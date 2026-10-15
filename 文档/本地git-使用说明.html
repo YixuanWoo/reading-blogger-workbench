@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>本地 git 使用说明 · 翊瑄的工作台</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 44px 24px 72px;
+    background-color: #0a1420;
+    background-image:
+      linear-gradient(rgba(90,150,220,.075) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(90,150,220,.075) 1px, transparent 1px);
+    background-size: 40px 40px;
+    color: #e8eef6;
+    font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    line-height: 1.7; font-size: 15px;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 30px; }
+  .kicker {
+    display: inline-block; font-size: 13px; letter-spacing: .12em;
+    color: #7fb6ff; border: 1px solid rgba(127,182,255,.35);
+    border-radius: 999px; padding: 4px 16px; margin-bottom: 16px;
+  }
+  h1 { font-size: 27px; margin: 0 0 10px; font-weight: 600; }
+  header p { color: #93a6bd; margin: 0; font-size: 15px; }
+
+  .verdict {
+    border: 1px solid rgba(240,198,116,.35);
+    background: linear-gradient(180deg, rgba(240,198,116,.10), rgba(240,198,116,.02));
+    border-radius: 14px; padding: 22px 26px; margin-bottom: 20px;
+  }
+  .verdict .big { font-size: 19px; color: #f5d99a; font-weight: 600; line-height: 1.55; }
+  .verdict .small { color: #93a6bd; margin-top: 8px; font-size: 13.5px; }
+
+  .card {
+    background: #111e2d; border: 1px solid rgba(120,180,255,.14);
+    border-radius: 14px; padding: 24px 26px; margin-bottom: 20px;
+  }
+  .card h2 {
+    font-size: 17px; margin: 0 0 4px; font-weight: 600;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .card h2 .num {
+    width: 25px; height: 25px; flex: none; border-radius: 7px;
+    background: rgba(127,182,255,.14); color: #7fb6ff;
+    font-size: 13px; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .card .sub { color: #93a6bd; font-size: 13px; margin: 0 0 16px; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+  th, td { text-align: left; padding: 9px 11px; font-size: 13.5px; border-bottom: 1px solid rgba(120,180,255,.10); vertical-align: top; }
+  th { color: #93a6bd; font-weight: 500; font-size: 12.5px; letter-spacing: .04em; }
+  td b { color: #cfe2ff; }
+  tr:last-child td { border-bottom: none; }
+
+  .code {
+    background: #0c1726; border: 1px solid rgba(120,180,255,.16);
+    border-radius: 10px; padding: 13px 15px;
+    font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+    font-size: 13px; color: #bfe0ff; line-height: 1.9; white-space: pre; overflow-x: auto;
+  }
+  .code .dim { color: #6f8aa8; }
+  .code .k { color: #f5d99a; }
+
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 6px; }
+  .side { border-radius: 12px; padding: 15px 16px; font-size: 13.5px; }
+  .side h3 { margin: 0 0 9px; font-size: 14px; font-weight: 600; }
+  .side.no { background: rgba(240,140,140,.07); border: 1px solid rgba(240,140,140,.22); }
+  .side.no h3 { color: #f0a0a0; }
+  .side.yes { background: rgba(120,220,160,.08); border: 1px solid rgba(120,220,160,.28); }
+  .side.yes h3 { color: #86e0a8; }
+  .side ul { margin: 0; padding-left: 18px; }
+  .side li { margin-bottom: 5px; }
+
+  ul { margin: 6px 0 0; padding-left: 20px; }
+  li { margin-bottom: 5px; }
+  .pill { display:inline-block; font-size:12px; padding:1px 9px; border-radius:999px; margin-right:6px; }
+  .pill.ok { background: rgba(120,220,160,.14); color:#86e0a8; border:1px solid rgba(120,220,160,.3); }
+  .pill.warn { background: rgba(240,198,116,.13); color:#f5d99a; border:1px solid rgba(240,198,116,.3); }
+  .pill.blue { background: rgba(127,182,255,.13); color:#9fc6ff; border:1px solid rgba(127,182,255,.3); }
+  footer { text-align:center; color:#5f7387; font-size:12.5px; margin-top:34px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">工 作 台 · 版 本 管 理</div>
+    <h1>本地 Git 建好了</h1>
+    <p>源码工程从此能「存档、回退、看每步改了什么」· 2026-10-15</p>
+  </header>
+
+  <div class="verdict">
+    <div class="big">一句话：给你的源码工程装了一台"时光机" —— 每次改完存一档，以后任何一步都能翻回去看。</div>
+    <div class="small">仓库就在工程夹里（`D:\工作台工程\工作台\.git`），单机本地、不上传任何地方。
+      已存了 2 档：一是全工程的起点，二是刚才那批文档改动。</div>
+  </div>
+
+  <!-- 1 -->
+  <div class="card">
+    <h2><span class="num">1</span>最该看的一个数：它有多"轻"</h2>
+    <p class="sub">你担心的是"体积越来越大"，这件事正好解决的就是它</p>
+    <table>
+      <tr><th style="width:46%">东西</th><th>大小</th></tr>
+      <tr><td>工程文件夹（含编译产物，实际占硬盘）</td><td><b>198 MB</b></td></tr>
+      <tr><td>真正的源码（<b>进 git 的部分</b>）</td><td><b>3.2 MB · 277 个文件</b></td></tr>
+      <tr><td>git 自己的仓库（<code>.git</code>）</td><td><b>2 MB</b></td></tr>
+    </table>
+    <p style="margin:14px 0 0;color:#93a6bd;font-size:13.5px">
+      ★ 差在哪？那 <b>190 MB 全是编译产物（<code>bin</code> / <code>obj</code>）</b> —— 每次编译都会重新生成，
+      存进 git 没有任何意义，还害你每次编完都看到"一堆好像改了什么"的假消息。<b>已经排除掉了。</b>
+    </p>
+  </div>
+
+  <!-- 2 -->
+  <div class="card">
+    <h2><span class="num">2</span>我替你做的三个决定</h2>
+    <table>
+      <tr><th style="width:30%">决定</th><th>为什么</th></tr>
+      <tr>
+        <td><b>排除编译产物</b><br>（bin / obj / 日志 / 缓存）</td>
+        <td>不排除的话仓库会胖 30 倍，而且每次编译都冒一堆"什么都没改"的假改动 —— 那 git 就废了，你会不想看它</td>
+      </tr>
+      <tr>
+        <td><b>钉死"换行符"不许乱动</b></td>
+        <td>你这台机器上 git 有个默认习惯：会把文件里的换行悄悄换一种写法。那样每次它碰过的文件都"整篇都改了"，diff 完全没法看。<b>已经关掉这个习惯</b></td>
+      </tr>
+      <tr>
+        <td><b>把 4 个文件统一成同一种换行符</b></td>
+        <td>工程里 214 个文件是一种，唯独 4 个（早期 VS 自动生成的）是另一种。一个仓库混两套，以后看改动会整篇乱跳。<b>只动了换行符，一个字的内容都没改</b>（其中两个原本自带 BOM，也原样留着）。改完已重新编译：0 警告 0 错误</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- 3 -->
+  <div class="card">
+    <h2><span class="num">3</span>你怎么用（就三个动作）</h2>
+    <p class="sub">打开"命令提示符 / PowerShell"，先进入工程夹：<code>cd /d D:\工作台工程\工作台</code></p>
+    <div class="code"><span class="dim"># ① 看：现在改了什么</span>
+git status
+
+<span class="dim"># ② 收：把这些改动放进"待存档"</span>
+git add -A
+
+<span class="dim"># ③ 存：存一档，一句话写清这次改了啥</span>
+git commit -m <span class="k">"修好了某某问题"</span></div>
+    <p style="margin:16px 0 6px;color:#93a6bd;font-size:13.5px">后悔药（想退回某个文件、看看历史）：</p>
+    <div class="code"><span class="dim"># 看最近存过的 10 档</span>
+git log --oneline -10
+
+<span class="dim"># 看某次改动具体动了哪些行（还没存档的时候用）</span>
+git diff
+
+<span class="dim"># 把某个文件退回"上次存档"的样子（★ 会丢掉这个文件现在的改动）</span>
+git checkout -- 文件路径</div>
+    <p class="sub" style="margin:14px 0 0">
+      ★ 一条经验：<b>一个小功能存一档</b>。别攒一星期存一次 —— 那样出了问题也不知道是哪一步搞坏的。
+    </p>
+  </div>
+
+  <!-- 4 -->
+  <div class="card">
+    <h2><span class="num">4</span>必须说清楚：它<b>不</b>做什么</h2>
+    <div class="two">
+      <div class="side no">
+        <h3>❌ 它不是备份</h3>
+        <ul>
+          <li>仓库就在你**同一块硬盘**上</li>
+          <li>硬盘坏了，代码和仓库一起没</li>
+          <li>真要备份得另存一份到别处（移动硬盘/网盘）</li>
+        </ul>
+      </div>
+      <div class="side yes">
+        <h3>✅ 它管什么</h3>
+        <ul>
+          <li>"这行代码什么时候改的、为什么改"</li>
+          <li>改坏了能一步退回上一版</li>
+          <li>同时做两件事、想对比着看</li>
+        </ul>
+      </div>
+    </div>
+    <p style="margin:16px 0 0;color:#93a6bd;font-size:13.5px">
+      ★ 还有一条：<b>它只管源码工程</b>。你的 <code>D:\工作台\项目\</code>（视频项目数据）<b>不在里面</b>，也<b>不该</b>在里面 ——
+      那是素材数据不是代码，混进来会把仓库撑爆。
+    </p>
+  </div>
+
+  <!-- 5 -->
+  <div class="card">
+    <h2><span class="num">5</span>已经存了哪两档</h2>
+    <table>
+      <tr><th style="width:20%">档号</th><th>内容</th></tr>
+      <tr><td><code>a548e87</code></td><td><b>起点</b>：整工程 277 个文件一次性入库（基线 = V1.15.0，即刚做完的复盘页"一层套一层"）</td></tr>
+      <tr><td><code>73e9aca</code></td><td>把 git 这件事写进文档（维护说明新增「本地 Git 版本管理」章节 / README / 更新日志补记）</td></tr>
+    </table>
+    <p class="sub" style="margin:14px 0 0">
+      <span class="pill ok">编译 0 警告 0 错误</span>
+      <span class="pill ok">工作区干净</span>
+      <span class="pill ok">没动你的全局配置</span>
+      <span class="pill blue">沿用本机已有身份 wuhao &lt;wuhao@local&gt;</span>
+    </p>
+    <p style="margin:14px 0 0;color:#93a6bd;font-size:13.5px">
+      想改提交名字/邮箱 → 在工程夹里跑 <code>git config user.name "你的名字"</code>、<code>git config user.email "你的邮箱"</code>（只改这个仓库，不动全局）。
+    </p>
+  </div>
+
+  <footer>
+    翊瑄的工作台（LiteCut）· 本地 Git · 2026-10-15<br>
+    技术细节在 <b>文档/维护说明.md 第九节·五</b>
+  </footer>
+
+</div>
+</body>
+</html>
