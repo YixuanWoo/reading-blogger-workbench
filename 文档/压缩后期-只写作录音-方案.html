@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>把后期压到只剩「写作 + 录音」· 方案</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 48px 24px 80px;
+    background-color: #0a1420;
+    background-image:
+      linear-gradient(rgba(90,150,220,.075) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(90,150,220,.075) 1px, transparent 1px);
+    background-size: 40px 40px;
+    color: #e8eef6;
+    font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    line-height: 1.75; font-size: 15px;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 40px; }
+  .kicker {
+    display: inline-block; font-size: 13px; letter-spacing: .12em;
+    color: #7fb6ff; border: 1px solid rgba(127,182,255,.35);
+    border-radius: 999px; padding: 4px 16px; margin-bottom: 18px;
+  }
+  h1 { font-size: 30px; margin: 0 0 12px; font-weight: 600; }
+  header p { color: #93a6bd; margin: 0; font-size: 16px; }
+
+  .card {
+    background: #111e2d; border: 1px solid rgba(120,180,255,.14);
+    border-radius: 14px; padding: 26px 28px; margin-bottom: 22px;
+  }
+  .card h2 {
+    font-size: 18px; margin: 0 0 6px; font-weight: 600;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .card h2 .num {
+    width: 26px; height: 26px; flex: none; border-radius: 7px;
+    background: rgba(127,182,255,.14); color: #7fb6ff;
+    font-size: 13px; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .card .sub { color: #93a6bd; font-size: 13.5px; margin: 0 0 20px; }
+
+  .verdict {
+    border: 1px solid rgba(240,198,116,.35);
+    background: linear-gradient(180deg, rgba(240,198,116,.10), rgba(240,198,116,.02));
+    border-radius: 14px; padding: 26px 28px; margin-bottom: 22px;
+  }
+  .verdict .big { font-size: 21px; color: #f5d99a; font-weight: 600; line-height: 1.5; }
+  .verdict .small { color: #93a6bd; margin-top: 10px; font-size: 14px; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+  th, td { text-align: left; padding: 10px 12px; font-size: 13.5px; border-bottom: 1px solid rgba(120,180,255,.10); vertical-align: top; }
+  th { color: #93a6bd; font-weight: 500; font-size: 12.5px; letter-spacing: .04em; }
+  tr:last-child td { border-bottom: none; }
+  code {
+    font-family: "Cascadia Mono", Consolas, monospace; font-size: 12.5px;
+    background: rgba(127,182,255,.10); color: #9cc7ff; padding: 1px 6px; border-radius: 4px;
+  }
+  .you { color: #ffb4a2; }
+  .agent { color: #c9b8ff; }
+  .auto { color: #8fe3bd; }
+  .note { color: #93a6bd; font-size: 13px; margin-top: 14px; }
+  .cellsub { color: #93a6bd; font-size: 12.5px; display: block; margin-top: 2px; }
+
+  .phase { display: flex; gap: 14px; padding: 15px 0; border-bottom: 1px dashed rgba(120,180,255,.14); }
+  .phase:last-child { border-bottom: none; }
+  .phase .idx {
+    flex: none; width: 30px; height: 30px; border-radius: 50%;
+    border: 1px solid rgba(127,182,255,.45); color: #7fb6ff;
+    display: flex; align-items: center; justify-content: center; font-size: 13px;
+  }
+  .phase .txt b { font-weight: 600; font-size: 14.5px; }
+  .phase .txt p { margin: 3px 0 0; color: #93a6bd; font-size: 13.5px; }
+  .tag { display:inline-block; font-size:12px; padding:1px 9px; border-radius:6px; margin-left:8px; vertical-align:1px;}
+  .tag.new { background: rgba(240,198,116,.16); color:#f5d99a; border:1px solid rgba(240,198,116,.4); }
+  .tag.has { background: rgba(95,207,154,.16); color:#8fe3bd; border:1px solid rgba(95,207,154,.35); }
+  .tag.later { background: rgba(127,182,255,.12); color:#9cc7ff; border:1px solid rgba(127,182,255,.3); }
+
+  .conflict {
+    border: 1px solid rgba(224,106,106,.35);
+    background: rgba(224,106,106,.06);
+    border-radius: 12px; padding: 18px 22px; margin-top: 18px;
+  }
+  .conflict h4 { margin: 0 0 10px; font-size: 14.5px; color: #ff9f9f; }
+  .conflict p { margin: 0; font-size: 13.5px; color: #cfdcea; }
+
+  footer { text-align: center; color: #6f8299; font-size: 13px; margin-top: 34px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">流程优化方案 · 未动代码</div>
+    <h1>把后期压到只剩「写作 + 录音」</h1>
+    <p>目标是你说的那句：我只负责内容，产出和包装全归 Agent。</p>
+  </header>
+
+  <div class="verdict">
+    <div class="big">关键不在"让机器剪得更聪明"，在于<b>让"剪"这件事消失</b>。<br>钥匙是你已经写好的那份稿子 —— 它是标准答案。</div>
+    <div class="small">而且这条路排队顺序要改：最该先做的不是录音台，是「对稿」和「品控」—— 它们不花钱、不买设备、没有未知数。</div>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">1</span>先把账算清：10 个环节，你其实只碰 4 个</h2>
+    <p class="sub">你抱怨"太啰嗦"，是因为这 4 次动手分散在整条链上，每次都要重新进入状态。</p>
+    <table>
+      <tr><th>#</th><th>环节</th><th>现在谁做</th><th>目标谁做</th></tr>
+      <tr><td>1</td><td>写作</td><td class="you">你</td><td class="you">你（不变，这是你的核心价值）</td></tr>
+      <tr><td>2</td><td>录音</td><td class="you">你</td><td class="you">你（不变）</td></tr>
+      <tr><td>3</td><td>转写</td><td>外部 Agent</td><td class="auto">消失 —— 稿子就是转写</td></tr>
+      <tr><td>4</td><td>粗剪</td><td>工作台代码猜</td><td class="auto">对稿，只标真偏差</td></tr>
+      <tr><td>5</td><td><b>精剪</b></td><td class="you">你（逐条审，最痛）</td><td class="auto">消失 / 只剩几条争议</td></tr>
+      <tr><td>6</td><td>分镜设计</td><td class="agent">Agent</td><td class="agent">Agent（不变）</td></tr>
+      <tr><td>7</td><td>渲染</td><td class="agent">Agent</td><td class="agent">Agent（不变）</td></tr>
+      <tr><td>8</td><td>组接出片</td><td>工作台自己</td><td class="auto">不变</td></tr>
+      <tr><td>9</td><td><b>品控</b></td><td class="you">你逐镜看</td><td class="agent">Agent 自动查 + 自动返工</td></tr>
+      <tr><td>10</td><td><b>终审</b></td><td class="you">你逐镜看</td><td class="you">你 —— 但只看一份异常报告</td></tr>
+    </table>
+    <p class="note">你的动手次数：<b style="color:#ff9f9f">4 次</b> → <b style="color:#8fe3bd">2 次</b>，而且剩下这 2 次都在最前面（写作、录音），不用来回切换状态。</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">2</span>★ 为什么"代码粗剪"永远让你不满意</h2>
+    <p class="sub">根因不是算法差，是<b>信息不够</b>。我去读了 <code>AutoCutEngine</code>，它其实已经很强了。</p>
+    <p style="color:#cfdcea;margin:0 0 14px">它跑的是<b>两轨六层</b>：波形轨抓静音气口 + 波形级重复；文本轨抓填充词（嗯/啊/这个）、半截重说、词级口吃、整句重复。</p>
+    <p style="color:#f5d99a;font-size:16px;margin:0 0 18px"><b>它会发现"你说了两遍"—— 但它不知道哪一遍是你想说的。</b></p>
+    <p style="color:#cfdcea;margin:0 0 18px">打个比方：这是<b>老师改作文，手里却没有标准答案</b>。他只能凭语法猜"这两句重复，划掉一句"—— 对错全看运气。</p>
+    <table>
+      <tr><th>要判什么</th><th>现在（只有录音）</th><th>有了稿子之后</th></tr>
+      <tr>
+        <td>说了两遍，留哪遍</td>
+        <td>只能猜（一般默认留最后一遍）</td>
+        <td class="auto">哪遍跟稿子对得上，就留哪遍</td>
+      </tr>
+      <tr>
+        <td>这句是不小心说的，还是本来就要说</td>
+        <td>判不了</td>
+        <td class="auto">稿子里一查就知道</td>
+      </tr>
+      <tr>
+        <td>哪里该断句、该切镜</td>
+        <td>靠静音时长猜</td>
+        <td class="auto">稿子的段落和句子就是天然边界</td>
+      </tr>
+      <tr>
+        <td>时间轴准不准</td>
+        <td>ASR 猜的（历史上差过 56 秒）</td>
+        <td class="auto">文本已知 → 时间戳只落在你真正说了的那一段里，不漂</td>
+      </tr>
+    </table>
+    <p class="note">而你手里<b>早就有那份标准答案</b>了 —— 就是写作台里的 <code>script.md</code>（V1.11.x 已落地）。只是现在没人把它交给粗剪。</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">3</span>三个新方案，分别干掉一个痛点</h2>
+
+    <h3 style="font-size:15px;margin:22px 0 10px;color:#8fe3bd">A · 对稿 —— 干掉「精剪」<span class="tag new">新想法 · 最该先做</span></h3>
+    <p style="color:#cfdcea;margin:0 0 12px">像演戏前对台词：拿你写的稿子，去校对你的录音。</p>
+    <table>
+      <tr><th>怎么走</th><th>说明</th></tr>
+      <tr><td>输入</td><td><code>script.md</code>（你写的）+ 现有的 ASR 转写稿</td></tr>
+      <tr><td>处理</td><td>逐句对齐 → 找出「重说了 / 卡壳了 / 漏了 / 多说了 / 顺序换了」</td></tr>
+      <tr><td>输出 ①</td><td><b>偏差清单</b>：每条带类型 + 位置 + 建议动作</td></tr>
+      <tr><td>输出 ②</td><td><b>修正后的时间轴</b>（比 ASR 猜的更准）</td></tr>
+      <tr><td>产物格式</td><td>★ <b>仍然是 <code>transcript.json</code></b> → 下游 ②③④⑤ <b>一行代码都不用改</b></td></tr>
+    </table>
+    <p class="note">偏差分两类：<b style="color:#8fe3bd">明确的</b>（重说、卡壳、口误、稿子里没有的多余话）→ Agent 直接处理，不问你；<b style="color:#f5d99a">有争议的</b>（整句漏了？顺序换了？删了会不会断意思？）→ 推给你，通常是个位数。<br>★ 于是"精剪"从<b>逐条划 200 条</b>变成<b>看 3 条</b>。</p>
+
+    <div class="conflict">
+      <h4>为什么它比"分段录音"更该先做</h4>
+      <p>分段录音能带来同样的收益，但它要<b>买麦克风</b>、要<b>改掉你的录音习惯</b>、还有一个致命未知数 —— <b>听感会不会变朗诵</b>（远景规划里的"期零"就是要验这个）。<br>而对稿这三样全都不需要：用你现在的整段录音就够了，<b>零风险、零设备、零习惯改动</b>，却能直接干掉最痛的精剪。</p>
+    </div>
+    <p class="note">工程上有个好消息：相似度比较的轮子已经在了（<code>TextSimilarity.cs</code>，已有 Dice / Overlap / LcsRatio / PrefixLen 四把尺子）—— 对稿正好要用它。<b>只对新项目生效，老项目（思辨与立场这类没写稿的）完全不动。</b></p>
+
+    <h3 style="font-size:15px;margin:26px 0 10px;color:#9cc7ff">A′ · 答疑：「说话跟稿子不一样」会不会让对稿失效？<span class="tag later">2026-10-08 补</span></h3>
+    <p style="color:#cfdcea;margin:0 0 12px">不会 —— 前提是把目标从「精确」换成「够用」。<b>对稿不是校对。</b>逐字比对那叫校对；对稿做的是<b>顺序对齐</b>：把稿子的段落和录音的时间段按先后顺序连起来。你换了词、加了话、绕了弯，只要<b>大方向还是照稿子讲的</b>，这条线就断不了 —— 而你是对着自己的稿子讲，顺序几乎总成立。</p>
+    <p style="color:#cfdcea;margin:0 0 12px"><b>整条下游没有一个环节需要「逐字精确」</b>：你不出字幕条，所以最难的「每个字落在哪 0.01 秒」这一档，压根不在需求里。实测分档：</p>
+    <table>
+      <tr><th>精度档</th><th>是什么</th><th>要不要</th></tr>
+      <tr><td class="auto">① 顺序</td><td>你大致按稿子的先后顺序讲</td><td class="auto">要（几乎总成立）</td></tr>
+      <tr><td class="auto">② 段级</td><td>这段话对应稿子哪一段</td><td class="auto">要（分镜靠它划边界）</td></tr>
+      <tr><td class="auto">③ 句级</td><td>这一句对应稿子哪一句</td><td class="auto">要（精剪靠它认「哪遍才是你要的」）</td></tr>
+      <tr><td style="color:#93a6bd">④ 词级</td><td>每个字精确落在哪 0.01 秒</td><td style="color:#93a6bd">不要（不出字幕条）</td></tr>
+    </table>
+    <p style="color:#cfdcea;margin:14px 0 12px"><b>★ 反直觉的好消息：口语化反而让对稿更强。</b><br>今天的自动粗剪靠「词像不像」找重复（<code>TextSimilarity</code> 那四把尺子）—— 你要是<b>改着词重说一遍</b>（头一遍「这个很重要」、第二遍「这点特别关键」），词面对不上，它就<b>认不出这是同一句</b>，重复就漏过去了。<br>但在对稿里，<b>这两遍都会对到同一段稿子</b> → 重复自动暴露。<b>你越爱换词，对稿相对今天的优势越大。</b></p>
+    <p style="color:#cfdcea;margin:0 0 12px"><b>那什么时候会真的失手？</b>—— 稿子里压根没有、你临场整段加的话；那里给不出锚点。所以做法是加一道<b>可信度门槛</b>，分三档走：</p>
+    <table>
+      <tr><th>对齐结果</th><th>怎么认出来的</th><th>怎么办</th></tr>
+      <tr><td class="auto"><b>对上了</b></td><td>词面 / 顺序都对得上</td><td class="auto">自动采用，<b>不问你</b></td></tr>
+      <tr><td style="color:#f5d99a"><b>说岔了</b></td><td>换了词，但顺序和长度还像</td><td style="color:#f5d99a">列出来，<b>你扫一眼</b></td></tr>
+      <tr><td style="color:#93a6bd"><b>稿子里没有</b></td><td>前后都对不上，疑似临场发挥</td><td style="color:#93a6bd"><b>退回今天的纯音频做法</b>，不硬套</td></tr>
+    </table>
+    <p class="note">★ 设计原则就一句：<b>对稿最差不能比今天差。</b>认不准就退回去，绝不硬套 —— 所以它的<b>下限 = 今天的水平</b>，<b>上限 = 替你看掉大部分精剪</b>。</p>
+    <p class="note">★ 附带红利：对稿跑几次，它会统计出<b>「你总把 A 说成 B」</b>。这些正是你「写起来顺、念起来别扭」的词 —— 顺手改回稿子，稿子会自己进化成<b>口播友好版</b>。也就是你说的「有些词写的时候顺畅、口播时未必适合」，它正好替你圈出来。</p>
+    <p class="note">★ 工程实现要点（工业界标准做法，别自己发明）：<b>长稿 × 长录音要按静音切段、再逐段对齐</b>，别整篇一次对齐 —— 否则一处错位会把后面所有时间戳一起带偏（这就是「强制对齐」最经典的坑）。每段单独算可信度，低于阈值就标记或退回。参考：广电字幕生产线（Qwen3-ForcedAligner 落地）、有声书文本对齐工程 —— 核心做法都是「<b>分段 + 置信度 + 低置信标记复核</b>」。</p>
+
+    <h4 style="font-size:14px;margin:24px 0 8px;color:#9cc7ff">★ 好消息：你说的「保后不保前」，引擎里已经埋了雏形</h4>
+    <p style="color:#cfdcea;margin:0 0 10px">读了 <code>RepeatDetector.cs</code> 和 <code>SpeechIssueDetector.ScanRetakes</code>，两处都已经按「保留后一遍」在做，只是判据还不够强：</p>
+    <table>
+      <tr><th>层</th><th>现在怎么判</th><th>缺什么</th></tr>
+      <tr><td>波形层<br><code>RepeatDetector</code></td><td>后一遍不比前一遍短（比值 ≥ 0.95）→ <b>剪前一遍</b>；否则<b>只提示、不动手</b></td><td>只看时长比，两遍说得不一样（改词重说）就认不出</td></tr>
+      <tr><td>文本层<br><code>ScanRetakes</code></td><td>把<b>前一遍</b>标成废片；护栏 = 后一遍短于前一遍 0.70 就不删</td><td>只比「两遍彼此像不像」，没有第三方参照</td></tr>
+    </table>
+    <p style="color:#cfdcea;margin:12px 0 10px"><b>★ 这两个缺口正好被两样东西补上：</b>① 稿子 = <b>第三方参照</b>（改词重说也能认出来）；② 「两遍都完整就降置信」= 给无条件的「保后」加一道刹车。<br><b>所以对稿不需要大模型</b> —— 对齐是成熟算法（序列对齐），取舍是纯规则，只有少数低置信点交人复核。</p>
+    <h4 style="font-size:14px;margin:24px 0 8px;color:#9cc7ff">★ 澄清：「对完稿子，音频就自动出来了？」—— 一半对</h4>
+    <table>
+      <tr><th>问的是</th><th>答案</th></tr>
+      <tr><td>剪好的<b>干净录音</b></td><td class="auto">基本是自动的 —— 对稿输出的是「<b>决策</b>」（留哪段、剪哪段），按决策裁源音频是全自动的，你只看被标记的少数点</td></tr>
+      <tr><td>整条<b>成片</b></td><td style="color:#f5d99a"><b>不是</b> —— 后面还有 ④ 分镜 → ⑤ 渲染 → ⑥ 组接，三步已经自动化（Agent + 工作台）但<b>不能省</b>，它们决定画面</td></tr>
+    </table>
+    <p class="note">★ 所以对稿吃掉的只有「精剪」这一段人工。你要的「我只写作录音」能到的位置是：<b>你写作、你录音、你看一遍成片</b>；中间的剪辑 / 分镜 / 渲染 / 组接全自动。</p>
+    <p class="note">★ 代码佐证：<code>AutoCutEngine.cs</code> 头部原话就是「<b>为什么输出的是"决策"而不是"新音频"</b>」—— 粗剪这一环从来不产出音频，只产出「怎么剪」。</p>
+
+    <h3 style="font-size:15px;margin:28px 0 10px;color:#8fe3bd">B · 品控清单化 + 自动返工 —— 干掉「逐镜核对」<span class="tag new">新 · 但已有基础</span></h3>
+    <p style="color:#cfdcea;margin:0 0 12px">"品控全交给 Agent"要成立，必须先有<b>一份可机检的清单</b>。判据分三档：</p>
+    <table>
+      <tr><th>档</th><th>判断</th><th>怎么办</th></tr>
+      <tr>
+        <td class="auto"><b>绿灯</b></td>
+        <td>时长 · 分辨率 · 帧率 · 有没有声音 · 音画同步 · 黑帧 · 静音段 · 镜号对不对 · 有没有溜进字幕条</td>
+        <td class="auto">机器全查，<b>你一个字都不用看</b></td>
+      </tr>
+      <tr>
+        <td style="color:#f5d99a"><b>黄灯</b></td>
+        <td>每镜有没有文字锚点 · 画面里的字对不对（OCR）· 内容贴不贴题（语义比对）· 听感节奏</td>
+        <td style="color:#f5d99a">列出来，<b>你扫一眼</b></td>
+      </tr>
+      <tr>
+        <td class="you"><b>红灯</b></td>
+        <td>好不好看 · 情感到没到 · 这个转场是不是俗 · 节奏对不对</td>
+        <td class="you">只有你能判</td>
+      </tr>
+    </table>
+    <p class="note">★ 所以准确的说法是：<b style="color:#f5d99a">Agent 负责把"错的"全部抓出来，你只负责判断"好不好"。</b><br>它不是替代你的审美，是替代你的<b>逐项核对</b>。</p>
+    <p class="note"><b>已有基础（不白做）</b>：<code>视觉规范.md</code> 已外部化并注入提示词（T-26 ①，V1.11.3）→ 改画面标准 = 改一个文本文件；<code>成片审片台</code>（T-27，V1.12.0）已打通"打点 → 唤醒 Agent 批量重渲 → 重新组装"这一圈。<br><b>缺的是</b>：① 把散落各处的判据<b>收成一份清单</b>（现在它们是"避免出错的手段"，不是"一份能跑的检查表"）；② 清单里<b>能机检的部分自动跑</b>，不合格<b>自动发重渲</b>，不用你打点。</p>
+
+    <h3 style="font-size:15px;margin:28px 0 10px;color:#8fe3bd">C · 异常报告 —— 干掉「逐镜看片」<span class="tag new">新</span></h3>
+    <p style="color:#cfdcea;margin:0 0 12px">终审从"把片子从头看到尾"，变成"看一页报告"：</p>
+    <table>
+      <tr><th>灯</th><th>报告里怎么显示</th><th>你的动作</th></tr>
+      <tr><td class="auto">绿</td><td>折叠起来，只显示一行汇总（如"34 镜合格"）</td><td class="auto">不用看</td></tr>
+      <tr><td style="color:#f5d99a">黄</td><td>展开，附抽帧缩略图 + 具体问题</td><td style="color:#f5d99a">扫一眼，点"通过/重做"</td></tr>
+      <tr><td class="you">红</td><td>置顶，附原因 + 一键"重渲这一镜"</td><td class="you">处理，然后重看这几镜</td></tr>
+    </table>
+    <p class="note">重渲这条路已经通了（单镜重渲 + 永久 ID + 产物指纹判"待重渲"），所以闭环是：<b>品控标红 → 点一下 → Agent 重渲 → 自动复查</b>。</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">4</span>★ 排队顺序要改：把「对稿」和「品控」提到录音台前面</h2>
+    <p class="sub">远景规划里的顺序（写作台 → 录音台 → 贯通）是按<b>方案完整性</b>排的。按<b>你最痛什么</b>排，顺序不一样。</p>
+    <table>
+      <tr><th>#</th><th>做什么</th><th>干掉什么</th><th>前置条件</th><th>风险</th></tr>
+      <tr>
+        <td>1</td>
+        <td class="auto"><b>对稿</b></td>
+        <td>精剪（你最痛的）</td>
+        <td>无 —— 用你现在的整段录音</td>
+        <td class="auto">低（老项目不动）</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td class="auto"><b>品控清单化 + 自动返工</b></td>
+        <td>逐镜核对</td>
+        <td>接 T-26 ① / T-27</td>
+        <td class="auto">低（纯软件）</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td class="auto"><b>异常报告页</b></td>
+        <td>逐镜看片</td>
+        <td>要第 2 步先出清单</td>
+        <td class="auto">低</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td style="color:#f5d99a"><b>录音台 + 分段录</b><span class="cellsub">（远景规划 期零 + 期二）</span></td>
+        <td>录音的体力消耗</td>
+        <td><b>要先买麦克风</b> + <b>先验听感</b></td>
+        <td style="color:#ff9f9f">高（听感未知）</td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td style="color:#f5d99a"><b>转写环消失</b><span class="cellsub">（远景规划 期三）</span></td>
+        <td>外包转写这一步</td>
+        <td>要第 4 步先落地</td>
+        <td style="color:#f5d99a">中</td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td>产能看板（远景规划 期四）</td>
+        <td>——</td>
+        <td>要前面稳定了才有意义</td>
+        <td>低</td>
+      </tr>
+    </table>
+    <p class="note">★ 这么排的理由：<b>第 4 步有两个硬前置（买麦克风 + 验听感），第 5 步依赖第 4 步</b>；而第 1~3 步<b>什么都不等</b>，却能拿走你最痛的两件事。先做能做的，别让整条路卡在一个未知数上。</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">5</span>诚实说：有三件事压不掉</h2>
+    <p class="sub">把边界说清楚，比许诺一个到不了的目标有用。</p>
+    <table>
+      <tr><th>压不掉的</th><th>为什么</th></tr>
+      <tr>
+        <td class="you"><b>写作</b></td>
+        <td>这是你的核心价值。整条链上唯一"只有你能产生"的东西</td>
+      </tr>
+      <tr>
+        <td class="you"><b>录音</b></td>
+        <td>除非换成机器配音 —— 那是另一个产品决策，而且读书博主的观众买的就是你的声音和语感</td>
+      </tr>
+      <tr>
+        <td class="you"><b>「好不好」的最终判断</b></td>
+        <td>审美没有客观判据。模型能告诉你"不难看"，给不了你"这个好"</td>
+      </tr>
+    </table>
+    <p class="note">所以现实的终点不是"你什么都不用管"，而是：<b style="color:#f5d99a">你从"操作员"变成"审片人 + 作者"。</b><br>这已经是最好的结果 —— 而且它恰好把时间还给了最该给的地方：内容。</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">6</span>待办登记（已写进 <code>工作台-待办清单.md</code>）</h2>
+    <table>
+      <tr><th>编号</th><th>事项</th><th>干掉什么</th></tr>
+      <tr><td><b>T-28</b></td><td>对稿：<code>script.md</code> 校准 ASR → 偏差清单 → 粗剪只出真偏差</td><td class="auto">精剪</td></tr>
+      <tr><td><b>T-29</b></td><td>品控清单化 + 自动返工闭环（接 T-26 ① / T-27）</td><td class="auto">逐镜核对</td></tr>
+      <tr><td><b>T-30</b></td><td>成片异常报告页（绿/黄/红）</td><td class="auto">逐镜看片</td></tr>
+    </table>
+    <p class="note">这三项都<b>不依赖麦克风、不依赖听感验证</b>，可以立刻开工。远景规划里的 期零（听感）/ 期二（录音台）/ 期三（贯通）<b>原样保留</b>，只是排到它们后面。</p>
+  </div>
+
+  <footer>一句话建议：先做 <b>T-28 对稿</b>。它零设备、零习惯改动、零听感风险，却能直接拿走你最痛的那一步 —— 而且它用的 <code>script.md</code> 你早就写好了。</footer>
+
+</div>
+</body>
+</html>

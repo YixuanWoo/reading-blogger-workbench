@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>T-05 分镜页实点验证清单</title>
+<style>
+  :root{
+    --bg:#0b1220; --card:#121b2e; --card2:#16203a; --line:#25324d;
+    --txt:#e8eef8; --dim:#9fb0cc; --faint:#6f82a3;
+    --gold:#f0c674; --blue:#7fb3ff; --ok:#5fd39a; --warn:#ffb454; --red:#ff7b72;
+    --grid:rgba(92,130,200,.10);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;padding:34px 30px 60px;background:var(--bg);color:var(--txt);
+    font-family:"Microsoft YaHei","PingFang SC",-apple-system,Segoe UI,sans-serif;
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:40px 40px;
+  }
+  .wrap{max-width:1080px;margin:0 auto}
+  h1{font-size:27px;margin:0 0 6px;letter-spacing:.5px}
+  h1 .n{color:var(--gold)}
+  .sub{color:var(--dim);font-size:14px;margin:0 0 26px;line-height:1.7}
+  .sub b{color:var(--txt)}
+  h2{font-size:15px;margin:32px 0 12px;color:var(--blue);letter-spacing:1px}
+  h2::before{content:"▍";color:var(--gold);margin-right:6px}
+
+  .grid5{display:grid;grid-template-columns:repeat(5,1fr);gap:11px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:13px 14px}
+  .stat .k{font-size:11.5px;color:var(--faint);margin-bottom:6px}
+  .stat .v{font-size:22px;font-weight:700;line-height:1.15}
+  .stat .u{font-size:11.5px;color:var(--dim);font-weight:400;margin-left:3px}
+
+  .steps{display:grid;gap:11px}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:14px 16px;display:grid;grid-template-columns:44px 1fr;gap:14px}
+  .step .no{width:44px;height:44px;border-radius:10px;background:var(--card2);border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:700;color:var(--gold)}
+  .step .t{font-size:15px;font-weight:700;margin:2px 0 7px}
+  .step .do{font-size:13px;color:var(--dim);line-height:1.75}
+  .step .do b{color:var(--txt);background:#1d2a45;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-weight:600}
+  .step .see{margin-top:9px;font-size:12.5px;color:var(--ok);line-height:1.7;
+    border-left:3px solid var(--ok);padding-left:10px;background:rgba(95,211,154,.06);border-radius:0 6px 6px 0;padding:7px 10px}
+  .step .see i{color:var(--dim);font-style:normal}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  th,td{padding:10px 13px;text-align:left;border-bottom:1px solid var(--line);line-height:1.6}
+  th{background:var(--card2);color:var(--blue);font-size:12px;font-weight:600;letter-spacing:.5px}
+  tr:last-child td{border-bottom:none}
+  td.b{color:var(--txt);font-weight:600}
+  td.g{color:var(--ok)} td.w{color:var(--warn)} td.r{color:var(--red)}
+
+  .note{margin-top:26px;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--warn);
+    border-radius:9px;padding:14px 16px;font-size:13px;line-height:1.85;color:var(--dim)}
+  .note b{color:var(--txt)}
+  .note .tag{color:var(--warn);font-weight:700}
+  .pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;border:1px solid var(--line);background:var(--card2);color:var(--dim);margin-right:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>T-05 · 分镜页实点验证 —— <span class="n">点这 4 下就验完</span></h1>
+  <p class="sub">
+    验的是分镜页三个<b>纯本地</b>动作（不走 Agent、不联网）：<b>语义合并切分</b> / <b>合并</b> / <b>拆分</b>，
+    外加改过的镜头会不会打 <b>✎</b> 标记。<br>
+    <span class="pill">全部只动「草稿」</span><span class="pill">已交接的 55 镜一个字不动</span><span class="pill">测完我把草稿清回原样</span>
+  </p>
+
+  <h2>验证基线（我刚从磁盘量的，现在就是这个样）</h2>
+  <div class="grid5">
+    <div class="stat"><div class="k">项目</div><div class="v" style="font-size:16px">思辨与立场</div></div>
+    <div class="stat"><div class="k">已交接镜头</div><div class="v">55<span class="u">镜</span></div></div>
+    <div class="stat"><div class="k">当前草稿</div><div class="v">0<span class="u">条</span></div></div>
+    <div class="stat"><div class="k">切法</div><div class="v" style="font-size:16px;color:var(--gold)">语义合并</div></div>
+    <div class="stat"><div class="k">已渲产物</div><div class="v">51<span class="u">个</span></div></div>
+  </div>
+
+  <h2>照着点（顺序别乱）</h2>
+  <div class="steps">
+
+    <div class="step">
+      <div class="no">1</div>
+      <div>
+        <div class="t">进 ③ 分镜页 → 确认切法亮在「语义合并」→ 点「生成镜头切分」</div>
+        <div class="do">
+          左边导航进第 <b>③ 分镜</b> 页。工具条最上面那排，「一句一镜 / 固定节奏 / <b>语义合并</b>」三个圆点，
+          应该亮在<b>语义合并</b>（新项目默认）。右边显示 <b>块长 5 ~ 9 秒/块</b>。<br>
+          然后点左边的 <b>生成镜头切分</b>。
+        </div>
+        <div class="see">
+          右边卡片流立刻铺出镜头卡（几十张）；状态栏出现 <b>「已切出 N 个镜头」</b>；
+          工具条下面那行提示显示切法说明（“语义合并：贪心把句子并成 5~9 秒的块”）。
+          <i>—— 若这个按钮是灰的，说明剪辑决策没加载，回①跑一次粗剪再来。</i>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="no">2</div>
+      <div>
+        <div class="t">点一张卡的卡头选中它 → 点卡上「合并▾」</div>
+        <div class="do">
+          在任意一张镜头卡的空白处 <b>点一下卡头</b>（会选中，左缘竖条变蓝）。
+          <b>先记住这张卡是第几镜、下一镜是第几。</b><br>
+          然后点这张卡右上角的 <b>合并▾</b>（等价于工具条的 <b>合并选中镜+下一镜</b>）。
+        </div>
+        <div class="see">
+          <b>瞬间</b>完成（不等 Agent）。卡片总数 <b>少 1 张</b>；被合并的那张卡索引旁冒出橙色的 <b>✎</b>，
+          左缘竖条变橙；工具条右侧出现 <b>「· 1 镜手动调过」</b>。<br>
+          <i>若这两镜已经有分镜设计 → 会先弹一个框问“原来那份设计怎么办”（拼接保留 / 清空 / 取消），选任一个都行。</i>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="no">3</div>
+      <div>
+        <div class="t">点刚才那张卡的「拆分」</div>
+        <div class="do">
+          还是选中那张卡，点它右上角的 <b>拆分</b>（等价于工具条的 <b>拆分选中镜</b>）。
+          它会在<b>最接近这镜中点的那句话说完之后</b>切开 —— 没有“按时间切”这种选项（那是伪选项，已删）。
+        </div>
+        <div class="see">
+          <b>瞬间</b>变两张，前后两段时长之和 = 原来那一镜。两张都带 <b>✎</b>、都算“手动调过”。<br>
+          <i>若这镜只有一句 → 状态栏提示“这一镜只有一句，没法按句子拆”；若原本有设计 → 会弹框提示设计只覆盖前半并标「待复核」。</i>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="no">4</div>
+      <div>
+        <div class="t">最后看交接闸门那一条（卡片流上方）</div>
+        <div class="do">
+          那条写着「下游当前使用：…」，同一条右边是「应用到下游」按钮。<b>它永远只报已交接版。</b>
+        </div>
+        <div class="see">
+          <b>点生成切分之前</b>，这条应写：<i>「下游当前使用：镜头表 55 镜 · 已交接于 …」</i>，
+          提示 <i>「草稿与已交接版一致 —— 下游现在就用这一份（55 镜）。改动后记得点一次交接。」</i>，按钮显示 <b>✓ 已在生效</b>（灰）。<br>
+          <b>做过第 2/3 步之后</b>，提示应变成 <i>「草稿 N 镜（有还没交下去的改动）· 成片已经出过 —— 交接后还需要到第⑤步重新组接」</i>，
+          按钮变成可点的 <b>应用到下游</b>。<br>
+          —— 这一变，就证明闸门是活的：<b>拆/合只改草稿，点「应用到下游」才算交下去</b>。
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <h2>判据速查：看到什么 = 什么结论</h2>
+  <table>
+    <tr><th style="width:44%">现象</th><th>结论</th></tr>
+    <tr><td class="b">点「生成镜头切分」→ 卡片流出块表，且块数 &lt; 一句一镜的句数</td><td class="g">✔ 语义合并生效（贪心成组，5~9 秒/块）</td></tr>
+    <tr><td class="b">点「合并」→ 瞬成、少一镜、出现 ✎ 与橙条</td><td class="g">✔ 合并 + Edited 标记都对</td></tr>
+    <tr><td class="b">点「拆分」→ 瞬成、多一镜、切点在句末</td><td class="g">✔ 按句边界拆分生效</td></tr>
+    <tr><td class="b">工具条出现「· N 镜手动调过」</td><td class="g">✔ ✎ 计数与刷新逻辑正常</td></tr>
+    <tr><td class="b">交接条仍写“下游当前使用：55 镜”</td><td class="g">✔ 闸门正确：草稿改了 ≠ 已交下去</td></tr>
+    <tr><td class="b">按钮点下去卡住 / 要等 / 弹 Agent 相关提示</td><td class="r">✘ 有 bug —— 这三个动作应当 0 延迟、纯本地</td></tr>
+  </table>
+
+  <div class="note">
+    <span class="tag">⚠ 这一轮千万别点的两个按钮：</span><br>
+    · <b>「应用到下游」</b> —— 那是 <b>T-17</b> 要验的东西。一点就会把草稿转正、重排镜号、把 51 个产物改名。验 T-05 用不着，先别碰。<br>
+    · <b>「重新自动切分」</b> —— 会弹确认框并覆盖刚才手动调的草稿，等 T-05 验完再说。<br><br>
+    <b>安全兜底：</b>这三个动作全程<b>只写“草稿”</b>（存在 <code>shotlist.json</code> 的 <code>DraftRows</code> 里，1.2 秒防抖落盘），
+    <b>已交接的 55 镜、51 个渲染产物、成片，一个字节都不动</b>。点完告诉我，我会把草稿清回原样再核一遍。
+  </div>
+
+</div>
+</body>
+</html>

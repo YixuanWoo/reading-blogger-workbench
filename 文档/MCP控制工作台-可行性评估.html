@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>给工作台写 MCP · 可行性评估</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    background:#0a1428;
+    background-image:
+      linear-gradient(rgba(70,130,200,.16) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(70,130,200,.16) 1px,transparent 1px);
+    background-size:48px 48px;
+    color:#e8eef8;
+    font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;
+    padding:44px 32px 60px;
+    min-height:100vh;
+  }
+  .wrap{max-width:1120px;margin:0 auto}
+  h1{font-size:30px;font-weight:800;letter-spacing:.5px;color:#ffffff}
+  h1 .sub{display:block;font-size:15px;font-weight:400;color:#8fb4dd;margin-top:10px;letter-spacing:0}
+
+  .verdict{
+    margin:28px 0 10px;padding:22px 26px;border-radius:14px;
+    background:rgba(20,44,78,.82);border:1px solid rgba(90,160,240,.35);
+    border-left:5px solid #4ea8ff;
+  }
+  .verdict .big{font-size:19px;font-weight:800;color:#ffd166;line-height:1.6}
+  .verdict p{line-height:1.85;font-size:15px;color:#cfe1f7;margin-top:8px}
+  .verdict code{font-family:Consolas,monospace;background:rgba(80,140,215,.18);padding:1px 6px;border-radius:5px;color:#a9d4ff;font-size:13.5px}
+
+  .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:26px 0 8px}
+  .metric{
+    background:rgba(18,38,66,.9);border:1px solid rgba(90,150,225,.28);
+    border-radius:14px;padding:18px 20px;
+  }
+  .metric .k{font-size:12.5px;color:#8fb4dd;letter-spacing:.5px}
+  .metric .v{font-size:25px;font-weight:800;color:#fff;margin:6px 0 4px}
+  .metric .v small{font-size:14px;font-weight:600;color:#9fc4ea}
+  .metric .d{font-size:13px;color:#a9c2dd;line-height:1.65}
+
+  h2{font-size:18px;color:#8fc7ff;margin:38px 0 16px;font-weight:700}
+  h2 span{font-size:13px;color:#6f8fb5;font-weight:400;margin-left:8px}
+
+  /* 三条路对比 */
+  .roads{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .road{
+    background:rgba(16,34,60,.88);border:1px solid rgba(80,140,215,.25);
+    border-radius:14px;padding:18px 18px 16px;display:flex;flex-direction:column;
+  }
+  .road.pick{background:rgba(24,54,94,.95);border-color:rgba(120,190,255,.55);box-shadow:0 0 0 1px rgba(120,190,255,.18)}
+  .road .lv{font-size:11.5px;padding:3px 10px;border-radius:99px;display:inline-block;align-self:flex-start;margin-bottom:12px}
+  .lv.a{background:rgba(94,227,154,.14);color:#5ee39a;border:1px solid rgba(94,227,154,.35)}
+  .lv.b{background:rgba(255,200,90,.14);color:#ffd166;border:1px solid rgba(255,200,90,.35)}
+  .lv.c{background:rgba(255,110,110,.14);color:#ff9d9d;border:1px solid rgba(255,110,110,.35)}
+  .road h3{font-size:16.5px;color:#fff;margin-bottom:8px}
+  .road .cost{font-size:13px;color:#8fb4dd;margin-bottom:12px;font-variant-numeric:tabular-nums}
+  .road .cost b{color:#ffd166;font-size:15px}
+  .road ul{list-style:none;margin-top:auto}
+  .road li{font-size:13.5px;line-height:1.95;padding-left:20px;position:relative;color:#c3d6ec}
+  .road li.yes::before{content:"✓";position:absolute;left:0;color:#5ee39a;font-weight:700}
+  .road li.no::before{content:"✕";position:absolute;left:0;color:#ff8a8a;font-weight:700}
+
+  /* 架构图 */
+  .arch{
+    background:rgba(14,30,54,.9);border:1px solid rgba(80,140,215,.25);
+    border-radius:14px;padding:26px 24px 22px;margin-top:4px;
+  }
+  .layer{
+    display:grid;grid-template-columns:150px 1fr;gap:16px;align-items:center;
+    padding:12px 16px;border-radius:11px;margin-bottom:9px;
+    background:rgba(20,42,72,.85);border:1px solid rgba(80,140,215,.22);
+  }
+  .layer.new{background:rgba(28,62,104,.95);border-color:rgba(120,190,255,.5)}
+  .layer .who{font-size:13.5px;font-weight:700;color:#9fc4ea}
+  .layer .what{font-size:13.5px;color:#dae8fa;line-height:1.7}
+  .layer .what em{color:#ffd166;font-style:normal;font-weight:700}
+  .layer .what small{color:#7a99bb;font-size:12.5px}
+  .arrow{text-align:center;color:#4ea8ff;font-size:13px;padding:2px 0;letter-spacing:.5px}
+  .legend{margin-top:14px;font-size:12.5px;color:#7a99bb}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:middle;margin-right:6px}
+  .legend .has{background:rgba(20,42,72,.95);border:1px solid rgba(80,140,215,.5)}
+  .legend .add{background:rgba(28,62,104,.95);border:1px solid rgba(120,190,255,.7);margin-left:18px}
+
+  /* 难点 */
+  .pains{display:flex;flex-direction:column;gap:9px}
+  .pain{
+    display:grid;grid-template-columns:104px 44px 1fr;gap:14px;align-items:start;
+    padding:13px 16px;border-radius:11px;
+    background:rgba(16,34,60,.85);border:1px solid rgba(80,140,215,.22);
+  }
+  .pain .nm{font-size:14px;font-weight:700;color:#dae8fa}
+  .pain .st{font-size:13px;font-weight:800;text-align:center;color:#ffd166;letter-spacing:1px}
+  .pain .de{font-size:13.5px;color:#bdd2e8;line-height:1.75}
+  .pain .de b{color:#ff9d9d}
+
+  /* 建议 */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .step{
+    background:rgba(18,38,66,.9);border:1px solid rgba(90,150,225,.28);
+    border-radius:14px;padding:18px 20px;position:relative;
+  }
+  .step .no{font-size:12px;color:#8fb4dd;letter-spacing:.5px}
+  .step h3{font-size:16px;color:#fff;margin:6px 0 8px}
+  .step .t{font-size:12.5px;color:#ffd166;margin-bottom:10px;font-weight:700}
+  .step p{font-size:13.5px;line-height:1.8;color:#c3d6ec}
+  .step .gain{margin-top:10px;font-size:13px;color:#5ee39a;line-height:1.7}
+
+  .foot{margin-top:36px;font-size:13px;color:#7a99bb;line-height:1.9}
+  .foot b{color:#ffd166}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>给工作台写一个 MCP · 可行性评估
+    <span class="sub">目标：做测试（尤其 T-05 / T-17 这类 GUI 实点验证）时，AI 能代你点界面</span>
+  </h1>
+
+  <div class="verdict">
+    <div class="big">结论：可行，没有技术禁区 —— 但「贵」的不是 MCP，是给工作台开一扇「遥控窗」。</div>
+    <p>MCP 那一层只是个小胶水（照抄现有 <code>bridge.js</code> 就行）。真正的活是：往工作台进程里装一个控制端口，
+       再把界面上一堆 <code>private</code> 的「点按钮」动作抽成能被外部调用的命令。工作量的大头在这里，不在 MCP。</p>
+  </div>
+
+  <div class="metrics">
+    <div class="metric">
+      <div class="k">规模（新增代码）</div>
+      <div class="v">1200~1800 <small>行</small></div>
+      <div class="d">其中 C# 约 900~1300 行，Node（MCP server）约 300~500 行。<br>参考：现有 <code>bridge.js</code> 23.5 KB。</div>
+    </div>
+    <div class="metric">
+      <div class="k">难度</div>
+      <div class="v">★★★☆</div>
+      <div class="d">不难在"写得出"，难在<b style="color:#ff9d9d">两个硬骨头</b>：UI 线程调度、动作语义化。<br>MCP 协议本身 ★☆。</div>
+    </div>
+    <div class="metric">
+      <div class="k">现在已有的底子</div>
+      <div class="v">60% <small>通了一半</small></div>
+      <div class="d">桥接链路已跑通、无头验证套路已验证、外壳已有 6 个公开入口。<br>方向反着的：现在是<b style="color:#ffd166">工作台 → Agent</b>，要加的是 <b style="color:#ffd166">Agent → 工作台</b>。</div>
+    </div>
+  </div>
+
+  <h2>先看清：这事其实分三条路，性价比差 5 倍 <span>别一上来就做最贵那条</span></h2>
+
+  <div class="roads">
+    <div class="road">
+      <span class="lv a">最省 · 半天</span>
+      <h3>① 验收探针常驻</h3>
+      <div class="cost">成本 <b>约 500 行</b></div>
+      <ul>
+        <li class="yes">把我现在"临时写工程 + 编译"的无头验证固定成一个工具</li>
+        <li class="yes">能跑断言、验算法、验持久化</li>
+        <li class="yes">一次写好，以后随时跑（像音频探针那样）</li>
+        <li class="no">碰不到你正开着的那个实例</li>
+        <li class="no">没法"代你点按钮"</li>
+      </ul>
+    </div>
+
+    <div class="road pick">
+      <span class="lv b">够用 · 1 天</span>
+      <h3>② 只读 MCP（看 + 走）</h3>
+      <div class="cost">成本 <b>约 500 行</b></div>
+      <ul>
+        <li class="yes">读内存状态（比读 project.json 强得多，约 30 个字段）</li>
+        <li class="yes">切页面、开项目、<b>截图回传给你看</b></li>
+        <li class="yes">够验 T-05/T-17 的一半（"显示对不对"）</li>
+        <li class="no">点不了按钮 → 验不了"点了之后"</li>
+      </ul>
+    </div>
+
+    <div class="road">
+      <span class="lv c">完整 · 2~3 天</span>
+      <h3>③ 真·MCP 控制（能点）</h3>
+      <div class="cost">成本 <b>约 1200~1800 行</b></div>
+      <ul>
+        <li class="yes">代你点按钮：应用决策 / 提交分镜 / 导出</li>
+        <li class="yes">完整复现 T-05 / T-17 的实点流程</li>
+        <li class="no">要动主线代码（把 Click 里的活抽成命令）</li>
+        <li class="no">产品 exe 会带一个控制端口</li>
+        <li class="no">每加一个界面动作，要同步加一个工具，否则会滞后</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>如果走第③条：架构长这样 <span>蓝底 = 要新写的，只有两块</span></h2>
+
+  <div class="arch">
+    <div class="layer">
+      <div class="who">AI（我）</div>
+      <div class="what">通过 MCP 协议发工具调用，例如 <em>「切到渲染页，把这一镜重渲，截图给我」</em></div>
+    </div>
+    <div class="arrow">↓ &nbsp;stdio（MCP 标准协议）</div>
+    <div class="layer new">
+      <div class="who">litecut-mcp</div>
+      <div class="what">新写的 Node 进程，把每个 MCP 工具翻译成一条 HTTP 请求 <small>· 约 300~500 行，可照抄 bridge.js 写法</small></div>
+    </div>
+    <div class="arrow">↓ &nbsp;HTTP 127.0.0.1:18766</div>
+    <div class="layer new">
+      <div class="who">ControlServer</div>
+      <div class="what">新写的 C#，装在工作台进程里。收命令 → 派到界面线程 → 执行 <small>· 约 350~500 行</small></div>
+    </div>
+    <div class="arrow">↓ &nbsp;Dispatcher.Invoke（必须！）</div>
+    <div class="layer">
+      <div class="who">工作台</div>
+      <div class="what">在外壳上跑：<em>GoTo</em> / <em>OpenProject</em> / 反射调页面动作 / 读 WorkbenchState <small>· 外壳已有 6 个公开入口，其余是 private 需补</small></div>
+    </div>
+    <div class="legend">
+      <i class="has"></i>已经有的
+      <i class="add"></i>要新写的（就这两块 + 一点命令封装）
+    </div>
+  </div>
+
+  <h2>诚实说难点 <span>按"卡人程度"排序，前两条才是真成本</span></h2>
+
+  <div class="pains">
+    <div class="pain">
+      <div class="nm">动作语义化</div><div class="st">★★★</div>
+      <div class="de">页面上的动作全是 <code>private void BtnXX_Click</code>，而且都假定"已经选好了某一行、某个项目"。
+        要暴露成命令，得先理清<b>前置条件</b>和<b>返回值</b>。这是最大的活，也最容易"做一半"。<br>
+        <b>省事的办法</b>：先做一个通用反射调用口（<code>POST /invoke {类, 方法, 参数}</code>），几乎零改造 —— 代价是调用方要自己知道方法名。</div>
+    </div>
+    <div class="pain">
+      <div class="nm">UI 线程调度</div><div class="st">★★★</div>
+      <div class="de">HTTP 回调在后台线程，碰任何控件都会抛"调用线程无法访问此对象"（这坑工作台已经踩过，crash.log 里有实锤）。
+        必须 <code>Dispatcher.Invoke</code>，且<b>不能在后台线程同步等界面</b> —— 会死锁。</div>
+    </div>
+    <div class="pain">
+      <div class="nm">长任务两段式</div><div class="st">★★</div>
+      <div class="de">渲染、Agent 调用都是分钟级。MCP 工具不能傻等，得"发起 → 轮询状态"。
+        <b>好消息</b>：工作台的 <code>/ping</code> 已经是这个模式，直接抄。</div>
+    </div>
+    <div class="pain">
+      <div class="nm">后门风险</div><div class="st">★★</div>
+      <div class="de">控制端口会长在产品 exe 里，任何本机进程都能遥控工作台。
+        要做成<b>默认关闭 + 只绑 127.0.0.1 + 可选口令</b>，或者干脆 <code>#if DEBUG</code> 只在调试包里存在。</div>
+    </div>
+    <div class="pain">
+      <div class="nm">抢你的界面</div><div class="st">★★</div>
+      <div class="de">我操作的是<b>你正开着的那个实例</b>。我切页面会打断你。要约定"我操作时你先别动手"，或者允许我另起一个验证实例（但这会撞单实例锁）。</div>
+    </div>
+    <div class="pain">
+      <div class="nm">MCP 协议本身</div><div class="st">★</div>
+      <div class="de">定义工具、收发消息 —— 几百行的标准活，<code>bridge.js</code> 现成骨架，没有难点。</div>
+    </div>
+  </div>
+
+  <h2>建议的分期 <span>每一期都能立刻用上，不用等全部做完</span></h2>
+
+  <div class="steps">
+    <div class="step">
+      <div class="no">第一期</div>
+      <h3>验收探针</h3>
+      <div class="t">半天 · 立刻见效</div>
+      <p>把无头验证固定成 <code>工具\验收探针\</code>，跑断言、验算法与持久化。</p>
+      <div class="gain">✓ 以后的回归测试我都能自己跑，不用你点</div>
+    </div>
+    <div class="step">
+      <div class="no">第二期</div>
+      <h3>只读 MCP</h3>
+      <div class="t">1 天 · 验"显示对不对"</div>
+      <p>加 ControlServer（只读）+ MCP server：读状态、切页、截图。</p>
+      <div class="gain">✓ T-05 的"徽章显示对不对"我能直接看并告诉你</div>
+    </div>
+    <div class="step">
+      <div class="no">第三期</div>
+      <h3>写操作</h3>
+      <div class="t">1~2 天 · 验"点了之后"</div>
+      <p>逐个把关键动作抽成命令：应用决策 / 提交分镜 / 重渲 / 导出。</p>
+      <div class="gain">✓ T-17 的完整实点流程可以全自动跑</div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <b>一句话决策建议：</b>先做第一期（半天），你立刻就能感到差别；
+    再决定要不要往第二、三期走 —— 二三期加起来才是"真 MCP"，也才是那 1200~1800 行。<br>
+    如果你要的就是"以后 T-05/T-17 这类活我替你干"，那目标其实是第三期；这份评估的作用是让你在花钱之前知道钱花在哪。
+  </div>
+
+</div>
+</body>
+</html>

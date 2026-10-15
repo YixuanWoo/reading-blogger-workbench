@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>写作台 · 位置与导航</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d1b2a;color:#e8eef4;font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;padding:32px 24px 56px}
+.wrap{max-width:1000px;margin:0 auto}
+h1{font-size:26px;font-weight:500;margin-bottom:6px}
+.sub{color:#8fa8bf;font-size:14px;margin-bottom:28px}
+h2{font-size:18px;font-weight:500;margin:32px 0 14px;padding-left:10px;border-left:3px solid #4cc9f0}
+.card{background:#12263a;border:1px solid #1e3a52;border-radius:10px;padding:16px 18px;margin-bottom:14px}
+.q{font-size:15px;color:#cfe3f2;margin-bottom:10px}
+.ans{font-size:22px;font-weight:500;color:#4cc9f0}
+.why{font-size:13px;color:#8fa8bf;margin-top:6px;line-height:1.7}
+table{width:100%;border-collapse:collapse;font-size:13px;background:#12263a;border-radius:10px;overflow:hidden}
+th{background:#1a3450;text-align:left;padding:10px 12px;color:#cfe3f2;font-weight:500;border-bottom:1px solid #2a4a66}
+td{padding:9px 12px;border-bottom:1px solid #1a3450;color:#b8cfe0;line-height:1.6}
+td.hi{color:#4cc9f0}
+code{background:#0d1b2a;color:#7fd1e8;padding:1px 5px;border-radius:4px;font-size:12px}
+.nav{background:#12263a;border:1px solid #1e3a52;border-radius:10px;padding:18px 22px;margin-bottom:14px}
+.navt{font-size:12px;color:#6d8ba3;letter-spacing:1px;margin:12px 0 6px}
+.navt:first-child{margin-top:0}
+.item{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:14px}
+.new{background:#0e3a4a;border:1px solid #1d6b7d;border-radius:6px;padding:1px 8px;font-size:11px;color:#5fd0e0}
+.flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;margin:10px 0}
+.box{background:#12263a;border:1px solid #2a4a66;border-radius:7px;padding:7px 12px}
+.box.g{background:#0e3a4a;border-color:#1d6b7d;color:#7fd8e8}
+.ar{color:#4cc9f0}
+.pit{background:#2a1a12;border:1px solid #7a4520;border-radius:10px;padding:14px 16px;margin-bottom:12px}
+.pit .t{font-size:14px;color:#ffb066;font-weight:500;margin-bottom:6px}
+.pit .b{font-size:13px;color:#d9c2ae;line-height:1.7}
+.fix{color:#7fe0a8}
+.warn{color:#ffcf6b}
+.foot{margin-top:30px;font-size:12px;color:#6d8ba3;line-height:1.8}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>写作台 · 放在哪、导航长什么样</h1>
+<div class="sub">依据：远景规划（写作台/录音台/产能看板）× 现状代码核对（NavTree / NavNode / NavHost / ProjectStore / Transcript） · 2026-10-02</div>
+
+<h2>一、放在哪</h2>
+
+<div class="card">
+<div class="q">问题：写作台该放在项目内，还是全局菜单？</div>
+<div class="ans">项目内 · 流水线的第 0 步</div>
+<div class="why">判据只有一条 —— <b>稿子属于「某一支片」，还是属于「我」？</b><br>
+稿子存在<code>项目\思辨与立场\script.md</code>，跟着片子走 → 项目内。<br>
+放全局就会造出没有归属的孤儿稿，那恰恰是它最该避免的状态。</div>
+</div>
+
+<div class="card">
+<div class="q">为什么不插在 1粗剪 和 2 精剪 中间？</div>
+<div class="ans">因为它不是流水线的一环，是 ① 的上游</div>
+<div class="why">稿子 → transcript.json → 粗剪。插中间会暗示"剪完才开始写稿"，那是倒着。<br>
+所以它排在最前面，编号 <b>0</b>；现有 1~5 <b>一步不���、不重编号</b>——重编号会让老项目的截图和记忆全部对不上。</div>
+</div>
+
+<h2>二、导航结构</h2>
+
+<div class="nav">
+<div class="navt">打开项目后 · 项目内菜单</div>
+<div class="item">0　写作台<span class="new">新增</span></div>
+<div class="navt">成 片</div>
+<div class="item">1　音频粗剪</div>
+<div class="item">2　精剪</div>
+<div class="item">3　分镜设计</div>
+<div class="item">4　渲染</div>
+<div class="item">5　组接导出</div>
+<div class="navt">资 源</div>
+<div class="item">▤　素材库</div>
+</div>
+
+<div class="card">
+<div class="q">为什么现在要加「分组」？</div>
+<div class="ans">7 项是临界点</div>
+<div class="why">现在 6 项平铺还能看，加写作台 7 项、期二录音台 8 项、期四看板 9 项。<br>
+<b>现在改最便宜</b>——只要 <code>NavNode</code> 加一个 <code>Group</code> 字段、<code>NavHost</code> 画一条分隔线，约 25 行；等9 项再改就要动现有布局了。<br>
+只做视觉分段，<b>不做二级菜单</b>（不缩进、不展开子项）。</div>
+</div>
+
+<div class="card">
+<div class="q">全局菜单要改吗？</div>
+<div class="ans">一个字都不改</div>
+<div class="why">灵感 / 进行中 / 已归档，保持原样。《阅读管理页》另有规划，它也按同一把尺判归属（书单不属于某一支片 → 全局），两页自洽不打架。</div>
+</div>
+
+<h2>三、核对现状时挖出的三个坑</h2>
+
+<div class="pit">
+<div class="t">坑 1　默认落点写死了，打开老项目会"稿子丢了"</div>
+<div class="b">现在 <code>DefaultProjectId => StepCut</code> 是<b>常量</b>。加了写作台后，打开《思辨与立场》这种已做完的老项目，
+落地却弹到<b>空的</b>写作台，用户以为稿子没了。<br>
+<span class="fix">修法</span>：改成按立项模式分流 —— 新项目（文稿驱动）落写作台，老项目（录音驱动）<b>仍然落粗剪</b>。
+老档案反序列化出来天然是<code>recording</code>，零改动。</div>
+</div>
+
+<div class="pit">
+<div class="t">坑 2　<code>ScriptText</code> 这个名字已经被占了</div>
+<div class="b">实测 <code>ProjectModel.cs:166</code> 已有 <code>ShotPart.ScriptText</code>，注释写着"降级用的文案稿"。
+写作台如果也叫这个名字，将来两个"稿子"字段必然打架。<br>
+<span class="fix">修法</span>：三者职责定死 —— <b>稿源</b>（script.md，人写的原文）、<b>带时间的稿</b>（transcript.json，下游吃这个）、
+<b>成片口播稿</b>（<code>ScriptText</code>，派生物）。新代码一律不许叫 <code>ScriptText</code>。</div>
+</div>
+
+<div class="pit">
+<div class="t">坑 3　<code>01-transcript</code> 现在是空目录，别写成"已支持"</div>
+<div class="b">实测 <code>项目\AI时代读书的价值\stages\01-transcript\</code> 里 <b>0 个文件</b>——
+转写稿一直是<b>外部 Agent</b> 交付的，粗剪页那颗"复制转写提示词"就是给它的任务书。<br>
+不影响方案（写作台是生成方之一），但文档里不能写"工作台已支持 transcript.json"。</div>
+</div>
+
+<h2>四、写作台长什么样</h2>
+
+<div class="card">
+<div class="q">编辑器选型</div>
+<div class="ans">不引入 AvalonEdit / Monaco / WebView2</div>
+<div class="why">工作台要的不是"一个完整 md 编辑器"，是"能把稿子<b>切成段落节点</b>的编辑器"。<br>
+存盘是 md（<b>你能在 Obsidian 里写</b>），编辑是卡片流（<b>与分镜页同一套心智</b>）→ 零新依赖。<br>
+与 Obsidian 的关系是<b>单向</b>：打开读一次 / 保存整份重写 /开着时你在 Obsidian 改了不管。</div>
+</div>
+
+<h2>五、最值钱的一处：下游一行都不用改</h2>
+
+<div class="flow">
+<div class="box">老路<br><span style="font-size:11px;color:#8fa8bf">整段录音→外包ASR</span></div>
+<span class="ar">→</span>
+<div class="box g">transcript.json<br><span style="font-size:11px;color:#7fd8e8">格式完全一致</span></div>
+</div>
+<div class="flow">
+<div class="box">新路<br><span style="font-size:11px;color:#8fa8bf">稿子+分段录音</span></div>
+<span class="ar">→</span>
+<div class="box g">transcript.json</div>
+<span class="ar">→</span>
+<div class="box">②③④⑤ 零改动</div>
+</div>
+
+<div class="card">
+<div class="q">为什么这条值这么多</div>
+<div class="ans">时间戳从"猜的"变成"累加出来的"</div>
+<div class="why">老路的<code>Start/End</code> 是 ASR 猜的 →<span class="warn">会漂</span>（那条血泪规矩实测差<b>56 秒</b>）。<br>
+新路是片段边界累加 → <b>零误差</b>，而且稿子零损耗、不用外包。<br>
+所以这不是"给流水线加两个前置环节"，是<b>换掉一个数据源，其余全不动</b>。</div>
+</div>
+
+<h2>六、要你拍板</h2>
+
+<table>
+<tr><th style="width:32%">问题</th><th>说明</th></tr>
+<tr><td><b>1 · 导航分组</b></td><td>采纳「文稿/成片/资源」三组？还是先保持平铺、7 项不动？（改动约 25 行）</td></tr>
+<tr><td><b>2 · 默认落点</b></td><td>按立项模式分流：新项目落写作台、老项目仍落粗剪。认吗？不认的话老项目每次打开都会先弹到一个空的写作台。</td></tr>
+<tr><td><b>3 · 立项前的稿子</b></td><td>规划稿没覆盖。建议进全局「灵感」池（已有跨项目先例），立项时一键转成项目稿；<b>而不是在全局再造第二个写作台</b>——那必然出现两份稿子对不上。</td></tr>
+<tr><td><b>4 · 期零听感验证</b></td><td>半天、不写代码，决定后面几千行是否白写。<b>不影响期一开工</b>（期一不依赖麦克风）。</td></tr>
+</table>
+
+<div class="foot">
+文档：<code>文档\写作台-开发方案.md</code>（完整版，含数据模型、代码落点、风险登记）<br>
+基线 V1.9.11 · 状态：<b>待拍板，代码一行未动</b> · 完整版为留痕与决策依据，本页为一屏速览
+</div>
+
+</div>
+</body>
+</html>

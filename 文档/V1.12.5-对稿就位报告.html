@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>T-28 对稿 · 做出来了（V1.12.5）</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 48px 24px 80px;
+    background-color: #0a1420;
+    background-image:
+      linear-gradient(rgba(90,150,220,.075) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(90,150,220,.075) 1px, transparent 1px);
+    background-size: 40px 40px;
+    color: #e8eef6;
+    font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    line-height: 1.75; font-size: 15px;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 36px; }
+  .kicker {
+    display: inline-block; font-size: 13px; letter-spacing: .12em;
+    color: #7fb6ff; border: 1px solid rgba(127,182,255,.35);
+    border-radius: 999px; padding: 4px 16px; margin-bottom: 18px;
+  }
+  h1 { font-size: 29px; margin: 0 0 12px; font-weight: 600; }
+  header p { color: #93a6bd; margin: 0; font-size: 15.5px; }
+
+  .verdict {
+    border: 1px solid rgba(240,198,116,.35);
+    background: linear-gradient(180deg, rgba(240,198,116,.10), rgba(240,198,116,.02));
+    border-radius: 14px; padding: 24px 28px; margin-bottom: 22px;
+  }
+  .verdict .big { font-size: 20px; color: #f5d99a; font-weight: 600; line-height: 1.55; }
+  .verdict .small { color: #93a6bd; margin-top: 10px; font-size: 14px; }
+
+  .card {
+    background: #111e2d; border: 1px solid rgba(120,180,255,.14);
+    border-radius: 14px; padding: 24px 28px; margin-bottom: 20px;
+  }
+  .card h2 {
+    font-size: 18px; margin: 0 0 4px; font-weight: 600;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .card h2 .num {
+    width: 26px; height: 26px; flex: none; border-radius: 7px;
+    background: rgba(127,182,255,.14); color: #7fb6ff;
+    font-size: 13px; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .card .sub { color: #93a6bd; font-size: 13.5px; margin: 0 0 18px; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+  th, td { text-align: left; padding: 10px 12px; font-size: 13.5px;
+           border-bottom: 1px solid rgba(120,180,255,.10); vertical-align: top; }
+  th { color: #93a6bd; font-weight: 500; font-size: 12.5px; letter-spacing: .04em; }
+  tr:last-child td { border-bottom: none; }
+  code {
+    font-family: "Cascadia Mono", Consolas, monospace; font-size: 12.5px;
+    background: rgba(127,182,255,.10); color: #9cc7ff; padding: 1px 6px; border-radius: 4px;
+  }
+  .note { color: #93a6bd; font-size: 13px; margin-top: 12px; }
+  .ok { color: #8fe3bd; }
+  .warn { color: #f5b04a; }
+  .bad { color: #ff8f8f; }
+
+  .phase { display: flex; gap: 14px; padding: 13px 0; border-bottom: 1px dashed rgba(120,180,255,.14); }
+  .phase:last-child { border-bottom: none; }
+  .phase .idx {
+    flex: none; width: 28px; height: 28px; border-radius: 50%;
+    border: 1px solid rgba(127,182,255,.45); color: #7fb6ff;
+    display: flex; align-items: center; justify-content: center; font-size: 13px;
+  }
+  .phase .txt b { font-weight: 600; font-size: 14.5px; }
+  .phase .txt p { margin: 3px 0 0; color: #93a6bd; font-size: 13.5px; }
+
+  .twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 720px) { .twocol { grid-template-columns: 1fr; } }
+  .mini { background: rgba(127,182,255,.06); border: 1px solid rgba(120,180,255,.12);
+          border-radius: 10px; padding: 14px 16px; }
+  .mini h4 { margin: 0 0 6px; font-size: 14px; font-weight: 600; }
+  .mini p { margin: 0; font-size: 13px; color: #93a6bd; }
+  .legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13px; color: #93a6bd; margin-top: 8px; }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">T-28 · 对稿 · V1.12.5 · 2026-10-10</div>
+    <h1>对稿做出来了：粗剪从此有一份"标准答案"</h1>
+    <p>你写的那份 script.md，现在会送进粗剪，和录音逐句对一遍。</p>
+  </header>
+
+  <div class="verdict">
+    <div class="big">一句话：以前粗剪只能听见你"说了两遍"，现在它能翻答案，知道<b>哪一遍是你想留的</b>。</div>
+    <div class="small">它不改变你现在的任何操作习惯 —— 打开项目、写稿、录音、点「开始粗剪」，就这一步，
+      多出来的是"更准的剪法"和右下一张"对稿偏差"清单。<b>稿子对不上时它自动什么都不做</b>，退回你现在的做法。</div>
+  </div>
+
+  <!-- ① -->
+  <div class="card">
+    <h2><span class="num">1</span>这步到底是咋回事</h2>
+    <p class="sub">先用一个比方说清 —— 其它代码细节都在 <code>文档\维护说明.md</code>，这里只讲"发生了什么"。</p>
+
+    <p style="margin-top:0">
+      <b>老师改作文，手里没有标准答案。</b> 你现在的粗剪就是这样：它靠"听着像不像"来判断你哪句话重复了。
+      你说了两遍差不多的话，它看得见两遍 —— <span class="warn">但它分不清</span>这是
+      <b>"我说错了，重录一遍"</b>，还是 <b>"我在有意识地重复强调"</b>。
+      这两种情况该做的事正好相反：前者要删前一遍，后者一个字都不能动。它只能赌一个。
+    </p>
+    <p>
+      <b>现在给了它标准答案。</b> 写作台里你写的那份稿子（<code>script.md</code>）被交进粗剪。
+      翻一下就知道答案了 ——
+    </p>
+    <div class="twocol">
+      <div class="mini">
+        <h4>稿子上这句只写了一次</h4>
+        <p>你却说了三遍 → 那前两遍就是废片，删掉，留最后一遍。<span class="ok">（"保后不保前"）</span></p>
+      </div>
+      <div class="mini">
+        <h4>稿子上本来就写了两遍</h4>
+        <p>那你说两遍是对的 → 一个字都不动。<span class="ok">（这是纯听录音永远分不出来的）</span></p>
+      </div>
+    </div>
+    <p class="note">
+      换句话说：这一步是给粗剪<b>多戴了一副眼镜</b>，不是换了一套算法。戴上看不清，就摘掉，回到现在。
+    </p>
+  </div>
+
+  <!-- ② -->
+  <div class="card">
+    <h2><span class="num">2</span>为啥要改</h2>
+    <p class="sub">这段是给未来的你（或别人）看的：别忘了当初为什么开这个工。</p>
+    <table>
+      <tr>
+        <th style="width:34%">你当时的话</th>
+        <th>翻译成做法</th>
+      </tr>
+      <tr>
+        <td>"代码剪的大部分不满意，我还得精剪，这太蠢了……<br>我希望我的流程最终优化到，我只写作录音。"</td>
+        <td>把最耗时间的"精剪"尽量自动掉。对稿率先解的就是它。</td>
+      </tr>
+      <tr>
+        <td>"保后不保前是大原则……置信度低的，交给人来对。"</td>
+        <td>认出重录时<b>永远保留后一遍</b>；拿不准的<b>只列出来不动手</b>，等你看。</td>
+      </tr>
+      <tr>
+        <td>"口语化，非常有可能跟稿子不完全一致……不会变得很精确。"</td>
+        <td>所以对稿<b>不追求逐字精确</b>，只要"这句大体上就是稿子上那句"。
+            换词、加话、绕弯都容忍。<b>精度只到句级</b>，不做字幕条。</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- ③ -->
+  <div class="card">
+    <h2><span class="num">3</span>打算怎么改</h2>
+    <p class="sub">粗剪里原来有"两条轨"，这次加了第三条"对稿"，但它比原来的更讲究"对不上就撤"。</p>
+
+    <svg viewBox="0 0 860 300" width="100%" style="margin:2px 0 6px">
+      <defs>
+        <marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+          <path d="M0,0 L7,3 L0,6 z" fill="#5b83b0"/>
+        </marker>
+      </defs>
+      <!-- 输入 -->
+      <rect x="12" y="30" width="180" height="52" rx="10" fill="#16273a" stroke="#2c4a6b"/>
+      <text x="102" y="52" fill="#e8eef6" font-size="13" text-anchor="middle" font-family="system-ui">录音</text>
+      <text x="102" y="70" fill="#93a6bd" font-size="11.5" text-anchor="middle" font-family="system-ui">（波形 + 转写稿）</text>
+
+      <rect x="12" y="120" width="180" height="52" rx="10" fill="#16273a" stroke="#4a6b3a"/>
+      <text x="102" y="142" fill="#e8eef6" font-size="13" text-anchor="middle" font-family="system-ui">你写的稿子</text>
+      <text x="102" y="160" fill="#93a6bd" font-size="11.5" text-anchor="middle" font-family="system-ui">script.md（写作台）</text>
+
+      <!-- 粗剪 -->
+      <rect x="250" y="60" width="200" height="86" rx="10" fill="#1b2e44" stroke="#7fb6ff"/>
+      <text x="350" y="86" fill="#9cc7ff" font-size="13.5" text-anchor="middle" font-family="system-ui">对稿（新）</text>
+      <text x="350" y="106" fill="#c9d6e6" font-size="11.5" text-anchor="middle" font-family="system-ui">洗净稿子 → 顺序对一遍</text>
+      <text x="350" y="124" fill="#c9d6e6" font-size="11.5" text-anchor="middle" font-family="system-ui">得出：每段录音归哪句稿子</text>
+
+      <!-- 判断 -->
+      <polygon points="510,72 620,103 510,134 400,103" fill="#16273a" stroke="#f0c674"/>
+      <text x="510" y="100" fill="#f5d99a" font-size="12" text-anchor="middle" font-family="system-ui">对得上吗？</text>
+      <text x="510" y="117" fill="#93a6bd" font-size="10.5" text-anchor="middle" font-family="system-ui">对齐率 ≥ 50% 且 ≥3 句</text>
+
+      <!-- 出口 -->
+      <rect x="660" y="30" width="186" height="52" rx="10" fill="#16273a" stroke="#4a8f6a"/>
+      <text x="753" y="52" fill="#8fe3bd" font-size="12.5" text-anchor="middle" font-family="system-ui">对得上 → 用稿子</text>
+      <text x="753" y="69" fill="#93a6bd" font-size="11" text-anchor="middle" font-family="system-ui">重录删得准 + 列偏差清单</text>
+
+      <rect x="660" y="140" width="186" height="52" rx="10" fill="#16273a" stroke="#6b5560"/>
+      <text x="753" y="162" fill="#ffb4a2" font-size="12.5" text-anchor="middle" font-family="system-ui">对不上 → 撤</text>
+      <text x="753" y="179" fill="#93a6bd" font-size="11" text-anchor="middle" font-family="system-ui">什么都不动，退回现在的做法</text>
+
+      <!-- 连线 -->
+      <line x1="192" y1="56" x2="248" y2="90" stroke="#5b83b0" marker-end="url(#ah)"/>
+      <line x1="192" y1="146" x2="248" y2="116" stroke="#5b83b0" marker-end="url(#ah)"/>
+      <line x1="450" y1="103" x2="508" y2="103" stroke="#5b83b0" marker-end="url(#ah)"/>
+      <line x1="616" y1="90" x2="658" y2="62" stroke="#5b83b0" marker-end="url(#ah)"/>
+      <line x1="616" y1="116" x2="658" y2="160" stroke="#5b83b0" marker-end="url(#ah)"/>
+    </svg>
+
+    <div class="phase">
+      <div class="idx">1</div>
+      <div class="txt"><b>洗干净稿子</b>
+        <p>Markdown 里的标题号 <code>#</code>、加粗 <code>**</code>、列表点、引用杠，一个字都不会被念出来 ——
+           先全部去掉，再切句。<b>一行一句为底</b>，行内再按句号问号切。</p></div>
+    </div>
+    <div class="phase">
+      <div class="idx">2</div>
+      <div class="txt"><b>顺序对一遍（不是随便找最像的）</b>
+        <p>你是照着稿子从上往下念的，所以这是"沿时间轴从左到右依次对"。
+           允许四种情况同时发生：一句稿子对一段／一句稿子对连续几段（ASR 把长句切开、或你重录了几遍）／
+           稿上有你没说／你没写但说了。</p></div>
+    </div>
+    <div class="phase">
+      <div class="idx">3</div>
+      <div class="txt"><b>抓重录</b>
+        <p>同一句稿子对到了好几段录音 → 再看这几段<b>互相像不像</b>。
+           像 → 是重录，删前面、留最后。<b>不像 → 是 ASR 把一句长句切成了前后两半</b>，两半都得留（这里最容易剪错，专门防了）。</p></div>
+    </div>
+    <div class="phase">
+      <div class="idx">4</div>
+      <div class="txt"><b>把对不上的列成清单给你看</b>
+        <p>忘词的、临场加词的、重录的 —— <b>只报告，不动手</b>。忘词和加词都可能是你要的，机器不该替你决定。</p></div>
+    </div>
+  </div>
+
+  <!-- ④ -->
+  <div class="card">
+    <h2><span class="num">4</span>我具体改了什么</h2>
+    <p class="sub">改动清单（给维护用；日常你不用管这些文件名）。</p>
+    <table>
+      <tr><th style="width:40%">文件</th><th>干了什么</th></tr>
+      <tr><td><code>LiteCut.Core\Engine\ScriptAligner.cs</code> <span class="ok">（新增）</span></td>
+          <td>对稿的本体：洗稿子 + 顺序对齐 + 抓重录。<b>纯算法，不联网、不调模型。</b></td></tr>
+      <tr><td><code>LiteCut.Core\Contracts\CutPlan.cs</code></td>
+          <td>决策文件多存一段"对稿结果"（概况 + 偏差清单），存档留痕。</td></tr>
+      <tr><td><code>LiteCut.Core\Engine\AutoCutEngine.cs</code></td>
+          <td>粗剪主流程多接一个<b>可空</b>的稿子参数。<b>不传稿子 = 和以前一模一样</b>，老项目一点不受影响。</td></tr>
+      <tr><td><code>LiteCut.Core\Engine\SpeechIssueDetector.cs</code></td>
+          <td>加一个小开关：有对稿时，重录交给对稿判（两条路一起跑会重复下刀）。</td></tr>
+      <tr><td><code>工作台\Workbench\Views\Step1CutView.xaml(.cs)</code></td>
+          <td>粗剪页：工具条多一格「对稿：稿子 N 句」；右下多一张卡「对稿偏差（需你看）」；
+              点「开始粗剪」时自动读项目里的 <code>script.md</code>。</td></tr>
+      <tr><td><code>工具\对稿验证\</code> <span class="ok">（新增）</span></td>
+          <td>37 条自动检查，一条命令就能跑（见下）。</td></tr>
+      <tr><td><code>文档\更新日志.md</code> / <code>维护说明.md</code> / <code>工作台-待办清单.md</code></td>
+          <td>留痕：版本 V1.12.5、逐文件说明、T-28 划 ✅。</td></tr>
+    </table>
+  </div>
+
+  <!-- ⑤ -->
+  <div class="card">
+    <h2><span class="num">5</span>结果如何</h2>
+    <p class="sub">没让你"信我"，而是写了一套自动检查去证明它。</p>
+
+    <table>
+      <tr><th style="width:52%">检查项</th><th>结果</th></tr>
+      <tr><td>整包自动检查（<code>工具\对稿验证</code>）</td><td class="ok">37 条全通过</td></tr>
+      <tr><td>干净念稿 → 全部对上、无偏差</td><td class="ok">通过</td></tr>
+      <tr><td>同一句录了三遍 → 删前两遍、留最后一遍</td><td class="ok">通过</td></tr>
+      <tr><td><b>长句被 ASR 切成两半 → 不许误判成重录</b></td><td class="ok">通过（最要紧的一条）</td></tr>
+      <tr><td>稿外发挥 / 稿上有没录 → 都进偏差清单</td><td class="ok">通过</td></tr>
+      <tr><td>拿错稿子（对不上）→ 自动不用，退回老做法</td><td class="ok">通过</td></tr>
+      <tr><td>不传稿子 → 和以前完全一样</td><td class="ok">通过</td></tr>
+      <tr><td>端到端：真的跑一遍粗剪，看它有没有按对稿下刀</td><td class="ok">通过（剪掉约 4 秒废片）</td></tr>
+    </table>
+
+    <p class="note">
+      另外顺手修了一个必现的小毛病：剪辑表格的「原因」列以前遇到"重录"会显示英文 <code>Retake</code>，现在显示「重录」。
+    </p>
+
+    <h2 style="margin-top:26px"><span class="num">→</span>你现在能做什么</h2>
+    <p style="margin-top:8px">
+      1. 在写作台写一篇稿子（不用为这个功能做任何特别的事，正常写）。<br>
+      2. 录一遍。粗剪页也会照你要的转写流程走。<br>
+      3. 点「开始粗剪」—— 工具条上会显示「对稿：稿子 N 句」，
+         右下角那张「对稿偏差」卡里就会列出：<span class="warn">琥珀色</span>＝稿上有你没录、
+         <span style="color:#60a5fa">蓝色</span>＝稿外发挥、
+         <span class="bad">红色</span>＝重录（已按"留后一遍"处理）。<br>
+      4. 扫一眼清单，觉得没问题就照旧「应用到下游」。
+    </p>
+    <div class="legend">
+      <span><span class="dot" style="background:#f5a623"></span>稿上有、没录到（可能漏了内容）</span>
+      <span><span class="dot" style="background:#60a5fa"></span>稿外发挥（通常不用管）</span>
+      <span><span class="dot" style="background:#ef4444"></span>重录（已删前几遍）</span>
+    </div>
+  </div>
+
+  <!-- 边界 -->
+  <div class="card">
+    <h2><span class="num">!</span>说清楚我没做什么（免得你以为有）</h2>
+    <table>
+      <tr><td style="width:38%">对稿只影响粗剪</td>
+          <td>后面的分镜 / 渲染 / 组接读的还是同一份粗剪结果，链路一个字没改。</td></tr>
+      <tr><td>偏差清单只报告不动手</td>
+          <td>忘词和加词都可能是你要的。要不要改，你自己看清单决定。
+              （"自动按清单返工"是下一步 T-29 的活。）</td></tr>
+      <tr><td>重录阈值还没在真实素材上标定</td>
+          <td>现在用的一套数字是从"纯文本重录检测"那儿借来的。
+              等你真录一篇，我们照你的实际效果调一次就定死了。</td></tr>
+      <tr><td>没做"按静音切段再逐段对"</td>
+          <td>原方案里提过。实测判断不必做：现在的对齐方式两侧都能"跳过"，
+              局部对不上自己会重新咬合，不会带偏后面 —— 少一套机制就少一处出错点。</td></tr>
+    </table>
+  </div>
+
+  <p class="note" style="text-align:center;margin-top:26px">
+    V1.12.5 ｜ 留痕：<code>文档\更新日志.md</code> ｜ 逐文件说明：<code>文档\维护说明.md</code>
+  </p>
+
+</div>
+</body>
+</html>

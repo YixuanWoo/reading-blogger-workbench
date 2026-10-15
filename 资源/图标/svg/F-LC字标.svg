@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<defs>
+  <clipPath id="clipF"><rect width="256" height="256" rx="56"/></clipPath>
+  <linearGradient id="bgF" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#142C4E"/><stop offset="1" stop-color="#07121E"/>
+  </linearGradient>
+  <pattern id="gridF" width="32" height="32" patternUnits="userSpaceOnUse">
+    <path d="M32 0 H0 V32" fill="none" stroke="#27496F" stroke-width="1.4" opacity=".5"/>
+  </pattern>
+  <linearGradient id="blueF" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#9BD8FF"/><stop offset="1" stop-color="#4E9BE0"/>
+  </linearGradient>
+  <linearGradient id="goldF" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#FFE6B4"/><stop offset="1" stop-color="#E09B2E"/>
+  </linearGradient>
+</defs>
+<g clip-path="url(#clipF)">
+  <rect width="256" height="256" fill="url(#bgF)"/>
+  <rect width="256" height="256" fill="url(#gridF)"/>
+
+  <!-- L -->
+  <path d="M56 62 V158 H112" fill="none" stroke="url(#blueF)"
+        stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- C（右侧开口的粗弧） -->
+  <path d="M198 84 A 48 48 0 1 0 198 172" fill="none" stroke="url(#goldF)"
+        stroke-width="24" stroke-linecap="round"/>
+
+  <!-- 一刀斜切：贯穿字标的切痕 -->
+  <path d="M74 44 L206 200" stroke="#F5F1E8" stroke-width="4"
+        opacity=".2" stroke-linecap="round"/>
+</g>
+</svg>

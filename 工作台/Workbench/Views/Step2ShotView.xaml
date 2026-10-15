@@ -1,0 +1,817 @@
+<UserControl x:Class="LiteCut.Workbench.Views.Step2ShotView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:LiteCut.Workbench.Views"
+             FontFamily="Microsoft YaHei">
+
+    <UserControl.Resources>
+        <!-- ★ 插片插入带的呼吸动画（2026-10-03）
+             【要什么感觉】像夜灯：不是"啪"地闪出来再"啪"地消失，而是有个渐亮和渐暗。
+             【为什么进快出慢】亮起是你"找它"的反馈，要跟手（0.22s）；
+               熄灭是它自己退场，慢一点（0.38s）才有余温，不会显得被甩开。
+               两头都加了缓动曲线 —— 匀速的淡入淡出看着像机械门，不像灯。 -->
+        <Style x:Key="InsertBandStyle" TargetType="Grid">
+            <Setter Property="Opacity" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Style.Triggers>
+                <EventTrigger RoutedEvent="UIElement.MouseEnter">
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                             To="1" Duration="0:0:0.22">
+                                <DoubleAnimation.EasingFunction>
+                                    <CubicEase EasingMode="EaseOut"/>
+                                </DoubleAnimation.EasingFunction>
+                            </DoubleAnimation>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+                <EventTrigger RoutedEvent="UIElement.MouseLeave">
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                             To="0" Duration="0:0:0.38">
+                                <DoubleAnimation.EasingFunction>
+                                    <CubicEase EasingMode="EaseInOut"/>
+                                </DoubleAnimation.EasingFunction>
+                            </DoubleAnimation>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- ⊕ 圆钮：被指到时轻轻胀一下（0.14s），移开回落（0.2s）。
+             幅度很小（1.0 → 1.12），是"回应"，不是"弹跳"。 -->
+        <Style x:Key="InsertPlusStyle" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="#FF22D3EE"/>
+            <Setter Property="Background" Value="#FF141A22"/>
+            <Setter Property="BorderBrush" Value="#FF22D3EE"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="11">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <EventTrigger RoutedEvent="UIElement.MouseEnter">
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                             To="1.12" Duration="0:0:0.14"/>
+                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                             To="1.12" Duration="0:0:0.14"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+                <EventTrigger RoutedEvent="UIElement.MouseLeave">
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                             To="1" Duration="0:0:0.2"/>
+                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                             To="1" Duration="0:0:0.2"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="16,14,16,12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- 工具条：切镜头 -->
+        <Border Grid.Row="0" Style="{StaticResource Card}" Padding="12,10,12,10" Margin="0,0,0,10">
+            <StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="生成镜头切分" Style="{StaticResource BtnPrimary}"
+                                Click="BtnGen_Click" x:Name="BtnGen" IsEnabled="False"
+                                Padding="16,7,16,7"
+                                ToolTip="按口播稿把成片切成镜头（纯算术，不调 Agent）"/>
+                        <TextBlock Text="切法：" FontSize="12" Foreground="{StaticResource TextDim}"
+                                   VerticalAlignment="Center" Margin="16,0,6,0"/>
+                        <!-- IsChecked 故意不在 XAML 里写：写死会在页面加载途中就触发 Checked，
+                             那时另一个 RadioButton 还没建出来（构造函数里统一设置更安全） -->
+                        <RadioButton x:Name="RbSentence" Content="一句一镜" GroupName="SplitMode"
+                                     FontSize="12" Foreground="White"
+                                     VerticalAlignment="Center" Checked="SplitMode_Changed"
+                                     ToolTip="说完一句换一次画面，时长用真实句时间"/>
+                        <RadioButton x:Name="RbPace" Content="固定节奏" GroupName="SplitMode"
+                                     FontSize="12" Foreground="White" Margin="12,0,0,0"
+                                     VerticalAlignment="Center" Checked="SplitMode_Changed"
+                                     ToolTip="每 N 秒换一次画面，切换点一律落在某句话说完之后"/>
+                        <StackPanel x:Name="GrpPace" Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBox x:Name="TxtPace" Style="{StaticResource Tbx}" Width="42"
+                                     Text="6" FontSize="12" Margin="6,0,0,0"
+                                     VerticalAlignment="Center" IsEnabled="False"
+                                     TextChanged="TxtPace_TextChanged"/>
+                            <TextBlock Text="秒/镜" FontSize="12" Foreground="{StaticResource TextDim}"
+                                       VerticalAlignment="Center" Margin="4,0,0,0"/>
+                        </StackPanel>
+                        <RadioButton x:Name="RbMerge" Content="语义合并" GroupName="SplitMode"
+                                     FontSize="12" Foreground="White" Margin="12,0,0,0"
+                                     VerticalAlignment="Center" Checked="SplitMode_Changed"
+                                     ToolTip="贪心把句子并成 5~9 秒的语义块（短视频初切首选）"/>
+                        <StackPanel x:Name="GrpMerge" Orientation="Horizontal" VerticalAlignment="Center" Visibility="Collapsed">
+                            <TextBlock Text="块长" FontSize="12" Foreground="{StaticResource TextDim}"
+                                       VerticalAlignment="Center" Margin="6,0,4,0"/>
+                            <TextBox x:Name="TxtMinSec" Style="{StaticResource Tbx}" Width="34"
+                                     Text="5" FontSize="12" VerticalAlignment="Center"
+                                     TextChanged="TxtRange_TextChanged"/>
+                            <TextBlock Text="~" FontSize="12" Foreground="{StaticResource TextDim}"
+                                       VerticalAlignment="Center"/>
+                            <TextBox x:Name="TxtMaxSec" Style="{StaticResource Tbx}" Width="34"
+                                     Text="9" FontSize="12" VerticalAlignment="Center" Margin="0,0,4,0"
+                                     TextChanged="TxtRange_TextChanged"/>
+                            <TextBlock Text="秒/块" FontSize="12" Foreground="{StaticResource TextDim}"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <TextBlock Grid.Column="1" x:Name="TxtHint" Margin="16,0,0,0"
+                               FontSize="12" Foreground="{StaticResource TextDim}"
+                               VerticalAlignment="Center" TextWrapping="Wrap"/>
+                </Grid>
+
+                <!-- ★ 成片规格：所有视频统一的那套底子（背景图 / 画幅 / 渲染方案）。
+                     放在这儿是为了让它一直看得见 —— 分镜设计合不合规，
+                     取决于画面最终会被铺在哪张底子上、拿什么渲染。 -->
+                <Grid Margin="0,8,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock x:Name="TxtSpec" FontSize="11.5"
+                               Foreground="{StaticResource TextFaint}"
+                               VerticalAlignment="Center" TextWrapping="Wrap"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <Button Content="换背景图…" Style="{StaticResource Btn}" x:Name="BtnBackground"
+                                Click="BtnBackground_Click" Padding="10,4,10,4" FontSize="11.5"
+                                ToolTip="背景图是所有视频统一共用的，看不到就把图选到那儿。换一次以后每支都跟着走"/>
+                        <Button Content="打开背景图" Style="{StaticResource Btn}" x:Name="BtnOpenBackground"
+                                Click="BtnOpenBackground_Click" Margin="8,0,0,0"
+                                Padding="10,4,10,4" FontSize="11.5"
+                                ToolTip="看看现在铺的到底是哪张图"/>
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <!-- 主区：左（口播稿 + 试听 + 个性化要求），右分镜表 -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="380"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Grid Grid.Column="0" Margin="0,0,10,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- 成片口播稿：可编辑 + 歌词线跟着播放走 -->
+                <Border Grid.Row="0" Style="{StaticResource Card}" Padding="10,8,10,8">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="成片口播稿" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="White" VerticalAlignment="Center"/>
+                            <Button Grid.Column="1" Content="重算" Style="{StaticResource Btn}"
+                                    Click="BtnBuildScript_Click" x:Name="BtnScript" Padding="10,4,10,4"
+                                    ToolTip="重新从转写稿推一遍（你手工改过的句子会保留）"/>
+                        </Grid>
+
+                        <TextBlock Grid.Row="1" x:Name="TxtScriptInfo" FontSize="11.5"
+                                   Foreground="{StaticResource TextFaint}" Margin="0,0,0,6"
+                                   TextWrapping="Wrap" Text="还没算"/>
+
+                        <!-- 稿子列表。每行可以改（转写错字、微调都在这儿改） -->
+                        <Grid Grid.Row="2">
+                            <ScrollViewer x:Name="ScriptScroll" VerticalScrollBarVisibility="Auto"
+                                          HorizontalScrollBarVisibility="Disabled"
+                                          Background="{StaticResource BgInput}">
+                                <ItemsControl x:Name="ListScript" ItemsSource="{Binding}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border x:Name="RowBd" Padding="4,2,4,2"
+                                                    BorderThickness="2,0,0,0" BorderBrush="Transparent">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="44"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding StartText}" FontSize="10.5"
+                                                               Foreground="{StaticResource TextFaint}"
+                                                               VerticalAlignment="Top" Margin="0,3,0,0"
+                                                               Cursor="Hand"
+                                                               MouseLeftButtonUp="RowTime_Click"
+                                                               ToolTip="点这里跳到这一句"/>
+                                                    <TextBox Grid.Column="1"
+                                                             Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                             Background="Transparent" BorderThickness="0"
+                                                             Foreground="{StaticResource TextMain}"
+                                                             CaretBrush="White"
+                                                             FontSize="12" Padding="0,1,0,1"
+                                                             TextWrapping="Wrap" AcceptsReturn="False"
+                                                             VerticalContentAlignment="Top"
+                                                             GotFocus="RowText_GotFocus"/>
+                                                </Grid>
+                                            </Border>
+                                            <DataTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+                                                    <Setter TargetName="RowBd" Property="Background" Value="#FF242C36"/>
+                                                    <Setter TargetName="RowBd" Property="BorderBrush" Value="{StaticResource Accent}"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Edited}" Value="True">
+                                                    <Setter TargetName="RowBd" Property="ToolTip" Value="这句你改过 —— 重算时不会被覆盖"/>
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+
+                            <!-- 歌词线：播放时移到当前句，暂停后停在那儿让人改 -->
+                            <Canvas x:Name="LyricCanvas" IsHitTestVisible="False">
+                                <Rectangle x:Name="LyricLine" Height="1.5" Fill="{StaticResource BrushPlayhead}"
+                                           Width="340" Canvas.Left="0" Canvas.Top="-10" Opacity="0.85"/>
+                            </Canvas>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <!-- 试听：整条成片波形 + 拖动定位 -->
+                <Border Grid.Row="1" Style="{StaticResource Card}" Margin="0,8,0,0" Padding="10,8,10,8">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Orientation="Horizontal">
+                                <Button x:Name="BtnPlay" Content="▶ 试听成片" Style="{StaticResource BtnPrimary}"
+                                        Click="BtnPlay_Click" Padding="12,6,12,6"/>
+                                <TextBlock x:Name="TxtTime" Text="00:00 / 00:00" FontSize="11.5"
+                                           Foreground="{StaticResource TextDim}" VerticalAlignment="Center"
+                                           Margin="12,0,0,0"/>
+                            </StackPanel>
+                            <TextBlock Grid.Column="1" x:Name="TxtWaveInfo" FontSize="11"
+                                       Foreground="{StaticResource TextFaint}" VerticalAlignment="Center"
+                                       HorizontalAlignment="Right"/>
+                        </Grid>
+
+                        <local:FinalWaveformBar Grid.Row="1" x:Name="WaveBar" Height="60"
+                                                Margin="0,6,0,0"/>
+                    </Grid>
+                </Border>
+
+                <!-- ★ 个性化要求 -->
+                <Border Grid.Row="2" Style="{StaticResource Card}" Margin="0,8,0,0" Padding="10,8,10,8">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="这支视频的特殊要求" FontSize="13" FontWeight="SemiBold"
+                                   Foreground="White" Margin="0,0,0,4"/>
+                        <TextBlock Grid.Row="1" FontSize="11" Foreground="{StaticResource TextFaint}"
+                                   TextWrapping="Wrap" Margin="0,0,0,6"
+                                   Text="交给 Agent 时会原样整段拼进提示词，优先级高于内置规则"/>
+                        <TextBox Grid.Row="2" x:Name="TxtRequirement" Style="{StaticResource Tbx}"
+                                 AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
+                                 TextWrapping="Wrap" FontSize="12" Height="92"
+                                 TextChanged="TxtRequirement_TextChanged"/>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- ============================================================
+                 分镜卡片流（V1.1.0 / T-15 + T-16）
+                 ============================================================
+                 为什么从表格改成卡片：
+                   表格范式把"文档"硬塞进"格子" —— 874px 里 8 列，真正需要宽度的
+                   画面构思只有 253px、动效 215px、配图 101px（约 4 个汉字/行）。
+                   而这三格的典型内容是段落级的。这一页最重要的东西被安排在了
+                   最小的格子里。卡片流让四个字段各拿整卡宽度（约 830px）。
+                 ============================================================ -->
+            <Border Grid.Column="1" Style="{StaticResource Card}" Padding="10,8,10,8">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- ① 工具条：调边界 + 折叠 -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+                        <Button Content="合并选中镜+下一镜" Style="{StaticResource Btn}"
+                                Click="BtnMerge_Click" x:Name="BtnMerge" IsEnabled="False"
+                                Padding="12,6,12,6"
+                                ToolTip="把选中的镜头和它后面那一镜合并成一个（纯本地，不调 Agent）"/>
+                        <Button Content="拆分选中镜 ▾" Style="{StaticResource Btn}"
+                                Click="BtnSplit_Click" x:Name="BtnSplit" IsEnabled="False"
+                                Margin="8,0,0,0" Padding="12,6,12,6"
+                                ToolTip="点开列出这一镜里所有可切的句子边界，你点哪个就在哪切（纯本地，不弹窗）"/>
+                        <Button Content="重新自动切分" Style="{StaticResource Btn}"
+                                Click="BtnResplit_Click" x:Name="BtnResplit" IsEnabled="False"
+                                Margin="8,0,0,0" Padding="12,6,12,6"
+                                ToolTip="按当前切法从头再切一遍（会覆盖手动调过的镜头，有确认）"/>
+                        <Button Content="全部折叠" Style="{StaticResource Btn}"
+                                Click="BtnFold_Click" x:Name="BtnFold"
+                                Margin="8,0,0,0" Padding="12,6,12,6"
+                                ToolTip="折叠后一屏能扫 20+ 镜，只看整体节奏"/>
+                        <TextBlock x:Name="TxtEditHint" FontSize="11.5" Foreground="{StaticResource Warn}"
+                                   VerticalAlignment="Center" Margin="14,0,0,0" TextWrapping="Wrap"/>
+                    </StackPanel>
+
+                    <!-- ② 决策条：下游此刻在用哪份镜头表 + 交接闸门 ★ T-16 核心 -->
+                    <!--    【为什么要这一条】所有环节的交接都只走「应用到下游」。
+                           拆/合只改草稿，下游一个字都不动 —— 所以那个
+                           "改内存不改磁盘 → 产物静默错位"的坑，是从根上关掉的。 -->
+                    <Border Grid.Row="1" Padding="10,7,10,7" Margin="0,0,0,8"
+                            Background="{StaticResource BgInput}" CornerRadius="6"
+                            BorderThickness="1" BorderBrush="{StaticResource Border}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="下游当前使用：" FontSize="12.5"
+                                           Foreground="{StaticResource TextDim}" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="TxtShotDecision" Text="尚未交接" FontSize="12.5"
+                                           FontWeight="SemiBold" Foreground="{StaticResource Ok}"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <TextBlock Grid.Column="1" x:Name="TxtShotDecisionHint" Text="" Margin="16,0,12,0"
+                                       FontSize="11.5" Foreground="{StaticResource TextDim}"
+                                       VerticalAlignment="Center" TextWrapping="Wrap"/>
+                            <Button Grid.Column="2" x:Name="BtnApplyShots" Content="应用到下游"
+                                    Style="{StaticResource BtnPrimary}" FontSize="12.5"
+                                    Padding="14,6,14,6" IsEnabled="False"
+                                    Click="BtnApplyShots_Click"
+                                    ToolTip="把这份镜头表交给渲染 / 组接导出。这一刻才会重排镜号、把产物改名、标「待重渲」"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- ③ 汇总条：交接完之后告诉你刚才发生了什么 + 一个后悔药 -->
+                    <Border Grid.Row="2" x:Name="BarSummary" Visibility="Collapsed"
+                            Padding="10,7,10,7" Margin="0,0,0,8"
+                            Background="#1F3A2A" CornerRadius="6"
+                            BorderThickness="1" BorderBrush="{StaticResource Ok}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="TxtSummary" Grid.Column="0" FontSize="11.5"
+                                       Foreground="{StaticResource TextMain}" TextWrapping="Wrap"
+                                       VerticalAlignment="Center"/>
+                            <Button Grid.Column="1" x:Name="BtnUndoReindex" Content="撤销这次交接"
+                                    Style="{StaticResource Btn}" FontSize="11.5"
+                                    Padding="10,4,10,4" Click="BtnUndoReindex_Click"
+                                    ToolTip="把镜头表和磁盘上的产物一起退回交接前的样子（只保留最近一次）"/>
+                            <Button Grid.Column="2" Content="知道了" Style="{StaticResource Btn}"
+                                    FontSize="11.5" Margin="8,0,0,0" Padding="10,4,10,4"
+                                    Click="BtnDismissSummary_Click"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- ④ 卡片流：一个镜头一张卡 -->
+                    <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel>
+                            <!-- ★ 片头插入带：和卡片之间那条是同一个东西，这样"片头空镜"也能插 -->
+                            <Grid Style="{StaticResource InsertBandStyle}" Height="24" Margin="0,2,2,2"
+                                  Tag="top" MouseRightButtonUp="Band_RightUp"
+                                  ToolTip="在片头插入一段插片">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Rectangle Grid.Column="0" Height="2" Fill="#FF22D3EE" Opacity="0.85"
+                                           Margin="6,0,8,0" VerticalAlignment="Center" RadiusX="1" RadiusY="1"/>
+                                <Button Grid.Column="1" Content="＋" Style="{StaticResource InsertPlusStyle}"
+                                        Width="22" Height="22" Margin="0,0,10,0" Click="BandPlus_Click"
+                                        ToolTip="在片头插一段插片（左键直接插，右键可以选素材）">
+                                    <Button.RenderTransform>
+                                        <ScaleTransform ScaleX="1" ScaleY="1"/>
+                                    </Button.RenderTransform>
+                                </Button>
+                            </Grid>
+
+                        <ItemsControl x:Name="ListShots">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel>
+                                    <Border x:Name="ShotCard" Style="{StaticResource Card}"
+                                            Padding="0" Margin="0,0,2,6"
+                                            PreviewMouseLeftButtonDown="ShotCard_PreviewDown"
+                                            ToolTip="点卡头可以选中这一镜（用来合并 / 拆分）">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="4"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- 左缘竖条：选中 = 蓝，被手动调过 = 橙 -->
+                                            <Border x:Name="AccentBar" Grid.Column="0"
+                                                    Background="#00000000" CornerRadius="8,0,0,8"/>
+
+                                            <StackPanel Grid.Column="1" Margin="10,6,10,8">
+
+                                                <!-- ── 卡头：只放元信息（一行） ── -->
+                                                <Grid x:Name="Head">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="38"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <TextBlock Text="{Binding IndexText}" FontSize="14"
+                                                               FontWeight="Bold"
+                                                               Foreground="{StaticResource TextMain}"
+                                                               VerticalAlignment="Center"/>
+
+                                                    <StackPanel Grid.Column="1" Orientation="Horizontal"
+                                                                VerticalAlignment="Center" Margin="0,0,6,0">
+                                                        <TextBlock Text="{Binding EditMark}"
+                                                                   FontSize="12" Foreground="{StaticResource Warn}"
+                                                                   VerticalAlignment="Center"
+                                                                   ToolTip="这一镜你手动调过边界（重切分前会提醒）"/>
+                                                        <!-- 插片标记：和普通镜头一眼分得开 -->
+                                                        <TextBlock Text="◈ 插片" FontSize="11" Margin="0,0,6,0"
+                                                                   Foreground="#FF22D3EE" VerticalAlignment="Center"
+                                                                   Visibility="{Binding InsertTagVisibility}"
+                                                                   ToolTip="这一段是你手动插进来的：没有口播（成片里静音），时长由你定"/>
+                                                    </StackPanel>
+
+                                                    <TextBlock Grid.Column="2" FontSize="11.5"
+                                                               Foreground="{StaticResource TextDim}"
+                                                               VerticalAlignment="Center">
+                                                        <Run Text="{Binding StartText, Mode=OneWay}"/>
+                                                        <Run Text="→"/>
+                                                        <Run Text="{Binding EndText, Mode=OneWay}"/>
+                                                    </TextBlock>
+
+                                                    <TextBlock Grid.Column="3" Text="{Binding DurText}"
+                                                               FontSize="11.5" Foreground="{StaticResource TextDim}"
+                                                               VerticalAlignment="Center" Margin="8,0,0,0"/>
+
+                                                    <!-- 状态徽章（设计 / 产物两件事分开说） -->
+                                                    <StackPanel Grid.Column="4" Orientation="Horizontal"
+                                                                VerticalAlignment="Center" Margin="10,0,0,0">
+                                                        <Border x:Name="BdgDesign" CornerRadius="3"
+                                                                Padding="5,1,5,1" Margin="0,0,4,0"
+                                                                Background="#00000000">
+                                                            <TextBlock x:Name="BdgDesignText" Text="{Binding DesignBadge}"
+                                                                       FontSize="10.5"
+                                                                       Foreground="{Binding DesignBadgeBrush}"/>
+                                                        </Border>
+                                                        <Border x:Name="BdgRender" CornerRadius="3" Padding="5,1,5,1">
+                                                            <TextBlock Text="{Binding RenderBadge}" FontSize="10.5"
+                                                                       Foreground="{Binding RenderBadgeBrush}"/>
+                                                        </Border>
+                                                    </StackPanel>
+
+                                                    <!-- 折叠态的台词预览 -->
+                                                    <TextBlock Grid.Column="5" x:Name="CollapsedPreview"
+                                                               Text="{Binding PreviewText}" FontSize="11.5"
+                                                               Foreground="{StaticResource TextDim}"
+                                                               VerticalAlignment="Center" Margin="12,0,0,0"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               Visibility="Collapsed"/>
+
+                                                    <StackPanel Grid.Column="6" Orientation="Horizontal"
+                                                                VerticalAlignment="Center">
+                                                        <Button Content="合并▾" Style="{StaticResource Btn}"
+                                                                FontSize="10.5" Padding="8,3,8,3"
+                                                                Click="CardMerge_Click"
+                                                                IsEnabled="{Binding CanMerge}"
+                                                                ToolTip="和下一镜合并"/>
+                                                        <Button Content="拆分 ▾" Style="{StaticResource Btn}"
+                                                                FontSize="10.5" Padding="8,3,8,3"
+                                                                Margin="4,0,0,0" Click="CardSplit_Click"
+                                                                ToolTip="点开列出这一镜里所有可切的句子边界，你点哪个就在哪切"/>
+                                                        <Button Content="✎确认无误" Style="{StaticResource Btn}"
+                                                                FontSize="10.5" Padding="8,3,8,3"
+                                                                Margin="4,0,0,0" Click="CardConfirmDesign_Click"
+                                                                Visibility="{Binding ConfirmButtonVisibility}"
+                                                                ToolTip="这份设计我复核过了，把「待复核」清掉"/>
+                                                        <Button Content="展开/收起" Style="{StaticResource Btn}"
+                                                                FontSize="10.5" Padding="8,3,8,3"
+                                                                Margin="4,0,0,0" Click="CardFold_Click"/>
+                                                    </StackPanel>
+                                                </Grid>
+
+                                                <!-- ── 卡身：台词 / 画面构思 / 动效 三栏左中右，配图一行（V1.9.10） ──
+                                                     为什么改成三栏：四个字段以前竖着摞，一镜的卡拉得老长，
+                                                     一屏扫不了几镜；而"画面构思"和"动效"本来就是并列着写的，
+                                                     横排一眼能对齐着看。配图一句话就说完，不值得占两行。 -->
+                                                <StackPanel x:Name="Body" Margin="0,4,0,0">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="8"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="8"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+
+                                                        <StackPanel Grid.Column="0">
+                                                            <TextBlock Text="台词" FontSize="11"
+                                                                       Foreground="{StaticResource TextDim}" Margin="0,4,0,2"/>
+                                                            <TextBox Style="{StaticResource Tbx}" FontSize="12"
+                                                                     Padding="6,4,6,4" MinLines="4" MaxHeight="170"
+                                                                     AcceptsReturn="True" TextWrapping="Wrap"
+                                                                     VerticalScrollBarVisibility="Auto"
+                                                                     Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                     GotFocus="CardBox_GotFocus"
+                                                                     ToolTip="直接改。改过的这一镜会被标记，重切分前会提醒"/>
+                                                        </StackPanel>
+
+                                                        <StackPanel Grid.Column="2">
+                                                            <TextBlock Text="画面构思（这一镜的场景）" FontSize="11"
+                                                                       Foreground="{StaticResource TextDim}" Margin="0,4,0,2"/>
+                                                            <TextBox Style="{StaticResource Tbx}" FontSize="12"
+                                                                     Padding="6,4,6,4" MinLines="4" MaxHeight="170"
+                                                                     AcceptsReturn="True" TextWrapping="Wrap"
+                                                                     VerticalScrollBarVisibility="Auto"
+                                                                     Text="{Binding Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                     GotFocus="CardBox_GotFocus"/>
+                                                        </StackPanel>
+
+                                                        <StackPanel Grid.Column="4">
+                                                            <TextBlock Text="动效（逐段时间线：第几秒出什么）" FontSize="11"
+                                                                       Foreground="{StaticResource TextDim}" Margin="0,4,0,2"/>
+                                                            <TextBox Style="{StaticResource Tbx}" FontSize="12"
+                                                                     Padding="6,4,6,4" MinLines="4" MaxHeight="170"
+                                                                     AcceptsReturn="True" TextWrapping="Wrap"
+                                                                     VerticalScrollBarVisibility="Auto"
+                                                                     Text="{Binding Motion, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                     GotFocus="CardBox_GotFocus"
+                                                                     ToolTip="长镜头必填 —— 十几秒不动的字幕看着呆"/>
+                                                        </StackPanel>
+                                                    </Grid>
+
+                                                    <!-- 配图：单行。一句话说得完，不值得两行 -->
+                                                    <Grid Margin="0,8,0,0">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="配图" FontSize="11"
+                                                                   Foreground="{StaticResource TextDim}"
+                                                                   VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                        <TextBox Grid.Column="1" Style="{StaticResource Tbx}" FontSize="12"
+                                                                 Padding="6,4,6,4"
+                                                                 Text="{Binding Image, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                 GotFocus="CardBox_GotFocus"
+                                                                 ToolTip="要什么样的图 + 怎么展示；留空 = 不需要图"/>
+                                                    </Grid>
+
+                                                    <!-- ★ 插片专属行：时长自己定 + 素材可选（只有插片才出现这一行） -->
+                                                    <Border Margin="0,8,0,0" Padding="8,6,8,6" CornerRadius="5"
+                                                            Background="#101A22" BorderThickness="1" BorderBrush="#22D3EE"
+                                                            Visibility="{Binding InsertRowVisibility}">
+                                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                            <TextBlock Text="时长" FontSize="11.5"
+                                                                       Foreground="#FF22D3EE" VerticalAlignment="Center"/>
+                                                            <TextBox Style="{StaticResource Tbx}" Width="52" Margin="6,0,0,0"
+                                                                     FontSize="12" Padding="4,3,4,3"
+                                                                     Text="{Binding DurationText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                     VerticalAlignment="Center"
+                                                                     ToolTip="这段多长你说了算。选了素材也以这里为准 —— 视频播不完就截断"/>
+                                                            <TextBlock Text="s" FontSize="11.5" Margin="4,0,0,0"
+                                                                       Foreground="{StaticResource TextDim}"
+                                                                       VerticalAlignment="Center"/>
+
+                                                            <!-- ★ 插片原声（V1.10.15 / T-25）
+                                                                 默认不勾 = 沿用老规矩「插片成片静音」。
+                                                                 勾上 = 把素材自己的声音录进成片（音量见右边）。
+                                                                 没有素材的插片谈不上原声 → 勾选框禁用。 -->
+                                                            <CheckBox Content="素材原声" FontSize="11.5" Margin="12,0,0,0"
+                                                                      Foreground="#FF22D3EE" VerticalAlignment="Center"
+                                                                      IsChecked="{Binding InsertAudio, Mode=TwoWay}"
+                                                                      IsEnabled="{Binding HasVideo}"
+                                                                      ToolTip="勾上：把这段视频素材自己的声音录进成片（音量见右边）。&#10;不勾：插片那一段成片静音（默认）。&#10;★ 拨了开关，这一镜要重渲才生效。"/>
+                                                            <TextBox Style="{StaticResource Tbx}" Width="42" Margin="6,0,0,0"
+                                                                     FontSize="12" Padding="4,3,4,3" VerticalAlignment="Center"
+                                                                     Text="{Binding InsertVolumeText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                                                     Visibility="{Binding AudioVolumeVisibility}"
+                                                                     ToolTip="原声音量（dB）：0 = 原样、−6 ≈ 减半、+6 ≈ 加倍"/>
+                                                            <TextBlock Text="dB" FontSize="11.5" Margin="3,0,0,0"
+                                                                       Foreground="{StaticResource TextDim}"
+                                                                       VerticalAlignment="Center"
+                                                                       Visibility="{Binding AudioVolumeVisibility}"/>
+                                                            <TextBlock Text="（成片这一段静音）" FontSize="11" Margin="8,0,0,0"
+                                                                       Foreground="{StaticResource TextFaint}"
+                                                                       VerticalAlignment="Center"
+                                                                       Visibility="{Binding SilentHintVisibility}"/>
+
+                                                            <TextBlock Text="{Binding VideoHint}" FontSize="11.5" Margin="12,0,0,0"
+                                                                       Foreground="{StaticResource TextFaint}"
+                                                                       VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                                            <Button Content="＋ 换素材" Style="{StaticResource Btn}"
+                                                                    FontSize="10.5" Padding="8,3,8,3" Margin="10,0,0,0"
+                                                                    Click="CardPickVideo_Click"
+                                                                    ToolTip="选一段本地视频当这段的画面（可选：不选就是纯静音画面）"/>
+                                                            <Button Content="✕ 不用素材" Style="{StaticResource Btn}"
+                                                                    FontSize="10.5" Padding="8,3,8,3" Margin="6,0,0,0"
+                                                                    Click="CardClearVideo_Click"
+                                                                    Visibility="{Binding VideoClearVisibility}"
+                                                                    ToolTip="去掉素材，这段变成纯静音画面（分镜设计保留）"/>
+                                                            <Button Content="🗑 删掉这段" Style="{StaticResource Btn}"
+                                                                    FontSize="10.5" Padding="8,3,8,3" Margin="10,0,0,0"
+                                                                    Click="CardDeleteInsert_Click"
+                                                                    ToolTip="插错了就删掉它（只删这一段，前后镜头自动接上）"/>
+                                                        </StackPanel>
+                                                    </Border>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- ★ 插入带：插在这一镜之后。平时完全隐形（Opacity=0），
+                                         鼠标移进来才像夜灯一样渐亮；左键点 ⊕ 一步插入，右键出菜单。 -->
+                                    <!-- ★ Tag 是给 BandPosOf 认位置用的（"after" = 插在这一镜之后）。
+                                         别删 —— ⊕ 按钮嵌在里面，它自己拿不到这个标记，
+                                         靠顺着可视树往上找到这一层，才知道该插在第几镜之后。 -->
+                                    <Grid Style="{StaticResource InsertBandStyle}" Height="24"
+                                          Tag="after" MouseRightButtonUp="Band_RightUp"
+                                          ToolTip="在这一镜之后插入一段插片">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Rectangle Grid.Column="0" Height="2" Fill="#FF22D3EE" Opacity="0.85"
+                                                   Margin="6,0,8,0" VerticalAlignment="Center" RadiusX="1" RadiusY="1"/>
+                                        <Button Grid.Column="1" Content="＋" Style="{StaticResource InsertPlusStyle}"
+                                                Width="22" Height="22" Margin="0,0,10,0" Click="BandPlus_Click"
+                                                ToolTip="在这一镜之后插一段插片（左键直接插，右键可以选素材）">
+                                            <Button.RenderTransform>
+                                                <ScaleTransform ScaleX="1" ScaleY="1"/>
+                                            </Button.RenderTransform>
+                                        </Button>
+                                    </Grid>
+                                    </StackPanel>
+
+                                    <DataTemplate.Triggers>
+                                        <!-- 选中：加边框 + 左缘蓝条 -->
+                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                            <Setter TargetName="ShotCard" Property="BorderBrush"
+                                                    Value="{StaticResource Accent}"/>
+                                            <Setter TargetName="ShotCard" Property="BorderThickness" Value="2"/>
+                                            <Setter TargetName="AccentBar" Property="Background"
+                                                    Value="{StaticResource Accent}"/>
+                                        </DataTrigger>
+                                        <!-- 手动调过边界：左缘橙条 -->
+                                        <DataTrigger Binding="{Binding Edited}" Value="True">
+                                            <Setter TargetName="AccentBar" Property="Background"
+                                                    Value="{StaticResource Warn}"/>
+                                        </DataTrigger>
+                                        <!-- 折叠态 -->
+                                        <DataTrigger Binding="{Binding IsCollapsed}" Value="True">
+                                            <Setter TargetName="Body" Property="Visibility" Value="Collapsed"/>
+                                            <Setter TargetName="CollapsedPreview" Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                        <!-- 有「待复核 / 待补设计」时，整卡加一条橙色提示边 -->
+                                        <DataTrigger Binding="{Binding NeedDesignAttention}" Value="True">
+                                            <Setter TargetName="ShotCard" Property="ToolTip"
+                                                    Value="这一镜的设计需要你复核或补写"/>
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Agent 调用区 -->
+        <Border Grid.Row="2" Style="{StaticResource Card}" Margin="0,10,0,0" Padding="12,10,12,10">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="交给 Agent 设计画面" Style="{StaticResource BtnPrimary}"
+                            Click="BtnAgent_Click" x:Name="BtnAgent" IsEnabled="False"
+                            Padding="16,7,16,7"
+                            ToolTip="把口播稿 + 你的特殊要求 + 内置规则一起发给 Agent，回来自动填表"/>
+                    <Button Content="取消" Style="{StaticResource Btn}" Click="BtnCancel_Click"
+                            x:Name="BtnCancel" IsEnabled="False" Margin="8,0,0,0" Padding="12,7,12,7"/>
+                    <Button Content="检测 Agent" Style="{StaticResource Btn}"
+                            Click="BtnTestAgent_Click" x:Name="BtnTestAgent" Margin="14,0,0,0"
+                            Padding="12,7,12,7"
+                            ToolTip="真检测，不做假通过：直连模式发一次最小请求；桥接模式会真的把 Agent 叫起来、要它写一份收据文件，看到收据才算通。结果一定弹对话框告诉你"/>
+                    <Button Content="Agent 设置…" Style="{StaticResource Btn}"
+                            Click="BtnAgentSettings_Click" x:Name="BtnAgentSettings"
+                            Margin="8,0,0,0" Padding="12,7,12,7"
+                            ToolTip="填接口地址 / API Key / 模型名。不填的话走任务包通道，独立运行时没人领取"/>
+                    <TextBlock x:Name="TxtAgentInfo" FontSize="11.5" Margin="14,0,0,0"
+                               Foreground="{StaticResource TextFaint}" VerticalAlignment="Center"
+                               TextWrapping="Wrap" MaxWidth="330"/>
+                </StackPanel>
+
+                <StackPanel Grid.Row="1" x:Name="ProgressRow" Visibility="Collapsed" Margin="0,8,0,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <ProgressBar x:Name="BarAgent" Height="8" IsIndeterminate="False"
+                                     VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="1" x:Name="TxtElapsed" FontSize="11.5"
+                                   Foreground="{StaticResource TextDim}" Margin="12,0,0,0"
+                                   VerticalAlignment="Center" MinWidth="150"/>
+                    </Grid>
+                    <TextBlock x:Name="TxtProgress" FontSize="11.5"
+                               Foreground="{StaticResource TextDim}" Margin="0,5,0,0"
+                               TextWrapping="Wrap"/>
+                    <TextBlock x:Name="TxtLog" FontSize="11"
+                               Foreground="{StaticResource TextFaint}" Margin="0,4,0,0"
+                               TextWrapping="Wrap" Visibility="Collapsed"
+                               FontFamily="Consolas"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- 导出条 -->
+        <Border Grid.Row="3" Style="{StaticResource Card}" Margin="0,10,0,0" Padding="12,10,12,10">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="导出：" FontSize="13" Foreground="{StaticResource TextDim}"
+                           VerticalAlignment="Center"/>
+                <Button Content="分镜表(JSON)" Style="{StaticResource Btn}"
+                        Click="BtnExportJson_Click" x:Name="BtnExportJson" IsEnabled="False"
+                        Margin="10,0,0,0" Padding="14,6,14,6"/>
+                <Button Content="画面构思提示词" Style="{StaticResource Btn}"
+                        Click="BtnExportPrompt_Click" x:Name="BtnExportPrompt" IsEnabled="False"
+                        Margin="8,0,0,0" Padding="14,6,14,6"
+                        ToolTip="生成一份提示词（含你的特殊要求），可以直接粘给别的 Agent"/>
+                <Button Content="搜图清单" Style="{StaticResource Btn}"
+                        Click="BtnExportImages_Click" x:Name="BtnExportImages" IsEnabled="False"
+                        Margin="8,0,0,0" Padding="14,6,14,6"
+                        ToolTip="把需要网络图片的镜头列成清单，交给 Agent 去搜图下载"/>
+                <Button Content="打开分镜目录" Style="{StaticResource Btn}"
+                        Click="BtnOpenDir_Click" x:Name="BtnOpenDir" IsEnabled="False"
+                        Margin="8,0,0,0" Padding="14,6,14,6"
+                        ToolTip="口播稿 / 镜头表 / 任务包都落在项目的 stages/03-shot"/>
+                <TextBlock x:Name="TxtCount" FontSize="11.5" Margin="14,0,0,0"
+                           Foreground="{StaticResource TextFaint}" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

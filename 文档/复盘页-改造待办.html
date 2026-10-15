@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>复盘页 · 改造待办</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 44px 24px 72px;
+    background-color: #0a1420;
+    background-image:
+      linear-gradient(rgba(90,150,220,.075) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(90,150,220,.075) 1px, transparent 1px);
+    background-size: 40px 40px;
+    color: #e8eef6;
+    font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    line-height: 1.7; font-size: 15px;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 34px; }
+  .kicker {
+    display: inline-block; font-size: 13px; letter-spacing: .12em;
+    color: #7fb6ff; border: 1px solid rgba(127,182,255,.35);
+    border-radius: 999px; padding: 4px 16px; margin-bottom: 16px;
+  }
+  h1 { font-size: 28px; margin: 0 0 10px; font-weight: 600; }
+  header p { color: #93a6bd; margin: 0; font-size: 15px; }
+
+  .card {
+    background: #111e2d; border: 1px solid rgba(120,180,255,.14);
+    border-radius: 14px; padding: 24px 26px; margin-bottom: 20px;
+  }
+  .card h2 {
+    font-size: 17px; margin: 0 0 4px; font-weight: 600;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .card h2 .num {
+    width: 25px; height: 25px; flex: none; border-radius: 7px;
+    background: rgba(127,182,255,.14); color: #7fb6ff;
+    font-size: 13px; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .card .sub { color: #93a6bd; font-size: 13px; margin: 0 0 16px; }
+
+  .verdict {
+    border: 1px solid rgba(240,198,116,.35);
+    background: linear-gradient(180deg, rgba(240,198,116,.10), rgba(240,198,116,.02));
+    border-radius: 14px; padding: 22px 26px; margin-bottom: 20px;
+  }
+  .verdict .big { font-size: 19px; color: #f5d99a; font-weight: 600; line-height: 1.55; }
+  .verdict .small { color: #93a6bd; margin-top: 8px; font-size: 13.5px; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+  th, td { text-align: left; padding: 9px 11px; font-size: 13.5px; border-bottom: 1px solid rgba(120,180,255,.10); vertical-align: top; }
+  th { color: #93a6bd; font-weight: 500; font-size: 12.5px; letter-spacing: .04em; }
+  td b { color: #cfe2ff; }
+  tr:last-child td { border-bottom: none; }
+
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 6px; }
+  .side { border-radius: 12px; padding: 16px 17px; font-size: 13.5px; }
+  .side h3 { margin: 0 0 10px; font-size: 14.5px; font-weight: 600; display:flex; gap:8px; align-items:center;}
+  .side.a { background: rgba(127,182,255,.09); border: 1px solid rgba(127,182,255,.25); }
+  .side.a h3 { color: #7fb6ff; }
+  .side.b { background: rgba(240,198,116,.08); border: 1px solid rgba(240,198,116,.28); }
+  .side.b h3 { color: #f0c674; }
+  .side dl { margin: 0; }
+  .side dt { color: #93a6bd; font-size: 12px; margin-top: 9px; }
+  .side dd { margin: 2px 0 0; }
+
+  .flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+  .step {
+    background: rgba(127,182,255,.10); border: 1px solid rgba(127,182,255,.22);
+    border-radius: 10px; padding: 8px 12px; font-size: 13px;
+  }
+  .step b { color: #7fb6ff; }
+  .step.done { background: rgba(120,220,160,.12); border-color: rgba(120,220,160,.35); }
+  .step.done b { color: #86e0a8; }
+  .step.todo { opacity: .75; }
+  .arrow { color: #5c7a99; font-size: 14px; }
+
+  ul { margin: 6px 0 0; padding-left: 20px; }
+  li { margin-bottom: 5px; }
+  .tag { display:inline-block; font-size:11.5px; padding:1px 8px; border-radius:999px; margin-left:6px; }
+  .ok   { background: rgba(120,220,160,.15); color:#86e0a8; border:1px solid rgba(120,220,160,.35); }
+  .warn { background: rgba(240,198,116,.13); color:#f0c674; border:1px solid rgba(240,198,116,.35); }
+  .risk { background: rgba(240,130,130,.13); color:#f09090; border:1px solid rgba(240,130,130,.32); }
+
+  code {
+    background: rgba(127,182,255,.10); border: 1px solid rgba(127,182,255,.18);
+    border-radius: 6px; padding: 1px 7px; font-size: 12.5px;
+    font-family: Consolas, "Cascadia Mono", monospace; color: #cfe2ff;
+  }
+  pre {
+    background: #0c1726; border: 1px solid rgba(120,180,255,.14);
+    border-radius: 11px; padding: 15px 17px; overflow-x: auto;
+    font-size: 12.5px; line-height: 1.65; color: #cfe2ff;
+    font-family: Consolas, "Cascadia Mono", monospace;
+  }
+  footer { text-align: center; color: #6b8098; font-size: 12.5px; margin-top: 30px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">复盘页 · 改造待办</div>
+    <h1>复盘：归位到一级，再长成两层</h1>
+    <p>2026-10-15　·　A 期已落地（V1.14.0）　·　★ B1 期已落地（V1.15.0）　·　★ 目标形态已定案</p>
+  </header>
+
+  <div class="verdict">
+    <div class="big">形态定案：一层套一层 —— 账号在上面，作品在下面，点进去看详情。</div>
+    <div class="small">
+      跟抖音创作者中心一样：<strong>上面账号数据，下面作品列表，点一行钻进这支片</strong>。<br>
+      好处是它<strong>几乎不用新造东西</strong> —— 作品列表就是项目列表，
+      点进去那一页就是现在这一页。下一期（B1）可以直接开工。
+    </div>
+  </div>
+
+  <!-- 0 -->
+  <div class="card">
+    <h2><span class="num">0</span>这一版做了什么、没做什么</h2>
+    <p class="sub">一眼分清哪些已经能用、哪些还欠着</p>
+    <table>
+      <tr><th style="width:34%">项</th><th>现在</th></tr>
+      <tr><td><b>菜单位置</b></td><td>一级（「已归档」下面）<span class="tag ok">已做</span>；项目里不再有</td></tr>
+      <tr><td><b>一级怎么用</b></td><td>顶上多了「看哪个项目」下拉 —— 一级没有"当前项目"，得先选<span class="tag ok">已做</span></td></tr>
+      <tr><td><b>进去以后</b></td><td>录入表单 / 已有快照表 / 生成报告 —— 跟原来一样<span class="tag ok">已做</span></td></tr>
+      <tr><td><b>已归档项目</b></td><td>打开时直接落到这一页（全局），能看到归档说明条 + 取回工程<span class="tag ok">已做</span></td></tr>
+      <tr><td><b>账号页（账号复盘）</b></td><td>已落地<span class="tag ok">V1.15.0</span> —— 见第 2 节；点作品可钻进作品页</td></tr>
+      <tr><td><b>图表</b></td><td>还没有（只做录入 + 存档 + 出报告）<span class="tag warn">欠着</span></td></tr>
+    </table>
+    <p class="sub" style="margin-top:14px">
+      ⚠️ 一个已知取舍：<b>开着项目时，左边菜单里没有「复盘」</b>（因为它是一级页）。
+      想看复盘，先点「← 全部项目」回一级。这不是 bug，是"级别"带来的必然结果。
+    </p>
+  </div>
+
+  <!-- 1 -->
+  <div class="card">
+    <h2><span class="num">1</span>两层，各管一摊</h2>
+    <p class="sub">左边是打开复盘第一眼看到的；右边是点一行之后钻进去的</p>
+    <div class="two">
+      <div class="side a">
+        <h3>① 账号页（第一层）</h3>
+        <dl>
+          <dt>关注什么</dt><dd>整个账号的增量水平</dd>
+          <dt>一屏是什么</dt><dd>4 张数据卡 ＋ 一份作品列表</dd>
+          <dt>回答的问题</dt><dd>我这个号在涨、在平、还是在掉</dd>
+          <dt>粒度</dt><dd>粉丝总量・总播放・总点赞・涨粉</dd>
+          <dt>数据来源</dt><dd>★ 手填 4 个数 ＋ 列表自动汇总</dd>
+          <dt>时间轴</dt><dd><b>有</b>（账号是随时间累积的）</dd>
+        </dl>
+      </div>
+      <div class="side b">
+        <h3>② 作品页（第二层）</h3>
+        <dl>
+          <dt>关注什么</dt><dd>每一条视频的数据</dd>
+          <dt>一行是什么</dt><dd>一次快照（某平台在某一天的一组数）</dd>
+          <dt>回答的问题</dt><dd>这条为什么行 / 为什么不行</dd>
+          <dt>粒度</dt><dd>播放・完播・点赞・涨粉・收藏…</dd>
+          <dt>数据来源</dt><dd>项目自己的 <code>review.json</code>（已有）</dd>
+          <dt>时间轴</dt><dd>无（一条一条看）</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2 -->
+  <div class="card">
+    <h2><span class="num">2</span>★ 目标形态：一层套一层（已定案）</h2>
+    <p class="sub">账号页在上、作品列表在下、点一行钻进作品页 —— 取代原来"两个标签页"的方案</p>
+    <pre>┌─ 复盘（一级）───────────────────────────────────────┐
+│ ① 账号页 · 点左侧「复盘」就落在这里  [平台：全部 ▾] │
+│                                                     │
+│  ★ 主图：更新节奏（近 26 周热力图 · 一天一格）       │
+│    ░█░█░░██░█░██░░█░██░█░░██░█░██░█░░█░██░█         │
+│    近 26 周发 54 支 · 最长连发 9 天 · 当前空档 2 天   │
+│    ※ 全自动 —— 从各作品发布日算，不用你填一个字     │
+│  ─────────────────────────────────────────────────  │
+│   [粉丝总量]  [总播放]  [总点赞]  [近30天涨粉]      │
+│     2.4万     128.6万    3.9万      +1,240          │
+│    ↑ 这 4 个数 = 手填（创作者中心抄一次）· 次要     │
+│  ─────────────────────────────────────────────────  │
+│   作品            发布日  播放   点赞  涨粉   状态   │
+│   ▸ 思辨与立场     09-20  12.3万  891  +42  已归档  │
+│   ▸ AI时代读书…    10-02   3.1万  156  +12  进行中  │
+│   ▸ 达克效应…      10-11     —     —    —   待填数据 │
+│                          │                          │
+│                          └─ 点某一行 ↓（钻进这支片） │
+│                                                     │
+│ ② 作品页 · 就是现在这一页，只多一个「← 返回」       │
+│   [ 录入表单：平台/发布日/统计日 + 8 个数 + 三段结论 ]│
+│   [ 已有快照列表：点中载回表单改 / 删除 ]            │
+│   [ 保存为新快照 ]   [ 生成复盘报告.md ]            │
+└─────────────────────────────────────────────────────┘</pre>
+
+    <div style="border:1px solid rgba(127,182,255,.35);background:rgba(127,182,255,.09);border-radius:12px;padding:18px 20px;margin-top:16px">
+      <p style="margin:0 0 10px;font-size:15px;font-weight:600;color:#7fb6ff">
+        ★ 主图 = 「更新节奏」（2026-10-15 定案 · 形态见 2.4）
+      </p>
+      <p class="sub" style="margin:0 0 10px">
+        <b>一张日打卡热力图（近 26 周，一天一格），出了片就点亮，断更就是空格。</b>
+      </p>
+      <table style="margin-top:2px">
+        <tr><th style="width:6%">#</th><th>为什么不是涨粉 / 播放 / 粉丝总量</th></tr>
+        <tr><td>①</td><td><b>主图该放"别处看不到"的东西。</b>涨粉、播放这些数，钻进任何一支片的详情页都能看到来源；而"我最近几周有没有在稳定出片"<b>只存在于账号页</b></td></tr>
+        <tr><td>②</td><td><b>它是唯一 100% 由你控制的变量。</b>涨粉是结果、滞后、还带运气；更新是原因、立刻、只看自己</td></tr>
+        <tr><td>③</td><td><b>它零手填。</b>从各作品的发布日算出来 —— 直接把"手填坚持不下来"这条风险从主图上删掉了</td></tr>
+        <tr><td>④</td><td><b>样本量的现实。</b>初创期只有几支片，一趟涨粉曲线就是几个 0 之间的抖动，看的是噪声</td></tr>
+      </table>
+      <p class="sub" style="margin:12px 0 0">
+        <b>唯一的数据依赖 = 发布日</b> → 作品列表那一行直接可改日期，再加一个一键「已发布」按钮记今天。
+        热力图是<b>天</b>粒度，但“哪天算哪天”不较真（填错一天不影响总体形状）。
+      </p>
+      <p class="sub" style="margin:8px 0 0;color:#f0c674">
+        ★ <b>说话的口气是硬规矩</b>：只陈述、不评判。<b>不变红、不弹窗、不催</b>。
+        它是指南针，不是监工 —— 一旦开始催人，人就会开始讨厌打开这一页。
+      </p>
+      <p class="sub" style="margin:8px 0 0">
+        ★ <b>主图可换（阶段自适应）</b>：0～10 支看<b>节奏</b>（现在）→ 10～30 支看<b>哪类内容行</b> →
+        30 支以上才轮到<b>涨粉曲线</b>。所以主图区做成可换内容，别死写一张图。
+      </p>
+    </div>
+
+    <div class="card" style="margin-top:16px;border-color:rgba(240,198,116,.35)">
+      <h2><span class="num">2.4</span>★ 主图的视觉样式（★ 深夜改定，B1 照这个做）</h2>
+      <p class="sub"><b>样式名：日打卡热力图</b>（GitHub 贡献图 / 打卡秘籍 同款）</p>
+
+      <div style="border:1px solid rgba(240,198,116,.35);background:rgba(240,198,116,.08);border-radius:10px;padding:12px 16px;margin:10px 0 14px">
+        <p class="sub" style="margin:0;color:#f0c674">
+          ★ <b>为什么改主意</b>：我原先推"一周一格"，理由是"初创期片子少，一天一格会大片空着、看着挫败"。
+          <b>你当场推翻了这条假设</b> —— 你会高频更新。<b>假设一翻，热力图的短板就没了，长板全出来。</b>
+        </p>
+      </div>
+
+      <pre>┌─ 更新节奏 ───────────────────── 少 ▢▢▢ 多 ─┐
+│  近 26 周 · 一天一格 · 颜色越深，当天发得越多 │
+│  一 ┌───────────────────────────────────┐ 4月 │
+│  三 │  ▢ 格 格   格  格 格  格 格 格    │ 5月 │
+│  五 │   格 ▢ 格 ▢ 格 ▢ 格 格 ▢ 格 ▢     │ 6月 │
+│      │  ▢ 格 格 格 ▢ 格 格 ▢ 格 格 格 ▢  │ ... │
+│      └───────────────────────────────────┘10月 │
+├───────────────┬───────────────┬──────────────┤
+│     54 支     │      9 天     │      2 天    │
+│  近 26 周发布 │   最长连发    │    当前空档   │
+├───────────────┴───────────────┴──────────────┤
+│  它只陈述，不评判 —— 不变红、不弹窗、不催你。 │
+└──────────────────────────────────────────────┘
+（一列 = 一周；一行 = 星期几；虚线圆框 = 今天那一格）</pre>
+
+      <p class="sub" style="margin-top:14px"><b>怎么读它（一次看懂四件事）</b>：</p>
+      <table>
+        <tr><th style="width:40%">视觉元素</th><th>说的是什么</th></tr>
+        <tr><td><b>一行 = 星期几，一列 = 一周</b></td><td>熟悉热力图的人零学习成本；新人看一眼"竖条纹"就懂</td></tr>
+        <tr><td>格子的<b>亮 / 暗</b></td><td>当天有没有出片</td></tr>
+        <tr><td>颜色<b>深浅</b>（浅金 → 深金）</td><td>当天发了几支 —— <b>给"一周多更"准备的</b></td></tr>
+        <tr><td><b>虚线圆框</b>那一格</td><td>今天（还没发就是空着的）</td></tr>
+        <tr><td>连续的<b>亮格长条</b></td><td>连发 ——「最长连发 9 天」是<b>数出来</b>的，不是被告知的</td></tr>
+      </table>
+      <p class="sub" style="margin-top:10px">
+        <b>读数全部改成「天」粒度</b>（热力图是日粒度，读数跟着走，否则上下对不上）：
+        <code>近 26 周发布 N 支</code> · <code>最长连发 Y 天</code> · <code>当前空档 Z 天</code>
+      </p>
+      <p class="sub" style="margin-top:8px;color:#f0c674">
+        ★ <b>铁律照旧</b>：只有两种色系（金 = 发了 / 浅灰 = 没发），<b>刻意不用红色</b> ——
+        红色是"评判"。断更就是几个浅灰格子静静地在那儿。
+      </p>
+
+      <p class="sub" style="margin-top:14px"><b>时间窗</b>：默认 <b>近 26 周（半年）</b>，可切 <code>近 13 周</code> / <code>近一年</code>。</p>
+      <p class="sub">
+        26 周是<b>刻意的起点</b> —— 新号攒不满一年，左边会空一大块；26 周刚好铺满、格子也够大。
+        ★ 实现时格子尺寸<b>随窗口宽度自算</b>（<code>格宽 = (可用宽 − 间隔×(列数−1)) / 列数</code>），
+        所以加"近一年"不用改样式，只改列数。
+      </p>
+
+      <p class="sub" style="margin-top:14px"><b>配色（浅色设计稿 / 深色工作台实际，实现按当前主题取）</b>：</p>
+      <table>
+        <tr><th style="width:26%">用途</th><th style="width:37%">浅色（设计稿）</th><th>深色（工作台实际）</th></tr>
+        <tr><td>卡片底</td><td><code>#FFFFFF</code> ／ 描边 <code>#D3D1C7</code></td><td><code>#12151A</code> ／ 描边 <code>#2A2F38</code></td></tr>
+        <tr><td>没发（格）</td><td><code>#F1EFE8</code></td><td><code>#1B1F26</code></td></tr>
+        <tr><td>发了 1 支</td><td><code>#FAC775</code></td><td><code>#6B4E17</code></td></tr>
+        <tr><td>发了 2 支以上</td><td><code>#EF9F27</code></td><td><code>#C99A2E</code></td></tr>
+        <tr><td>虚线圈（今天）</td><td>描边 <code>#888780</code></td><td>描边 <code>#9A9890</code></td></tr>
+        <tr><td>主文字</td><td><code>#2C2C2A</code></td><td><code>#E8E6E1</code></td></tr>
+        <tr><td>次文字</td><td><code>#5F5E5A</code> / <code>#888780</code></td><td><code>#9A9890</code> / <code>#6E6C66</code></td></tr>
+      </table>
+      <p class="sub" style="margin-top:10px">
+        ★ <b>深色下"深浅"是反的</b>（深底上越亮 = 越多），实现时别直接搬浅色那三档。
+      </p>
+
+      <p class="sub" style="margin-top:14px"><b>备选（已否）</b>：</p>
+      <table>
+        <tr><th style="width:38%">样式</th><th>为什么不用</th></tr>
+        <tr><td>周打卡条（一格一周，先前我的推荐）</td><td>格子太粗，<b>看不出是"哪天"断的</b>；比热力图也没多出什么信息</td></tr>
+        <tr><td>周柱状（一周一根柱）</td><td>柱高要"一周多更"才有意义；且<b>像报表，没有打卡感</b></td></tr>
+        <tr><td>只用文字</td><td>没有形状，<b>看不出断在哪</b></td></tr>
+      </table>
+
+      <p class="sub" style="margin-top:14px">
+        ★ <b>以后可以长成什么样（先记着，B1 不做）</b>：格子颜色现在是"当天发了几支"。
+        等作品数据攒起来，可以<b>把颜色换成"当天发布的作品播放量"</b> ——
+        那就从"打卡图"升级成"<b>内容绩效图</b>"：一眼看出哪几天发的片爆了。
+        字段不用新加，<code>review.json</code> 里就有。
+      </p>
+      <p class="sub" style="margin-top:8px">
+        <b>还没定的小事</b>（B1 随手定）：点一格要不要跳到那天发的作品；悬停要不要出小卡片（"10-02 · 2 支"）。
+      </p>
+    </div>
+    <p class="sub" style="margin-top:16px"><b>为什么这个比"两个标签页"好</b>：</p>
+    <ul>
+      <li>更贴直觉 —— 就是"总览 → 点进去看详情"，不用先想"我该点哪个标签"。</li>
+      <li>原来担心的"两种数据混在一屏分不清"<b>其实不成立</b> ——
+          账号那几个数是<b>卡片</b>（不是列表），下面那个是<b>唯一的一份列表</b>，不会打架。</li>
+      <li>顺手多出一个好处：<b>没填过数据的片子会在列表里显示「待填数据」</b>，复盘待办自己就浮出来了。</li>
+    </ul>
+    <p class="sub" style="margin-top:14px">
+      <b>唯一的新增</b>只有<b>主图（更新节奏）</b>＋ 账号卡 ＋ 它的历史（将来画曲线用）。
+      作品列表 = 项目列表，数字 = 读各项目 <code>review.json</code> 的最新快照，
+      作品页 = 现在这个 <code>ReviewView</code>（只加一个返回按钮）。
+    </p>
+  </div>
+
+  <!-- 3 -->
+  <div class="card">
+    <h2><span class="num">3</span>七条设计判断（★ 已全部定案）</h2>
+    <p class="sub">①②③④ 是开工前的必答题；⑤⑥ 是定案"一层套一层"之后新冒出来的；⑦ 是"主图放什么"</p>
+    <table>
+      <tr><th style="width:5%">#</th><th style="width:24%">定什么</th><th style="width:32%">定案</th><th>为什么</th></tr>
+      <tr>
+        <td>①</td><td><b>账号级数据从哪来</b></td>
+        <td><b>手填 4 个数</b>（粉丝总量/总播放/总点赞/近30天涨粉）＋ <b>列表数字自动汇总</b>，两者<b>分开摆、绝不并排</b></td>
+        <td>粉丝总量这类数<b>项目里根本没有</b>，工作台算不出来，只能手填。★ 但"抄来的"和"算出来的"绝不能并排当同一回事 —— 工程老规矩（写作台的预估时长就吃过这个亏）</td>
+      </tr>
+      <tr>
+        <td>②</td><td><b>账号复盘的横轴</b></td>
+        <td>时间（周 / 月）</td>
+        <td>账号的"增量"是按时间累积的，横轴只能是时间</td>
+      </tr>
+      <tr>
+        <td>③</td><td><b>账号数据落哪</b></td>
+        <td><code>%APPDATA%\翊瑄的工作台\account-review.json</code></td>
+        <td>账号是<b>所有项目的总和</b>，挂在任何一个项目底下都不对。放 AppData 里跟项目解耦，随时能填</td>
+      </tr>
+      <tr>
+        <td>④</td><td><b>汇总算不算已归档的</b></td>
+        <td>算</td>
+        <td>已归档的片子数据还在本地（<code>&lt;项目&gt;\review\</code> 就是为这个留的）。不算的话账号复盘会凭空少一块</td>
+      </tr>
+      <tr>
+        <td>⑤</td><td><b>平台维度怎么摆</b></td>
+        <td>顶部加 <b>「平台 ▾」筛选，默认"全部"</b></td>
+        <td>严格说"账号"＝<b>某个平台上的号</b>（抖音号/小红书号/B站号是三个号，粉丝数各是各的）。数据的 <code>Platform</code> 字段本来就有，直接用；只做一个平台时它一直显示"全部"，等于不存在</td>
+      </tr>
+      <tr>
+        <td>⑥</td><td><b>列表一行代表什么 ＋ 合计口径</b></td>
+        <td><b>一行 = 一支片</b>（多平台合并）｜合计：<b>每平台各取最新一份快照再加起来</b>｜<b>只摆能相加的数</b>（播放/点赞/涨粉），<b>完播率不进列表</b></td>
+        <td>跟抖音"作品列表"一个意思，一眼就懂。<b>完播率是比率、加不了</b>，硬加就是编数，所以它只出现在作品页里</td>
+      </tr>
+      <tr>
+        <td>⑦</td><td><b>首页最显眼处放什么</b></td>
+        <td><b>主图 = 「更新节奏」</b>（近 26 周日打卡热力图，全自动）</td>
+        <td>主图该放<b>别处看不到</b>的信息（涨粉/播放在作品页都有）；节奏是唯一 100% 由自己控制的变量，且零手填。详见第 2 节</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- 4 -->
+  <div class="card">
+    <h2><span class="num">4</span>数据放哪（关键）</h2>
+    <p class="sub">先说清，免得返工</p>
+    <pre>项目复盘（已有，不动）
+  &lt;项目&gt;\review\review.json      ← 逐条视频 × 多平台 × 多次快照
+  &lt;项目&gt;\review\复盘报告.md       ← 人读的那份
+
+账号复盘（拟新增，形态已定）
+  %APPDATA%\翊瑄的工作台\account-review.json
+    一条 = 某平台在某一天的一次"账号快照"（跟项目快照同一个套路）
+      platform   平台（抖音 / 视频号 / …）
+      statsDate  统计日
+      fans       粉丝总量      ← 手填
+      totalPlay  总播放        ← 手填
+      totalLike  总点赞        ← 手填
+      fans30d    近30天涨粉     ← 手填
+
+  作品列表的数字：不存盘，每次现算 ——
+    扫所有项目的 review.json，每平台各取最新快照，加起来
+    （只读小 json，几十个项目也就几十毫秒；结果可缓存）</pre>
+    <ul>
+      <li>写盘一律<b>无 BOM</b>（老规矩 R-13）</li>
+      <li>加字段 = 安全（老档案读到默认值），加字段不用改结构版本</li>
+      <li>和归档<b>完全解耦</b>：随时能填，不必等硬盘插着</li>
+    </ul>
+  </div>
+
+  <!-- 5 -->
+  <div class="card">
+    <h2><span class="num">5</span>分期：先做哪个</h2>
+    <p class="sub">建议顺序 B1 → D → B2 → C</p>
+    <div class="flow">
+      <span class="step done"><b>A</b> 一级页 + 项目选择器</span>
+      <span class="arrow">→</span>
+      <span class="step done"><b>B1</b> 账号页（门面）✅ V1.15.0</span>
+      <span class="arrow">→</span>
+      <span class="step todo"><b>D</b> 图表</span>
+      <span class="arrow">→</span>
+      <span class="step todo"><b>B2</b> 账号历史曲线</span>
+      <span class="arrow">→</span>
+      <span class="step todo"><b>C</b> 排行 / 筛选增强</span>
+    </div>
+    <table style="margin-top:14px">
+      <tr><th style="width:8%">期</th><th style="width:44%">做什么</th><th style="width:14%">规模</th><th>状态</th></tr>
+      <tr><td><b>A</b></td><td>一级页 + 项目选择器（现在这套）</td><td>~80 行</td><td><span class="tag ok">V1.14.0 已做</span></td></tr>
+      <tr><td><b>B1</b></td><td><b>账号页</b>：★ 主图「更新节奏」热力图 ＋ 手填 4 数数据卡 ＋ 作品列表（自动汇总 ＋ 行内改发布日）＋ 点一行钻进作品页</td><td>大（~500 行）</td><td><span class="tag ok">✅ 已落地 V1.15.0</span></td></tr>
+      <tr><td><b>D</b></td><td>图表：折线 / 横向条 / 对比柱（WPF 手绘，不引库）</td><td>中（~450 行）</td><td><span class="tag warn">待排期</span></td></tr>
+      <tr><td><b>B2</b></td><td><b>账号历史</b>：账号快照按时间录入 ＋ 折线（"在涨还是在平"）</td><td>中（~300 行）</td><td><span class="tag warn">待排期</span></td></tr>
+      <tr><td><b>C</b></td><td>跨项目排行 / 筛选增强（B1 的列表已经吃掉一大半）</td><td>小（~150 行）</td><td><span class="tag warn">待排期</span></td></tr>
+    </table>
+    <p class="sub" style="margin-top:14px">
+      <b>为什么 B1 排最前</b>：它是这一整轮改造的<b>门面</b> —— 打开复盘第一眼就是它，
+      而且它<b>几乎全是复用</b>（项目列表 ＋ 各项目 review.json ＋ 现在的 ReviewView），
+      新增的只有"<b>主图 ＋ 账号卡 ＋ 汇总 ＋ 返回按钮</b>"几样。
+    </p>
+    <p class="sub">
+      <b>B1 最大的坑不是画图，是"手填坚持不下来"</b> ——
+      所以第一原则是：<b>能自动汇总的一律不让手填</b>，手填字段压到 4 个以内（现在定的就是 4 个），
+      而且<b>主图完全不吃手填</b>（从发布日自动算）。
+    </p>
+  </div>
+
+  <!-- 6 -->
+  <div class="card">
+    <h2><span class="num">6</span>风险与明确不做</h2>
+    <table>
+      <tr><th style="width:42%">风险</th><th style="width:12%">等级</th><th>缓解</th></tr>
+      <tr><td><b>主图变成"监工"，让人开始讨厌打开复盘页</b>（★ 新，分量最重）</td><td><span class="tag risk">高</span></td><td>只陈述不评判：<b>不变红、不弹窗、不催、不用"目标/落后/加油"这类话术</b>；断更就静静显示空格</td></tr>
+      <tr><td><b>发布日没人记 → 主图长期空着</b></td><td><span class="tag risk">高</span></td><td>作品列表<b>行内直接改日期</b> ＋ 一键「已发布」按钮记今天；<b>周粒度容错一天</b>；没记录的日子只是空格，<b>不报错、不提示</b></td></tr>
+      <tr><td>账号数据手填坚持不下来</td><td><span class="tag warn">中 ↓</span></td><td>能算的绝不让填；手填字段 ≤ 4 个；<b>不填也不影响主图</b>；不催</td></tr>
+      <tr><td><b>两种数被人当成一回事</b>（把"列表汇总"当成"平台显示的账号总量"）</td><td><span class="tag risk">高</span></td><td>卡片和列表<b>物理分开</b>（卡片在上、列表在下，中间隔一行说明）；列表数字旁边标"本工作台片子合计"；<b>绝不并排在同一排</b></td></tr>
+      <tr><td>「算出来的」被当「看到的」</td><td><span class="tag warn">中</span></td><td>预估值一律显式标灰，绝不与实测值并排</td></tr>
+      <tr><td><b>多平台合计口径被误解</b>（"每平台各取最新一份"这条规则不直观）</td><td><span class="tag warn">中</span></td><td>列表行上挂平台标签；点进作品页能看到"这个数由哪几条快照加出来"</td></tr>
+      <tr><td>跨项目汇总慢（要扫所有项目）</td><td><span class="tag ok">低</span></td><td>只读 review.json 小文件；结果缓存</td></tr>
+    </table>
+    <p class="sub" style="margin-top:16px"><b>明确不做</b>（免得反复问）：</p>
+    <ul>
+      <li>接平台 API 自动抓账号数据 —— 抖音创作者后台无公开 API，做了也会被改版打断</li>
+      <li>账号级"预测"（下月会涨多少）—— 样本不够，预测是编</li>
+    </ul>
+  </div>
+
+  <footer>
+    详版见 <code>文档\复盘页-改造待办.md</code>　·　老规划稿见 <code>文档\数据复盘页-细化方案.md</code>（其"放项目内"结论已作废）
+  </footer>
+
+</div>
+</body>
+</html>

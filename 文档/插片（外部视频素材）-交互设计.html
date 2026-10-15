@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>工作台 · 插片交互设计</title>
+<style>
+  :root{
+    --bg:#0b1024; --card:rgba(20,28,52,.74); --line:rgba(240,214,138,.16);
+    --gold:#f0d68a; --cream:#f3ecdc; --dim:#8b93a1; --red:#e2554d; --green:#7fc8a0; --blue:#6aa8ff;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:48px 24px 72px; color:var(--cream);
+    font-family:"Microsoft YaHei","PingFang SC","Segoe UI",system-ui,sans-serif;
+    line-height:1.75; background-color:var(--bg);
+    background-image:
+      linear-gradient(rgba(110,140,200,.075) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(110,140,200,.075) 1px,transparent 1px);
+    background-size:44px 44px;
+  }
+  .wrap{max-width:1080px;margin:0 auto}
+  h1{font-size:34px;font-weight:500;margin:0 0 10px;letter-spacing:.5px}
+  h2{font-size:21px;font-weight:500;margin:0 0 8px;color:var(--cream)}
+  h2 .no{color:var(--gold);margin-right:10px;font-variant-numeric:tabular-nums}
+  .lead{font-size:15.5px;color:var(--dim);margin:0 0 22px}
+  .sub{font-size:14.5px;color:var(--dim);margin:0 0 18px}
+  section{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:26px 28px;margin:0 0 22px;
+  }
+  .hero{background:rgba(20,28,52,.5);border-color:rgba(240,214,138,.28)}
+  .hero .lead{color:var(--cream);opacity:.82}
+  .chips{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}
+  .chip{
+    flex:1 1 190px;padding:14px 16px;border:1px solid var(--line);border-radius:11px;
+    background:rgba(11,16,36,.6)
+  }
+  .chip b{display:block;font-size:22px;font-weight:500;color:var(--gold);letter-spacing:.3px}
+  .chip span{font-size:12.5px;color:var(--dim)}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:6px}
+  th,td{border-bottom:1px solid var(--line);padding:9px 10px;text-align:left;vertical-align:top}
+  th{color:var(--gold);font-weight:500;font-size:12.5px}
+  code{background:rgba(240,214,138,.1);padding:1px 5px;border-radius:4px;font-size:12.5px}
+  .ok{color:var(--green)} .bad{color:var(--red)} .warn{color:var(--gold)}
+  ul{margin:8px 0 0;padding-left:20px}
+  li{margin:5px 0;font-size:14px}
+  .note{
+    border-left:3px solid var(--gold);padding:10px 14px;margin-top:16px;
+    background:rgba(240,214,138,.07);border-radius:0 8px 8px 0;font-size:13.5px
+  }
+  .note.bad{border-left-color:var(--red);background:rgba(226,85,77,.08)}
+  .mock{
+    background:rgba(11,16,36,.62);border:1px solid var(--line);border-radius:11px;
+    padding:14px 16px;margin-top:14px
+  }
+  .shot{
+    background:rgba(20,28,52,.9);border:1px solid rgba(240,214,138,.14);
+    border-radius:8px;padding:9px 12px;display:flex;gap:10px;align-items:center;font-size:12.5px
+  }
+  .shot .idx{font-weight:500;color:var(--cream)}
+  .shot .t{color:var(--dim)}
+  .shot .txt{color:var(--dim);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .insline{display:flex;align-items:center;gap:8px;height:28px}
+  .insline .ln{flex:1;height:2px;background:var(--gold);border-radius:1px}
+  .insline .dot{
+    width:18px;height:18px;border-radius:50%;background:var(--gold);color:#0b1024;
+    font-size:13px;line-height:18px;text-align:center;flex:none
+  }
+  .inscard{
+    background:rgba(20,28,52,.9);border:1.5px solid var(--gold);border-radius:8px;padding:12px 14px;margin-top:4px
+  }
+  .badge{font-size:11px;border-radius:3px;padding:2px 6px;margin-right:6px}
+  .b-ins{background:rgba(240,214,138,.2);color:var(--gold)}
+  .b-sil{background:rgba(139,147,161,.22);color:#c8cdd6}
+  .fld{display:grid;grid-template-columns:72px 1fr;gap:7px 10px;align-items:center;margin-top:10px;font-size:12.5px}
+  .fld span{color:var(--dim)}
+  .fld input{
+    background:rgba(11,16,36,.8);border:1px solid rgba(240,214,138,.2);color:var(--cream);
+    border-radius:5px;padding:3px 7px;font-size:12.5px;font-family:inherit;width:100%
+  }
+  .fld input.sm{width:70px}
+  .hint{font-size:11.5px;color:var(--dim)}
+  .steps{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+  .step{
+    flex:1 1 190px;border:1px solid var(--line);border-radius:11px;padding:14px 16px;
+    background:rgba(11,16,36,.55)
+  }
+  .step .n{
+    display:inline-block;width:22px;height:22px;line-height:21px;text-align:center;
+    border-radius:50%;background:var(--gold);color:#0b1024;font-size:12.5px;font-weight:500;margin-bottom:8px
+  }
+  .step b{display:block;font-size:14.5px;margin-bottom:4px}
+  .step span{font-size:12.5px;color:var(--dim);line-height:1.6}
+  .menu{
+    background:rgba(11,16,36,.95);border:1px solid rgba(240,214,138,.35);border-radius:7px;
+    padding:6px 0;margin-top:10px;font-size:12.5px;width:230px
+  }
+  .menu div{padding:5px 14px;color:var(--cream)}
+  .menu div.sel{background:rgba(240,214,138,.18);color:var(--gold)}
+  .menu hr{border:0;border-top:1px solid rgba(240,214,138,.18);margin:5px 0}
+  .foot{margin-top:26px;font-size:12.5px;color:var(--dim);text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<section class="hero">
+  <h1>插片：一个「时长我说了算」的普通镜头</h1>
+  <p class="lead">别把它当特殊功能。<b>插片就是普通镜头，写分镜的方式一模一样</b>，
+  只有两处不同：<b>时长自己定</b>（普通镜头由口播决定）、<b>音频静音</b>。<br>
+  素材是可选的 —— 想引用就引用，不想引用就当一段纯静音画面照写。</p>
+  <div class="chips">
+    <div class="chip"><b>0 弹窗</b><span>插入就地展开，全部行内改</span></div>
+    <div class="chip"><b>1 次点击</b><span>悬浮线亮起，左键即插</span></div>
+    <div class="chip"><b>时长自由</b><span>可覆盖素材长度，播不完就截断</span></div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="no">01</span>交互：移到两镜之间，线亮起</h2>
+  <p class="sub">就按你心里那个思路做。分镜表是卡片列表，卡片之间留一条 26px 的插入带。</p>
+
+  <div class="mock">
+    <div class="shot"><span class="idx">#012</span><span class="t">02:14 → 02:21 · 7.2s</span><span class="txt">所以真正的问题不是读得少…</span></div>
+    <div class="insline"><div class="ln"></div><div class="dot">+</div><div class="ln"></div></div>
+    <div class="shot"><span class="idx">#013</span><span class="t">02:21 → 02:28 · 6.8s</span><span class="txt">而是读完就忘，没有留下…</span></div>
+    <div style="font-size:11.5px;color:var(--dim);margin-top:10px">↑ 鼠标移进两卡之间：线 + 圆钮淡入。移开就消失，平时完全不占视觉。</div>
+  </div>
+
+  <table>
+    <tr><th>操作</th><th>发生什么</th></tr>
+    <tr>
+      <td><b>左键点 ⊕</b></td>
+      <td class="ok">立刻插入一个插片（默认 3 秒，记住上次用过的），<b>零弹窗</b>，就地展开可编辑</td>
+    </tr>
+    <tr>
+      <td><b>右键</b></td>
+      <td>出菜单，两项：<br>
+        <div class="menu">
+          <div class="sel">插入插片</div>
+          <div>插入插片并选素材…</div>
+          <hr>
+          <div style="color:var(--dim)">在此粘贴镜头</div>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td><b>列表最上方</b></td>
+      <td>也有同样一条带 → 片子开头就能插（片头空镜）</td>
+    </tr>
+  </table>
+
+  <div class="note">
+    <b>为什么左键也要能用</b>：你多数时候就是"在这儿插一段"，点一下就该完事。
+    右键留着走菜单，是两个选项的入口，不是必经之路。
+  </div>
+</section>
+
+<section>
+  <h2><span class="no">02</span>插进来之后：就地编辑，没有弹窗</h2>
+  <p class="sub">和普通镜头<b>长一样、写法一样</b>，只是多了一个可改的时长，多一枚徽章。</p>
+
+  <div class="mock">
+    <div class="inscard">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:13px;font-weight:500">#013</span>
+        <span class="badge b-ins">插片</span>
+        <span class="badge b-sil">静音</span>
+        <span style="margin-left:auto;font-size:11.5px;color:var(--dim)">02:21 → 02:26</span>
+      </div>
+      <div class="fld">
+        <span>时长</span>
+        <div style="display:flex;align-items:center;gap:8px"><input class="sm" value="5.0"><span class="hint">秒 · 我说了算（普通镜头这格是只读的）</span></div>
+        <span>素材</span>
+        <div style="display:flex;align-items:center;gap:8px"><span>城市夜景.mp4</span><span class="hint">8.0s · 只播前 5.0s</span><span class="hint" style="margin-left:auto">＋ 换素材　✕ 不用素材</span></div>
+        <span>画面构思</span>
+        <input value="夜景视频从中间放大出现，压暗 60%，右下角压标题">
+        <span>动效</span>
+        <input value="放大淡入 0.6s → 停留 3.4s → 缩小淡出 0.6s">
+      </div>
+    </div>
+    <div style="font-size:11.5px;color:var(--dim);margin-top:10px">
+      「画面构思」「动效」两格和普通镜头完全一样 —— 你说的"从幕布上出现、退场做特效"，就写在动效这格。
+    </div>
+  </div>
+
+  <div class="note">
+    <b>唯一的弹窗</b>是「＋ 换素材」—— 选文件必须有文件框，这个省不掉。
+    但它是<b>你要用才出现</b>，不是插入流程的一部分：直接插一个不带素材的插片，全程零弹窗。
+  </div>
+</section>
+
+<section>
+  <h2><span class="no">03</span>时长的三条规则（重点）</h2>
+  <table>
+    <tr><th>情况</th><th>时长怎么定</th></tr>
+    <tr>
+      <td>刚插入，还没选素材</td>
+      <td><b>3.0 秒</b>（记住上次你填的值，第二次就是上次那个）</td>
+    </tr>
+    <tr>
+      <td>选了视频素材</td>
+      <td class="ok">如果你<b>还没手动改过</b>时长 → 自动改成素材全长<br>
+          如果你<b>已经改过</b> → <b>保持你的值不动</b>，卡片上标「素材 8.0s · 只播前 5.0s」</td>
+    </tr>
+    <tr>
+      <td>我就是要自己定</td>
+      <td class="ok"><b>永远以你为准。</b>视频播不完就到点结束，不补、不循环、不拉伸</td>
+    </tr>
+    <tr>
+      <td>视频比设定短</td>
+      <td>播完<b>定格最后一帧</b>直到结束，并提示「素材 3.0s · 后 2.0s 定格」—— 不循环（循环很跳）</td>
+    </tr>
+  </table>
+  <div class="note">
+    <b>为什么是「你改过就不自动覆盖」</b>：你要的是确定性。
+    自动改一次是帮忙，改两次就是添乱 —— 所以只在你没表态时替你填，你一开口就以你为准。
+  </div>
+</section>
+
+<section>
+  <h2><span class="no">04</span>素材只是「画面里的一层」</h2>
+  <p class="sub">引用视频 ≠ 整镜都是视频。它是你构图里的一层，出场退场都归你写。</p>
+  <ul>
+    <li><b>可以不用素材</b>：纯静音画面照写分镜，和普通的文字卡镜头没区别，只是没口播</li>
+    <li><b>可以有出场退场</b>：视频从中心放大出现、停留、缩小淡出 —— 写在「动效」格，渲染照做</li>
+    <li><b>可以只露一部分</b>：想让它出现在幕布中央一块区域也可以，动效格写清楚就行</li>
+    <li><b>文字锚点照旧</b>：按你的铁律，插片也得有字 —— 压在视频上或放旁边都行</li>
+  </ul>
+  <div class="note">
+    技术上：视频用 <code>data-media-start</code> 从指定秒开始播（免重编码），
+    用 <code>data-duration</code> 控制播多久 —— 到点就停，播不完直接切，正是你要的效果。
+  </div>
+</section>
+
+<section>
+  <h2><span class="no">05</span>实现约束（给我自己看的，你扫一眼就行）</h2>
+  <table>
+    <tr><th>约束</th><th>说明</th></tr>
+    <tr>
+      <td class="warn">插片只写分镜表</td>
+      <td>不去改精剪时间轴。改那儿会让口播稿凭空多一句，还会出现「预览静音、出片真人声」</td>
+    </tr>
+    <tr>
+      <td class="warn">组接时补静音</td>
+      <td>画面 +N 和音轨 +N 必须同时发生，组接前会强制校验，差 0.5 秒就不给出片 —— 这一步是自动的</td>
+    </tr>
+    <tr>
+      <td>后面镜头顺延</td>
+      <td>插一段 5 秒，它后面所有镜头的成片时间整体 +5 秒（源录音坐标不变）</td>
+    </tr>
+    <tr>
+      <td>已有镜头不用重渲</td>
+      <td>重排改名的机制现成，只有新插的这一镜要渲</td>
+    </tr>
+  </table>
+  <div class="note">
+    <b>顶部建议常显一行</b>：插片 3 段 · 合计 12.5s · 成片预计 4:32。
+    插片会让成片变长，别到导出才发现多了半分钟。
+  </div>
+</section>
+
+<section>
+  <h2><span class="no">06</span>一个待你定的小问题</h2>
+  <p class="sub">插片的<b>原声</b>要不要留？—— 不影响时长，只是音频怎么填。</p>
+  <table>
+    <tr><th>选项</th><th>说明</th><th>建议</th></tr>
+    <tr>
+      <td>全静音</td>
+      <td>你说的主要场景：没台词，就是一段画面</td>
+      <td class="ok">先做这个</td>
+    </tr>
+    <tr>
+      <td>留环境音（压到 -25dB）</td>
+      <td>街景、咖啡馆这类，有点环境声更有临场感</td>
+      <td>字段先留着，以后开</td>
+    </tr>
+    <tr>
+      <td>每片自己选</td>
+      <td>卡片上一格「原声：静音 / 小声 / 全保留」</td>
+      <td>等真用到再说</td>
+    </tr>
+  </table>
+</section>
+
+<p class="foot">翊瑄的工作台 · 插片交互设计 · 2026-10-03</p>
+</div>
+</body>
+</html>

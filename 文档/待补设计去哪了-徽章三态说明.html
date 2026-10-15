@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>徽章三态说明 · 为什么看不到「待补设计」</title>
+<style>
+  :root{
+    --bg:#0E1520; --card:#161F2E; --card2:#1B2637; --line:#26344A;
+    --text:#E6ECF5; --dim:#9AA7BA; --faint:#6C7A90;
+    --warn:#F59E0B; --ok:#34D399; --accent:#7FB3FF; --danger:#F87171;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:26px 22px 34px;
+    background:
+      linear-gradient(rgba(127,179,255,.055) 1px, transparent 1px) 0 0/28px 28px,
+      linear-gradient(90deg, rgba(127,179,255,.055) 1px, transparent 1px) 0 0/28px 28px,
+      radial-gradient(1100px 560px at 50% -12%, #17273F 0%, var(--bg) 68%);
+    color:var(--text);
+    font:15px/1.72 "Microsoft YaHei","PingFang SC",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:980px;margin:0 auto}
+  h1{font-size:26px;margin:0 0 6px;letter-spacing:.4px}
+  .sub{color:var(--dim);font-size:14px;margin:0 0 22px}
+  .verdict{
+    background:linear-gradient(180deg,#1C2A3E,#16202E);
+    border:1px solid var(--line); border-left:4px solid var(--warn);
+    border-radius:10px; padding:14px 18px; margin:0 0 24px;
+  }
+  .verdict b{color:var(--warn)}
+  h2{font-size:16.5px;margin:26px 0 12px;color:var(--accent);letter-spacing:.3px}
+  h2 span{color:var(--faint);font-weight:400;font-size:13px;margin-left:8px}
+  table{width:100%;border-collapse:collapse;font-size:14px;background:var(--card);
+        border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  th,td{padding:10px 13px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:#1A2536;color:var(--dim);font-weight:600;font-size:13px}
+  tr:last-child td{border-bottom:none}
+  code{background:#0B1119;border:1px solid var(--line);border-radius:4px;
+       padding:1.5px 6px;font-size:12.5px;color:#A8C7FF;font-family:Consolas,monospace}
+  .b{display:inline-block;padding:1.5px 8px;border-radius:4px;font-size:12.5px;font-weight:600;white-space:nowrap}
+  .b-warn{color:var(--warn);background:rgba(245,158,11,.13);border:1px solid rgba(245,158,11,.35)}
+  .b-faint{color:#8A97AB;background:rgba(110,122,144,.13);border:1px solid rgba(110,122,144,.3)}
+  .b-none{color:var(--faint);background:transparent;border:1px dashed var(--line)}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:15px 16px}
+  .card .t{font-size:14.5px;font-weight:600;margin-bottom:7px}
+  .card .d{color:var(--dim);font-size:13.2px;line-height:1.65}
+  .swatch{height:34px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+          font-size:13px;font-weight:600;margin-top:10px}
+  .sw-warn{background:#1E2431;color:var(--warn);border:1px solid rgba(245,158,11,.3)}
+  .sw-faint{background:#1E2431;color:#5A626E;border:1px solid #232C3A}
+  .sw-dim{background:#1E2431;color:#8B93A1;border:1px solid #232C3A}
+  ol{margin:8px 0 0;padding-left:22px}
+  ol li{margin:7px 0;color:var(--text)}
+  ol li em{color:var(--dim);font-style:normal}
+  .note{background:#141C29;border:1px dashed #2C3A50;border-radius:9px;padding:12px 16px;
+        color:var(--dim);font-size:13.3px;margin-top:16px}
+  .note b{color:var(--accent)}
+  .kbd{background:#0B1119;border:1px solid #31405A;border-bottom-width:2px;border-radius:5px;
+       padding:1px 7px;font-size:12.5px;color:#CFE0FF}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>拆分之后，为什么没看到「待补设计」？</h1>
+  <p class="sub">一句话：它不是<b>没生成</b>，是<b>颜色太淡被你看漏了</b>；而你的猜测，只对了一半。</p>
+
+  <div class="verdict">
+    <b>先说最硬的证据：</b>「思辨与立场」这个项目 —— 已交接 <b>55 镜</b> + 草稿 <b>57 镜</b>，
+    里面的设计字段<b>一条都没有</b>。也就是说这套「设计徽章」的语义，到现在<b>从来没被真正走过一遍</b>。
+  </div>
+
+  <h2>你的猜测，对了一半</h2>
+  <table>
+    <tr><th style="width:150px">你做的动作</th><th style="width:150px">这面镜谁在判断</th><th>判据（程序里就这三行）</th><th style="width:112px">结果</th></tr>
+    <tr>
+      <td>拆分 · <b>前半镜</b></td>
+      <td>原镜</td>
+      <td><code>DesignStale = 原来有没有设计</code> —— <b>这一面才看"原来有没有"</b></td>
+      <td><span class="b b-warn">有设计→待复核</span><br><span class="b b-faint" style="margin-top:5px">没设计→待补设计</span></td>
+    </tr>
+    <tr>
+      <td>拆分 · <b>后半镜</b></td>
+      <td>全新镜</td>
+      <td><code>DesignStale = false</code> 恒为假 —— 新镜<b>必然</b>没设计（设计不会自动劈成两半）</td>
+      <td><span class="b b-faint">永远「待补设计」</span></td>
+    </tr>
+    <tr>
+      <td>合并</td>
+      <td>合并后那一镜</td>
+      <td><code>DesignStale = 合并后还剩不剩设计</code>（选"拼接"就还在）</td>
+      <td><span class="b b-warn">留→待复核</span><br><span class="b b-faint" style="margin-top:5px">清空→待补设计</span></td>
+    </tr>
+  </table>
+
+  <h2>三种状态到底是什么颜色 <span>这才是你"看不见"的真因</span></h2>
+  <div class="grid3">
+    <div class="card">
+      <div class="t">待复核</div>
+      <div class="d">有设计、但边界变了，要你确认。</div>
+      <div class="swatch sw-warn">待复核　#F59E0B 亮橙</div>
+    </div>
+    <div class="card">
+      <div class="t">待补设计</div>
+      <div class="d">这一镜还没写设计。</div>
+      <div class="swatch sw-faint">待补设计　#5A626E 暗灰</div>
+    </div>
+    <div class="card">
+      <div class="t">什么都不显示</div>
+      <div class="d">有设计、边界也没动过。</div>
+      <div class="swatch sw-dim">（空白）</div>
+    </div>
+  </div>
+  <div class="note">
+    「待补设计」用的是全应用<b>最淡的一档灰</b>（和"规划中""待渲染"同一个颜色），字号 10.5 挂在卡片头。
+    橙色你一眼就看见了 —— 所以上一轮你能报出"待复核摘不掉"，这一轮却看不见灰色的「待补设计」。
+    <br><b>要不要把它调亮一档？</b>（改成 <code>#8B93A1</code>，还是灰的、但不是隐形）说一声我就改。
+  </div>
+
+  <h2>我已经往草稿里写了测试设计 <span>不用重新打包，重启就生效</span></h2>
+  <p class="sub" style="margin:0 0 12px">特意做成<b>三种状态同屏</b>，一屏看穿：</p>
+  <table>
+    <tr><th style="width:120px">哪一镜</th><th style="width:230px">我写进去了什么</th><th>你重启后应该看到</th></tr>
+    <tr><td><b>第 3 镜</b></td><td><code>[测试]</code> 描述 + 动效，并标了"要复核"</td><td><span class="b b-warn">待复核</span> + 卡上出现 <span class="kbd">✎确认无误</span> 按钮</td></tr>
+    <tr><td><b>第 4、5 镜</b></td><td>没写（就是拆出来的后半镜）</td><td><span class="b b-faint">待补设计</span>（淡灰，仔细看）</td></tr>
+    <tr><td><b>第 6 镜</b></td><td><code>[测试]</code> 描述 + 动效，边界没动</td><td>什么都不显示</td></tr>
+  </table>
+
+  <h2>请你点这三下 <span>一次验完两个版本</span></h2>
+  <ol>
+    <li>双击 <code>D:\视频创作\工作台\LiteCut.exe</code>，开「思辨与立场」，进 <b>③ 分镜页</b></li>
+    <li>找到 <b>第 3 镜</b>（橙「待复核」）→ 点卡上 <span class="kbd">✎确认无误</span>
+      → <em>徽章应「当场消失」。这一下验的是上一版（V1.1.5）修的那个 bug —— 以前它会赖着不走。</em></li>
+    <li>回头看 <b>第 4、5 镜</b> → <em>应该有一行淡灰的「待补设计」。这就是你这次没找到的那个东西。</em>
+      <br>顺手再拆一次第 4 镜：<b>前半镜变橙「待复核」、后半镜是新镜、挂「待补设计」</b> —— 一拆就两态齐全。</li>
+  </ol>
+
+  <div class="note" style="margin-top:20px">
+    <b>两个提醒：</b><br>
+    ① <b>别点「应用到下游」</b>（那是 T-17 的验点，一点就把草稿转正、重排镜号、给 51 个产物改名）。<br>
+    ② 我写的都是 <code>[测试]</code> 开头，验证完我会把草稿还原（原文件已备份在
+    <code>D:\工作台工程\更新\_备份\</code>）。已交接的 55 镜和 51 个产物<b>一个字节都没动</b>。
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://litecut.local/schemas/cutplan.schema.json",
+  "title": "CutPlan",
+  "description": "粗剪决策。把源音频按时间顺序切成若干连续段，每段标记保留（keep）或剪掉（drop）。相邻段边界必须咬合，且完整覆盖 0 到音频结束。不要输出时间轴位置——时间轴由程序累加算出。",
+
+  "type": "object",
+  "required": ["schemaVersion", "source", "segments"],
+  "additionalProperties": true,
+
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "projectId": { "type": "string" },
+    "source": { "$ref": "#/$defs/sourceInfo" },
+    "params": { "$ref": "#/$defs/cutParams" },
+    "segments": {
+      "type": "array",
+      "minItems": 1,
+      "description": "全片切分列表，按 sourceStartSec 升序，首尾相接",
+      "items": { "$ref": "#/$defs/cutSegment" }
+    },
+    "stats": { "$ref": "#/$defs/cutStats" },
+    "review": { "$ref": "#/$defs/reviewState" },
+    "generatedAt": { "type": "string" },
+    "generatedBy": { "type": "string" }
+  },
+
+  "$defs": {
+    "sourceInfo": {
+      "type": "object",
+      "required": ["path", "durationSec"],
+      "properties": {
+        "path": { "type": "string" },
+        "durationSec": { "type": "number", "minimum": 0 },
+        "sampleRate": { "type": "integer" },
+        "channels": { "type": "integer", "minimum": 1, "maximum": 8 },
+        "sha256": { "type": "string" }
+      }
+    },
+
+    "cutParams": {
+      "type": "object",
+      "description": "判定参数。生成决策时用的实际值，记录下来便于复现。",
+      "properties": {
+        "silenceMinSec": { "type": "number", "default": 1.5, "description": "静音超过这个秒数算气口" },
+        "fillerMaxSec": { "type": "number", "default": 0.6, "description": "短于这个秒数的停顿一律不剪" },
+        "repeatMinCount": { "type": "integer", "default": 2, "minimum": 2, "description": "同一句重复几次算卡壳" },
+        "repeatWindowSec": { "type": "number", "default": 12.0, "description": "判断重复的时间窗口" },
+        "breathKeepSec": { "type": "number", "default": 0.4, "description": "剪掉气口后保留的余量" },
+        "leadPadSec": { "type": "number", "default": 0.15, "description": "切点前留白" },
+        "tailPadSec": { "type": "number", "default": 0.25, "description": "切点后留白" },
+        "minKeepSec": { "type": "number", "default": 0.5, "description": "短于此的保留段并入相邻段" }
+      }
+    },
+
+    "cutSegment": {
+      "type": "object",
+      "required": ["id", "sourceStartSec", "sourceEndSec", "action"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^s[0-9]+$", "description": "段 ID，形如 s0001" },
+        "sourceStartSec": { "type": "number", "minimum": 0 },
+        "sourceEndSec": { "type": "number", "minimum": 0 },
+        "action": {
+          "type": "string",
+          "enum": ["keep", "drop"],
+          "description": "keep = 进成片；drop = 剪掉（仍保留记录，用户可反悔）"
+        },
+        "reason": {
+          "type": "string",
+          "enum": ["normal", "silence", "filler", "repeat", "stutter", "falseStart", "offTopic", "manual"],
+          "description": "normal=正常语句；silence=气口；filler=口水话；repeat=重复；stutter=卡顿；falseStart=口误重来；offTopic=跑题；manual=用户手删"
+        },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1, "description": "对本次判断的把握" },
+        "text": { "type": "string", "description": "这段说的话（抄自转写稿）" },
+        "note": { "type": "string", "description": "补充说明，如与哪段重复" },
+        "userEdited": { "type": "boolean", "default": false }
+      }
+    },
+
+    "cutStats": {
+      "type": "object",
+      "properties": {
+        "originalSec": { "type": "number" },
+        "finalSec": { "type": "number" },
+        "removedSec": { "type": "number" },
+        "segmentCount": { "type": "integer" },
+        "keepCount": { "type": "integer" },
+        "dropCount": { "type": "integer" },
+        "dropByReason": {
+          "type": "object",
+          "additionalProperties": { "type": "integer" }
+        }
+      }
+    },
+
+    "reviewState": {
+      "type": "object",
+      "properties": {
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"], "default": "pending" },
+        "reviewedAt": { "type": "string" },
+        "userDropAdded": { "type": "integer", "default": 0 },
+        "userKeepRestored": { "type": "integer", "default": 0 },
+        "comment": { "type": "string" }
+      }
+    }
+  }
+}

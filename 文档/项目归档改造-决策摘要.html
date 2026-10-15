@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目归档改造 · 决策摘要</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 44px 24px 72px;
+    background-color: #0a1420;
+    background-image:
+      linear-gradient(rgba(90,150,220,.075) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(90,150,220,.075) 1px, transparent 1px);
+    background-size: 40px 40px;
+    color: #e8eef6;
+    font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    line-height: 1.7; font-size: 15px;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 34px; }
+  .kicker {
+    display: inline-block; font-size: 13px; letter-spacing: .12em;
+    color: #7fb6ff; border: 1px solid rgba(127,182,255,.35);
+    border-radius: 999px; padding: 4px 16px; margin-bottom: 16px;
+  }
+  h1 { font-size: 28px; margin: 0 0 10px; font-weight: 600; }
+  header p { color: #93a6bd; margin: 0; font-size: 15px; }
+
+  .card {
+    background: #111e2d; border: 1px solid rgba(120,180,255,.14);
+    border-radius: 14px; padding: 24px 26px; margin-bottom: 20px;
+  }
+  .card h2 {
+    font-size: 17px; margin: 0 0 4px; font-weight: 600;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .card h2 .num {
+    width: 25px; height: 25px; flex: none; border-radius: 7px;
+    background: rgba(127,182,255,.14); color: #7fb6ff;
+    font-size: 13px; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .card .sub { color: #93a6bd; font-size: 13px; margin: 0 0 16px; }
+
+  .verdict {
+    border: 1px solid rgba(240,198,116,.35);
+    background: linear-gradient(180deg, rgba(240,198,116,.10), rgba(240,198,116,.02));
+    border-radius: 14px; padding: 22px 26px; margin-bottom: 20px;
+  }
+  .verdict .big { font-size: 19px; color: #f5d99a; font-weight: 600; line-height: 1.55; }
+  .verdict .small { color: #93a6bd; margin-top: 8px; font-size: 13.5px; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+  th, td { text-align: left; padding: 9px 11px; font-size: 13.5px; border-bottom: 1px solid rgba(120,180,255,.10); vertical-align: top; }
+  th { color: #93a6bd; font-weight: 500; font-size: 12.5px; letter-spacing: .04em; }
+  td b { color: #cfe2ff; }
+
+  .flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 6px; }
+  .step {
+    background: rgba(127,182,255,.10); border: 1px solid rgba(127,182,255,.22);
+    border-radius: 10px; padding: 8px 12px; font-size: 13px;
+  }
+  .step b { color: #7fb6ff; }
+  .arrow { color: #5c7a99; font-size: 14px; }
+
+  .three { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 4px; }
+  .col { border-radius: 11px; padding: 14px 15px; font-size: 13.5px; }
+  .col h3 { margin: 0 0 8px; font-size: 14px; font-weight: 600; }
+  .col ul { margin: 0; padding-left: 18px; }
+  .col li { margin-bottom: 5px; }
+  .c-go { background: rgba(86,201,140,.09); border: 1px solid rgba(86,201,140,.28); }
+  .c-go h3 { color: #6fd39a; }
+  .c-del { background: rgba(240,120,120,.09); border: 1px solid rgba(240,120,120,.28); }
+  .c-del h3 { color: #f08a8a; }
+  .c-keep { background: rgba(127,182,255,.09); border: 1px solid rgba(127,182,255,.28); }
+  .c-keep h3 { color: #7fb6ff; }
+
+  .no { color: #93a6bd; }
+  .tag { display:inline-block; font-size:12px; padding:1px 8px; border-radius:999px; background:rgba(127,182,255,.14); color:#7fb6ff; margin-left:6px; }
+  .tag.warn { background: rgba(240,120,120,.14); color:#f08a8a; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <span class="kicker">V1.13.0 · 决策摘要</span>
+    <h1>项目归档改造</h1>
+    <p>从"点一下挪个位置" → 变成"整包搬进移动硬盘，本地只留个小桩"</p>
+  </header>
+
+  <div class="verdict">
+    <div class="big">今天的「归档」只改一个状态字段，一个文件都不动。</div>
+    <div class="small">改造后它会真的搬文件：搬进 E 盘、删掉逐镜画面、本地留下还能读的小桩 + 复盘数据。</div>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">1</span>点下「归档」之后的六步</h2>
+    <p class="sub">顺序是铁律：先复制 → 校验 → 全过 → 才删。绝不边搬边删。</p>
+    <div class="flow">
+      <div class="step"><b>①</b> 探盘（认序列号）</div>
+      <span class="arrow">→</span>
+      <div class="step"><b>②</b> 查门槛（要有成片）</div>
+      <span class="arrow">→</span>
+      <div class="step"><b>③</b> 弹清单给你确认</div>
+      <span class="arrow">→</span>
+      <div class="step"><b>④</b> 整包复制进 E 盘</div>
+      <span class="arrow">→</span>
+      <div class="step"><b>⑤</b> 逐个校验 → 才删本地</div>
+      <span class="arrow">→</span>
+      <div class="step"><b>⑥</b> 后台更新台账</div>
+    </div>
+    <p class="sub" style="margin-top:14px;margin-bottom:0">
+      盘不在 → 直接拒绝，什么也不做；中途掉盘或指纹对不上 → 立刻中止，一个都不删。
+    </p>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">2</span>什么搬走、什么删掉、本地留什么</h2>
+    <p class="sub">一句话判据：<b>"镜头渲染出来的画面"删，"能重渲出它的代码/封面/脚本"留。</b></p>
+    <div class="three">
+      <div class="col c-go">
+        <h3>搬进 E 盘</h3>
+        <ul>
+          <li>project.json、script.md</li>
+          <li>stages\ 全套</li>
+          <li>镜头代码（.html / .py / .json）</li>
+          <li>素材、封面</li>
+          <li><b>成片 mp4</b></li>
+        </ul>
+      </div>
+      <div class="col c-del">
+        <h3>E 盘不留 · 本地删</h3>
+        <ul>
+          <li><b>逐镜 mp4 / silent.mp4</b></li>
+          <li>卡片图 images\</li>
+          <li>_备份\</li>
+          <li>渲染工作区\</li>
+          <li>media\ 里的大视频</li>
+        </ul>
+      </div>
+      <div class="col c-keep">
+        <h3>本地留（小桩）</h3>
+        <ul>
+          <li>project.json（基础＋归档信息）</li>
+          <li>script.md</li>
+          <li>stages\ 全套文本<br><span class="no">含 shotlist.json 分镜稿</span></li>
+          <li>公共素材、封面小图</li>
+          <li><b>review\（复盘数据）</b></li>
+        </ul>
+      </div>
+    </div>
+    <p class="sub" style="margin-top:14px;margin-bottom:0">
+      桩就留在原位置 <span class="no">D:\视频创作\工作台\项目\&lt;项目名&gt;\</span> —— 工作台零改动就能读到它。
+    </p>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">3</span>复盘：跟归档彻底解耦 <span class="tag">新页面</span></h2>
+    <p class="sub">硬盘不一定插着，所以复盘绝不能"只有归档后才能填"。</p>
+    <table>
+      <tr><th style="width:120px">入口</th><td>项目内独立导航页 <b>「复盘」</b>，<b>进行中 + 已归档都能进</b></td></tr>
+      <tr><th>填什么</th><td>平台 / 发布日 / 统计日 / 距发布天数 ＋ 播放、完播率、点赞、涨粉、收藏、评论、转发、主页访问</td></tr>
+      <tr><th>怎么存</th><td><b>多平台 × 多次快照</b>（时间序列，为将来画趋势留形状）→ 存 <b>本地</b> <span class="no">&lt;项目&gt;\review\review.json</span></td></tr>
+      <tr><th>这次做到哪</th><td>录入 ＋ 本地存档 ＋ 一屏看结果。　<span class="no">图表页不做，留给你说的"将来做数据可视化"</span></td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">4</span>归档之后，工作台里看到什么</h2>
+    <table>
+      <tr><th style="width:120px">打开项目</th><td>直接落到「复盘」页，顶部一条归档说明条；剪辑页打不开（没必要打开）</td></tr>
+      <tr><th>两个按钮</th><td><b>「取回工程」</b>（从 E 盘整包拷回来）｜<b>「打开归档文件夹」</b></td></tr>
+      <tr><th>卡片按钮</th><td>原来的「恢复」→ 改成 <b>「取回工程」</b>（取回成功自动回到进行中）</td></tr>
+      <tr><th>还读得到</th><td>基础信息、立项时间、归档时间、复盘记录、自媒体数据　<span class="tag">不会变成黑箱</span></td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">5</span>这次明确不做</h2>
+    <table>
+      <tr><td style="width:46%">江西 79GB、读书博主素材库等散装内容</td><td class="no">不动，你自己手动归纳</td></tr>
+      <tr><td>图表 / 可视化页</td><td class="no">留给"将来做数据可视化"</td></tr>
+      <tr><td>台账库里的 projects / review 表</td><td class="no">作废 —— 硬盘只是文档归纳箱，不管项目</td></tr>
+      <tr><td>独立项目数据库</td><td class="no">项目少，扫目录聚合够用；多了再加缓存</td></tr>
+      <tr><td>历史 E 盘结构（vlog\、读书博主\）</td><td class="no">这次不动</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">6</span>测试前先"恢复现场"<span class="tag warn">有数据风险</span></h2>
+    <p class="sub">今天另一个会话已经手工搬了两份，要先清回去再测新流程。</p>
+    <table>
+      <tr><td style="width:44%">E 盘 · 粥糊了…（112 文件）</td><td>D 盘原件齐全 → 移到 <span class="no">E:\_回收\20261015_迁移回滚\</span></td></tr>
+      <tr><td>E 盘 · 思辨与立场（22 文件）</td><td>★ 混着 <b>5 个 E 盘独有文件</b>（封面×2 ＋ 讲稿×3，<b>D 盘没有源</b>）<br>→ <b>先复制回 D 盘保底</b>，再移走</td></tr>
+    </table>
+  </div>
+
+</div>
+</body>
+</html>

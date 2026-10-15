@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>⑤「开始出片」按钮为什么灰着</title>
+<style>
+  :root{
+    --bg:#0b1020; --card:#141b2e; --line:#25314d;
+    --txt:#f3ecdc; --dim:#9aa8bf; --gold:#f0d68a; --blue:#8fb8d8;
+    --red:#e08a7a; --green:#7fc79b;
+  }
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);
+    font-family:'Noto Serif SC','Songti SC','Microsoft YaHei',system-ui,serif;}
+  body{
+    background-image:
+      linear-gradient(rgba(120,160,220,.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(120,160,220,.07) 1px, transparent 1px);
+    background-size:46px 46px, 46px 46px;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:44px 28px 60px;}
+  h1{font-size:30px;margin:0 0 6px;letter-spacing:1px;}
+  .sub{color:var(--dim);font-size:15px;margin-bottom:26px;}
+  .lead{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gold);
+    border-radius:14px;padding:18px 22px;font-size:18px;line-height:1.75;margin-bottom:30px;}
+  .lead b{color:var(--gold);}
+  h2{font-size:19px;margin:38px 0 14px;color:var(--gold);letter-spacing:1px;}
+  .steps{display:grid;grid-template-columns:1fr;gap:10px;}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:13px 18px;font-size:15px;line-height:1.7;display:grid;
+    grid-template-columns:34px 1fr;gap:14px;align-items:start;}
+  .n{width:26px;height:26px;border-radius:50%;background:#1d2942;border:1px solid var(--line);
+    color:var(--gold);font-size:14px;text-align:center;line-height:25px;font-weight:700;}
+  .step.dead{border-left:4px solid var(--red);}
+  .step.ok{border-left:4px solid var(--green);}
+  .step code{background:#0a0f1c;border:1px solid var(--line);border-radius:5px;padding:1px 6px;
+    font-family:Consolas,monospace;font-size:13px;color:var(--blue);}
+  table{width:100%;border-collapse:collapse;background:var(--card);border-radius:14px;overflow:hidden;
+    font-size:14.5px;}
+  th,td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--line);}
+  th{background:#182238;color:var(--gold);font-weight:600;font-size:13.5px;letter-spacing:.5px;}
+  tr:last-child td{border-bottom:none;}
+  td.yes{color:var(--green);font-weight:700;}
+  td.no{color:var(--red);font-weight:700;}
+  td code{background:#0a0f1c;border:1px solid var(--line);border-radius:5px;padding:1px 6px;
+    font-family:Consolas,monospace;font-size:13px;color:var(--blue);}
+  .flow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+  .box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;}
+  .box .tag{font-size:12px;color:var(--dim);letter-spacing:1px;margin-bottom:8px;}
+  .box h3{margin:0 0 10px;font-size:16.5px;}
+  .box ul{margin:0;padding-left:18px;font-size:14px;line-height:1.85;color:#d7dfec;}
+  .box.hl{border-color:var(--gold);box-shadow:0 0 0 1px rgba(240,214,138,.25) inset;}
+  .foot{margin-top:36px;color:var(--dim);font-size:13px;line-height:1.9;border-top:1px solid var(--line);
+    padding-top:16px;}
+  .foot code{background:#0a0f1c;border:1px solid var(--line);border-radius:5px;padding:1px 6px;
+    font-family:Consolas,monospace;font-size:12.5px;color:var(--blue);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>⑤「开始出片」按钮灰着 —— 不是数据缺，是<b>判据问错了问题</b></h1>
+  <div class="sub">结论 + 证据 + 已修 · 2026-10-03 · V1.10.12（R-19）</div>
+
+  <div class="lead">
+    一句话：这颗按钮在问「<b>第①步的波形解码好了没</b>」——<br>
+    可你这个会话<b>根本没进过第①步</b>，所以答案永远是"没有"，按钮就永远灰着。<br>
+    <span style="color:var(--dim);font-size:15px;">
+      你的项目数据其实一样都不缺（216 段粗剪 · 精剪已应用 90 块 · 源文件在 · 26 镜产物齐）。</span>
+  </div>
+
+  <h2>① 事情是怎么发生的（一条链，四步就锁死了）</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="n">1</div>
+      <div>你打开项目。工作台记得你上次停在第⑤步
+        （配置文件里 <code>LastNavId = step.export</code>）→ <b>直接落在⑤</b>。</div>
+    </div>
+    <div class="step dead">
+      <div class="n">2</div>
+      <div>★ <b>源素材的解码只有第①步页面被打开时才做</b>（打开项目只是把文件路径记下来排队）。
+        你这次没进① → <code>Pcm</code>（内存里那份波形）一直是空的。</div>
+    </div>
+    <div class="step dead">
+      <div class="n">3</div>
+      <div>而⑤页的放行条件是 <code>HasSource && HasDecision</code>，
+        其中 <code>HasSource</code> 的定义是 <b>波形不为空</b> → 第 2 步一空，这里必然 false。</div>
+    </div>
+    <div class="step dead">
+      <div class="n">4</div>
+      <div>→ 按钮恒灰；提示还谎报「还没有加载源素材。」（文件明明躺在磁盘上）</div>
+    </div>
+    <div class="step ok">
+      <div class="n">✓</div>
+      <div><b>修好之后</b>：判据换成"<b>磁盘上有没有源素材</b>"（<code>HasSourceFile</code>）——
+        跟"解码做到哪一步"彻底脱钩，进⑤就能点。</div>
+    </div>
+  </div>
+
+  <h2>② 改前 / 改后（一句话对照）</h2>
+  <table>
+    <tr><th style="width:34%">问的问题</th><th style="width:26%">你的项目实际答案</th><th>结论</th></tr>
+    <tr>
+      <td>旧：内存里的波形解码好了没？<br><code>HasSource</code></td>
+      <td class="no">没进过① → 空</td>
+      <td class="no">按钮永远灰 ← 报障现场</td>
+    </tr>
+    <tr>
+      <td>新：磁盘上有没有源素材？<br><code>HasSourceFile</code></td>
+      <td class="yes">在（大通回族土族自治县.m4a）</td>
+      <td class="yes">按钮可点 ✓</td>
+    </tr>
+    <tr>
+      <td>有没有剪辑决策？<br><code>HasDecision</code></td>
+      <td class="yes">有（精剪已应用 · 90 块）</td>
+      <td class="yes">✓</td>
+    </tr>
+  </table>
+
+  <h2>③ 本次一共动了 4 处（都是小改）</h2>
+  <div class="flow">
+    <div class="box hl">
+      <div class="tag">状态层</div>
+      <h3>拆开两个概念</h3>
+      <ul>
+        <li><code>HasSource</code> = 解码好了没（①②才需要）</li>
+        <li><b>新增 <code>HasSourceFile</code></b> = 磁盘上有没有源素材<br>
+          —— <b>"能不能往下走"以后只用它</b></li>
+      </ul>
+    </div>
+    <div class="box">
+      <div class="tag">⑤ 组接页</div>
+      <h3>换判据 + 自愈</h3>
+      <ul>
+        <li>构造时算一次，<b>进页面再算一次</b></li>
+        <li>没进过①时<b>自己 ffprobe 一次</b>（只读、毫秒级）—— 免得「源素材成片」被错报成「音频成片」</li>
+        <li>缺什么就说什么（没选文件 / 文件被挪走 / 没决策，分三种）</li>
+      </ul>
+    </div>
+    <div class="box">
+      <div class="tag">③ 分镜页</div>
+      <h3>顺手收口</h3>
+      <ul>
+        <li>那一页 2026-09-29 <b>已经手搓过同一条判断</b>绕开这个坑</li>
+        <li>只在那一页绕 → ⑤ 就重摔一次</li>
+        <li>→ 现在统一引用状态层那一处，<b>全系统只有一份定义</b></li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>④ 你现在要做什么</h2>
+  <div class="lead" style="border-left-color:var(--green);">
+    <b>重开一次工作台</b>（新版已打包：14:01，版本号 1.10.12）→ 直接进第⑤步 →
+    「开始出片」就能点了。26 镜产物 26/26 齐，选「画面成片」直接拼。
+  </div>
+
+  <div class="foot">
+    代码依据：<code>WorkbenchState.cs:412 HasSourceFile</code>（新判据，磁盘事实）·
+    <code>Step4ExportView.xaml.cs:186 RefreshReady</code>（放行判据）·
+    <code>:213 EnsureProbeAsync</code>（只读补探测）·
+    <code>Step2ShotView.xaml.cs:283</code>（手搓判断收口）。<br>
+    风险登记 <b>R-19</b>；待办 <b>T-22</b>（已修）；治本项 <b>T-23</b>（打开项目即后台解码，暂不做）。<br>
+    ★ 这类病在渲染页也犯过一次（"渲完不变绿"，R-17）：<b>状态只在某一页里被建立</b> ——
+    以后遇到"某按钮灰 / 某状态不刷新"，先问"它看的是磁盘事实，还是内存里某个页面顺手留下的东西"。
+  </div>
+
+</div>
+</body>
+</html>

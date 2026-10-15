@@ -1,0 +1,40 @@
+# ============================================================
+#  翊瑄的工作台（LiteCut）· git 属性
+# ------------------------------------------------------------
+#  ★ 本工程源码**从头到尾都是 LF**（214 个文本文件实测全 LF）。
+#    但本机 PortableGit 的全局配置是 core.autocrlf=true
+#    （= 检出时会把 LF 变成 CRLF），那会让 git 悄悄改掉你的源码换行。
+#    所以这里显式钉死：**文本一律 LF、二进制一律别碰**。
+#
+#  一句话：让 git 只管记录，不要顺手改文件。
+# ============================================================
+
+# ---- 文本：按 LF 存、也按 LF 检出 ----
+* text=auto eol=lf
+
+# ---- 二进制：明确声明，永远不做换行转换 / 不做文本 diff ----
+*.ico    binary
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.jfif   binary
+*.gif    binary
+*.bmp    binary
+*.wav    binary
+*.mp3    binary
+*.m4a    binary
+*.mp4    binary
+*.mov    binary
+*.zip    binary
+*.7z     binary
+*.pdf    binary
+*.ttf    binary
+*.otf    binary
+*.woff   binary
+*.woff2  binary
+*.dll    binary
+*.exe    binary
+*.pyc    binary
+
+# ---- 文档里的 HTML 报告，git 别把它当代码统计（语言统计会更准）----
+文档/**/*.html  linguist-documentation

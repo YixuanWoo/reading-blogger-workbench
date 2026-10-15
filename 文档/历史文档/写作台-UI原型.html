@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>写作台 · UI 原型（可交互）</title>
+<style>
+:root{
+  --bg-deep:#0E1013; --bg-nav:#14171C; --bg-card:#1A1E24; --bg-input:#232830;
+  --border:#2A3038; --text:#E6E9EF; --dim:#8B93A1; --faint:#78828F;
+  --accent:#3B82F6; --accent-hot:#2563EB; --danger:#EF4444; --ok:#22C55E; --warn:#F59E0B;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg-deep);color:var(--text);font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;font-size:14px;height:100vh;overflow:hidden}
+.app{display:flex;height:100vh}
+
+/* ============ 导航栏（照抄 NavTree + 新的三组） ============ */
+.nav{width:216px;background:var(--bg-nav);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.nav-hd{padding:14px 16px 10px;font-size:12px;color:var(--faint)}
+.nav-item{display:flex;align-items:center;gap:10px;height:42px;margin:2px 8px;padding:0 10px;border-radius:6px;color:var(--dim);cursor:pointer;font-size:14px;transition:background .12s}
+.nav-item:hover{background:#1E2229;color:var(--text)}
+.nav-item.on{background:var(--bg-card);color:var(--text);box-shadow:inset 0 0 0 1px var(--border)}
+.nav-ico{width:20px;text-align:center;font-size:13px;color:var(--faint);flex-shrink:0}
+.nav-item.on .nav-ico{color:var(--accent)}
+.nav-grp{padding:14px 18px 5px;font-size:11px;color:#5A616E;letter-spacing:2px}
+.nav-badge{margin-left:auto;font-size:10px;background:var(--warn);color:#1A1200;padding:1px 6px;border-radius:8px;font-weight:600}
+.nav-sp{flex:1}
+
+/* ============ 主区 ============ */
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.hd{padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--bg-card)}
+.hd h1{font-size:16px;font-weight:500}
+.hd .sub{font-size:12px;color:var(--faint)}
+.hd-r{margin-left:auto;display:flex;gap:8px;align-items:center}
+
+/* 按钮：照抄 Btn / BtnPrimary */
+.btn{background:var(--bg-input);border:1px solid var(--border);color:var(--text);padding:6px 13px;border-radius:6px;font-size:13px;cursor:pointer;font-family:inherit;transition:background .12s}
+.btn:hover{background:#2C323B}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.pri:hover{background:var(--accent-hot)}
+.btn.sm{padding:3px 9px;font-size:12px}
+.btn.gh{background:transparent}
+
+/* 三栏 */
+.body{flex:1;display:grid;grid-template-columns:236px 1fr 340px;min-height:0}
+
+/* 大纲树 */
+.outline{background:var(--bg-nav);border-right:1px solid var(--border);display:flex;flex-direction:column;min-height:0}
+.ol-hd{padding:11px 14px;font-size:12px;color:var(--dim);border-bottom:1px solid var(--border);display:flex;align-items:center}
+.ol-hd .n{margin-left:auto;color:var(--faint);font-size:11px}
+.ol-list{flex:1;overflow-y:auto;padding:6px}
+.ol{padding:7px 9px;border-radius:6px;cursor:pointer;margin-bottom:2px;border-left:2px solid transparent}
+.ol:hover{background:#1B1F25}
+.ol.on{background:var(--bg-card);border-left-color:var(--accent)}
+.ol-t{font-size:13px;color:var(--text);display:flex;gap:7px;align-items:baseline}
+.ol-id{font-size:11px;color:var(--faint);font-family:Consolas,monospace}
+.ol-m{font-size:11px;color:var(--faint);margin-top:3px;padding-left:2px}
+.dot{width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0}
+.dot.ok{background:var(--ok)} .dot.rd{background:var(--warn)} .dot.no{background:#3D444E}
+
+/* 卡片流主区 */
+.flow{flex:1;overflow-y:auto;padding:16px;min-height:0}
+.flow-hd{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.flow-hd .t{font-size:13px;color:var(--dim)}
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:13px 15px;margin-bottom:9px;cursor:pointer;transition:border-color .12s}
+.card:hover{border-color:#3A424E}
+.card.on{border-color:var(--accent);box-shadow:0 0 0 1px rgba(59,130,246,.25)}
+.card.dirty{border-left:3px solid var(--warn)}
+.card-hd{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.card-id{font-family:Consolas,monospace;font-size:11.5px;color:var(--faint)}
+.card-txt{font-size:14px;line-height:1.85;color:var(--text);white-space:pre-wrap}
+.card-ft{display:flex;gap:8px;align-items:center;margin-top:10px;padding-top:9px;border-top:1px solid var(--border);font-size:11.5px;color:var(--faint)}
+.chip{padding:1.5px 8px;border-radius:9px;font-size:11px;border:1px solid}
+.chip.ok{color:var(--ok);border-color:rgba(34,197,94,.35);background:rgba(34,197,94,.08)}
+.chip.rd{color:var(--warn);border-color:rgba(245,158,11,.35);background:rgba(245,158,11,.08)}
+.chip.no{color:var(--faint);border-color:var(--border);background:#20242B}
+.chip.est{color:var(--dim);border-color:var(--border);background:#20242B}
+
+/* 详情栏 */
+.det{background:var(--bg-nav);border-left:1px solid var(--border);display:flex;flex-direction:column;min-height:0;overflow-y:auto}
+.det-sec{padding:13px 15px;border-bottom:1px solid var(--border)}
+.det-lbl{font-size:11px;color:var(--faint);margin-bottom:8px;letter-spacing:.5px}
+.ta{width:100%;min-height:210px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:10px 11px;font-size:13.5px;line-height:1.85;font-family:inherit;resize:vertical;outline:none}
+.ta:focus{border-color:var(--accent)}
+.kv{display:flex;justify-content:space-between;font-size:12.5px;padding:5px 0}
+.kv .k{color:var(--faint)} .kv .v{color:var(--text);font-family:Consolas,monospace}
+.act{display:flex;gap:7px;flex-wrap:wrap}
+.meter{height:5px;background:#20242B;border-radius:3px;overflow:hidden;margin-top:7px}
+.meter i{display:block;height:100%;background:var(--accent)}
+.hint{font-size:11.5px;color:var(--faint);line-height:1.7;margin-top:8px}
+.warnbox{background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.3);border-radius:6px;padding:9px 11px;font-size:12px;color:#FCD34D;line-height:1.7;margin-top:10px}
+
+/* 底部状态栏 */
+.st{padding:7px 18px;border-top:1px solid var(--border);background:#12151A;font-size:11.5px;color:var(--faint);display:flex;gap:18px;align-items:center}
+.st b{color:var(--dim);font-weight:500}
+.toast{position:fixed;bottom:56px;left:50%;transform:translateX(-50%);background:var(--bg-input);border:1px solid var(--accent);color:var(--text);padding:9px 18px;border-radius:7px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.on{opacity:1}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:#2C323B;border-radius:5px}
+::-webkit-scrollbar-track{background:transparent}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ========== 导航栏：真实 NavTree 结构 + 新增的三组分组 ========== -->
+  <div class="nav">
+    <div class="nav-hd">翊瑄的工作台</div>
+
+    <div class="nav-grp">文 稿</div>
+    <div class="nav-item on" data-pg="script"><span class="nav-ico">0</span>写作台<span class="nav-badge">待导出</span></div>
+
+    <div class="nav-grp">成 片</div>
+    <div class="nav-item"><span class="nav-ico">1</span>音频粗剪</div>
+    <div class="nav-item"><span class="nav-ico">2</span>精剪</div>
+    <div class="nav-item"><span class="nav-ico">3</span>分镜设计</div>
+    <div class="nav-item"><span class="nav-ico">4</span>渲染</div>
+    <div class="nav-item"><span class="nav-ico">5</span>组接导出</div>
+
+    <div class="nav-grp">资 源</div>
+    <div class="nav-item"><span class="nav-ico">▤</span>素材库</div>
+
+    <div class="nav-sp"></div>
+    <div class="nav-hd" style="border-top:1px solid var(--border);padding:10px 16px">思辨与立场 · 文稿驱动</div>
+  </div>
+
+  <!-- ========== 主区 ========== -->
+  <div class="main">
+    <div class="hd">
+      <h1>写作台</h1>
+      <span class="sub">script.md · 9 段 · 约 1,842 字 · 预估 8分20秒</span>
+      <div class="hd-r">
+        <button class="btn gh sm">打开 script.md</button>
+        <button class="btn gh sm">用 Obsidian 打开</button>
+        <button class="btn" onclick="toast('已保存 → script.md（无 BOM，原子写）')">保存</button>
+        <button class="btn pri" onclick="toast('已导出 → stages\\01-transcript\\transcript.json')">导出为转写稿</button>
+      </div>
+    </div>
+
+    <div class="body">
+      <!-- 大纲树 -->
+      <div class="outline">
+        <div class="ol-hd">大纲<span class="n">9 段</span></div>
+        <div class="ol-list" id="ol"></div>
+        <div style="padding:9px;border-top:1px solid var(--border);display:flex;gap:6px">
+          <button class="btn sm gh" style="flex:1" onclick="toast('新建段落')">＋ 段落</button>
+          <button class="btn sm gh" onclick="toast('合并到上一段')" title="与上一段合并">⇧合</button>
+          <button class="btn sm gh" onclick="toast('在段中拆分')" title="拆分本段">✂拆</button>
+        </div>
+      </div>
+
+      <!-- 段落卡片流 -->
+      <div class="flow">
+        <div class="flow-hd">
+          <span class="t">段落卡片流 · 点任一段在右侧编辑</span>
+          <span style="margin-left:auto;font-size:11.5px;color:var(--faint)">拖动可排序 · 顺序变了身份不变（看 s01，不看序号）</span>
+        </div>
+        <div id="cards"></div>
+      </div>
+
+      <!-- 段落详情 -->
+      <div class="det">
+        <div class="det-sec">
+          <div class="det-lbl">段落正文 · s<span id="dId">01</span></div>
+          <textarea class="ta" id="ta" oninput="onEdit(this.value)"></textarea>
+          <div class="hint">改完这段，下面会自动标成「待重录」——因为录音台共用同一份段落节点。</div>
+        </div>
+
+        <div class="det-sec">
+          <div class="det-lbl">状态</div>
+          <div class="kv"><span class="k">录音</span><span class="v" id="dAudio">—</span></div>
+          <div class="kv"><span class="k">实测时长</span><span class="v" id="dDur">—</span></div>
+          <div class="kv"><span class="k">字数 / 句数</span><span class="v" id="dCount">—</span></div>
+          <div class="kv"><span class="k">重录遍数</span><span class="v" id="dTake">0</span></div>
+          <div class="meter"><i id="dMeter" style="width:0"></i></div>
+          <div class="hint" id="dHint">还没录音 → 时长是按字数估的，<b style="color:var(--warn)">不准</b>。</div>
+        </div>
+
+        <div class="det-sec">
+          <div class="det-lbl">操作</div>
+          <div class="act">
+            <button class="btn sm pri" onclick="toast('开始录音（期二 · NAudio 已就位）')">● 录音</button>
+            <button class="btn sm" onclick="toast('重录本段，旧 take 进 takes\\ 留底')">↻ 重录</button>
+            <button class="btn sm" onclick="toast('▶ 试听本段')">▶ 试听</button>
+            <button class="btn sm gh" onclick="toast('拆分本段')">✂ 拆</button>
+            <button class="btn sm gh" onclick="toast('与下一段合并')">⇩ 合</button>
+          </div>
+        </div>
+
+        <div class="det-sec">
+          <div class="det-lbl">交给下游</div>
+          <div class="warnbox">
+            ★ 没点「应用到下游」，粗剪读到的还是<b>上一版</b>稿子。<br>
+            这是全系统铁律，写作台也一样。
+          </div>
+          <button class="btn pri" style="width:100%;margin-top:10px" onclick="toast('已交接 → ① 转写稿已更新')">应用到下游 →</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="st">
+      <span><b>script.md</b> 9 段 / 1,842 字</span>
+      <span>预估总时长 <b>8分20秒</b>（按 4.2 字/秒 估）</span>
+      <span><b style="color:var(--warn)">3 段待重录</b></span>
+      <span style="margin-left:auto">末次保存 18:12 · 无 BOM</span>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const D=[
+ {id:"s01",st:"ok",dur:"18.4s",tk:2,txt:"我们常常以为，一个观点站不住，是因为论证不够严密。可更多时候，问题出在更靠前的地方——我们根本没在讨论同一个问题。"},
+ {id:"s02",st:"ok",dur:"21.1s",tk:1,txt:"语言有一种隐蔽的力量：它不反对你，它只是悄悄地把话题挪走。等你回过神来，争论得热火朝天，两个人说的却是两件事。"},
+ {id:"s03",st:"rd",dur:null,tk:0,txt:"这不是吹毛求疵。当讨论的目标从「弄清事实」滑向「赢得认同」，理性的论证就失去了意义——因为你要说服的不是道理，而是立场。"},
+ {id:"s04",st:"ok",dur:"24.7s",tk:1,txt:"所以真正的辩论，第一步不是亮出你的证据，而是先确认：我们要谈的，是同一个问题吗？这一步花掉十秒，能省下后面两个小时的无谓消耗。"},
+ {id:"s05",st:"rd",dur:null,tk:0,txt:"识别这种滑坡并不难：留意自己什么时候从「是什么」转向了「应该」，从「事实如此」转向了「本来就该」。"},
+ {id:"s06",st:"ok",dur:"19.8s",tk:1,txt:"《思辨与立场》把这套方法讲得很透：先分开事实与价值，再把价值摆到桌面上接受检验，而不是把它藏在语气里。"},
+ {id:"s07",st:"ok",dur:null,tk:0,txt:"很多人以为立场是感性的。其实立场是一套关于「什么更重要」的排序，它可以被追问，也可以被修正。"},
+ {id:"s08",st:"rd",dur:null,tk:0,txt:"真正危险的不是有立场，而是不知道自己站在哪。于是每一种说法都能被解读成对己有利的样子，验证也就永远不必发生。"},
+ {id:"s09",st:"ok",dur:16.3s",tk:1,txt:"下一次你想要反驳的时候，先别急着找对方的漏洞。先问一句：我们说的是同一件事吗？"}
+];
+let cur=0;
+const $=s=>document.querySelector(s);
+const state=D.map((d,i)=>({...d,text:d.txt,dur:d.dur}));
+
+function cnt(t){return t.replace(/\s/g,'').length}
+function sents(t){return t.split(/[。！？；]/).filter(s=>s.trim()).length}
+function est(t){return (cnt(t)/4.2).toFixed(1)}
+
+function render(){
+  // 大纲
+  $("#ol").innerHTML=D.map((d,i)=>`
+   <div class="ol ${i===cur?'on':''}" onclick="pick(${i})">
+     <div class="ol-t"><span class="dot ${d.st}"></span><span class="ol-id">${d.id}</span></div>
+     <div class="ol-m">${sents(d.text)}句 · ${d.dur?d.dur:'估'+est(d.text)+'s'}${state[i].dirty?' · 待重录':''}</div>
+   </div>`).join('');
+  // 卡片
+  $("#cards").innerHTML=D.map((d,i)=>{
+    const dirty=state[i].dirty;
+    return `<div class="card ${i===cur?'on':''} ${dirty?'dirty':''}" onclick="pick(${i})">
+      <div class="card-hd">
+        <span class="card-id">${d.id}</span>
+        <span class="chip ${dirty?'rd':(d.dur?'ok':'no')}">${dirty?'待重录':(d.dur?'已录 '+d.dur:'未录音')}</span>
+        <span class="chip est">${sents(d.text)}句 ${cnt(d.text)}字</span>
+        <span style="margin-left:auto;font-size:11.5px;color:var(--faint)">${d.dur?'实测':'预估'} ${d.dur?d.dur:est(d.text)+'s'}</span>
+      </div>
+      <div class="card-txt">${d.text}</div>
+      <div class="card-ft">
+        <span>永久 ID <b style="color:var(--dim)">${d.id}</b></span>
+        <span>·</span><span>重录 ${state[i].tk} 遍</span>
+        <span>·</span><span>${dirty?'改过稿，录音已失效':'与稿一致'}</span>
+      </div>
+    </div>`}).join('');
+  det();
+}
+
+function det(){
+  const d=state[cur];
+  $("#dId").textContent=d.id.slice(1);
+  $("#ta").value=d.text;
+  $("#dAudio").textContent=d.dur?`seg_${d.id}.wav`:"—";
+  $("#dDur").textContent=d.dur?d.dur+"（实测）":"—";
+  $("#dCount").textContent=`${cnt(d.text)} 字 / ${sents(d.text)} 句`;
+  $("#dTake").textContent=d.tk;
+  $("#dMeter").style.width=Math.min(100,est(d.text)*4)+"%";
+  $("#dHint").innerHTML=d.dur
+    ?"已录实测时长，导出时用它算时间戳 —— <b style='color:var(--ok)'>零误差</b>。"
+    :"还没录音 → 时长是按字数估的，<b style='color:var(--warn)'>不准</b>。导出时会标灰，别当成实测值。";
+}
+
+function pick(i){cur=i;render()}
+function onEdit(v){state[cur].text=v;state[cur].dirty=true;state[cur].dur=null;state[cur].st="rd";render()}
+let tm;
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("on");clearTimeout(tm);tm=setTimeout(()=>t.classList.remove("on"),1900)}
+render();
+</script>
+</body>
+</html>

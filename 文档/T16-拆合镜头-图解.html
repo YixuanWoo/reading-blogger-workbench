@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>T-16 · 拆镜头 / 合镜头 —— 一页看懂</title>
+<style>
+  :root{
+    --bg:#070c18;
+    --panel:#0e1730;
+    --panel2:#121d3a;
+    --panel3:#16223f;
+    --line:rgba(110,155,255,.15);
+    --line2:rgba(110,155,255,.30);
+    --text:#e7eefc;
+    --dim:#93a5c9;
+    --faint:#5d6f96;
+    --blue:#4d9dff;
+    --cyan:#37e0d4;
+    --amber:#ffb347;
+    --red:#ff5d6c;
+    --green:#3ddc97;
+    --purple:#a78bfa;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    color:var(--text);
+    font-family:"Microsoft YaHei","PingFang SC","Hiragino Sans GB",system-ui,-apple-system,"Segoe UI",sans-serif;
+    font-size:15px;
+    line-height:1.75;
+    background:
+      radial-gradient(1200px 600px at 50% -120px, rgba(77,157,255,.13), transparent 62%),
+      linear-gradient(rgba(110,155,255,.042) 1px, transparent 1px) 0 0/44px 44px,
+      linear-gradient(90deg, rgba(110,155,255,.042) 1px, transparent 1px) 0 0/44px 44px,
+      var(--bg);
+    background-attachment:fixed;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{
+    max-width:1080px;
+    margin:0 auto;
+    padding:56px 28px 96px;
+    display:flex;
+    flex-direction:column;
+    gap:64px;
+  }
+
+  /* ---------- hero ---------- */
+  .hero{ text-align:center; }
+  .kicker{
+    display:inline-block;
+    font-size:12px;
+    letter-spacing:.22em;
+    color:var(--blue);
+    border:1px solid var(--line2);
+    background:rgba(77,157,255,.07);
+    border-radius:999px;
+    padding:5px 16px;
+    margin-bottom:22px;
+  }
+  h1{
+    font-size:clamp(27px,4.2vw,44px);
+    line-height:1.25;
+    margin:0 0 18px;
+    font-weight:800;
+    letter-spacing:-.01em;
+    background:linear-gradient(180deg,#ffffff 0%,#a9c6ff 100%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  .lead{
+    max-width:760px;
+    margin:0 auto;
+    color:var(--dim);
+    font-size:16px;
+  }
+  .lead b{ color:var(--red); }
+  .chips{
+    display:flex;
+    justify-content:center;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-top:28px;
+  }
+  .chip{
+    font-size:13px;
+    padding:8px 15px;
+    border-radius:10px;
+    border:1px solid;
+    background:var(--panel);
+    white-space:nowrap;
+  }
+  .chip-red{ border-color:rgba(255,93,108,.42); color:#ffb3ba; }
+  .chip-amber{ border-color:rgba(255,179,71,.42); color:#ffd79a; }
+  .chip-green{ border-color:rgba(61,220,151,.38); color:#9df0c8; }
+
+  /* ---------- section ---------- */
+  .sec{ display:flex; flex-direction:column; gap:18px; }
+  h2{
+    font-size:clamp(19px,2.4vw,25px);
+    margin:0;
+    font-weight:750;
+    display:flex;
+    align-items:center;
+    gap:13px;
+    letter-spacing:-.01em;
+  }
+  .num{
+    flex:none;
+    width:32px;height:32px;
+    border-radius:9px;
+    display:grid;place-items:center;
+    font-size:15px;
+    font-weight:800;
+    color:#04101f;
+    background:linear-gradient(135deg,var(--cyan),var(--blue));
+    box-shadow:0 0 22px rgba(77,157,255,.35);
+  }
+  .sub{ color:var(--dim); margin:0; }
+  .sub b{ color:var(--text); }
+
+  /* ---------- cards ---------- */
+  .grid3{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:14px;
+  }
+  .grid2{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:14px;
+  }
+  .card{
+    background:linear-gradient(180deg,var(--panel2),var(--panel));
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:18px 20px;
+  }
+  .card h3{
+    margin:0 0 8px;
+    font-size:16px;
+    font-weight:700;
+  }
+  .card p{ margin:0; color:var(--dim); font-size:14px; }
+  .ico{
+    width:30px;height:30px;
+    border-radius:8px;
+    display:grid;place-items:center;
+    font-size:14px;font-weight:800;
+    margin-bottom:12px;
+  }
+  .ico.a{ background:rgba(77,157,255,.16); color:var(--blue); border:1px solid rgba(77,157,255,.35); }
+  .ico.b{ background:rgba(167,139,250,.16); color:var(--purple); border:1px solid rgba(167,139,250,.35); }
+  .ico.c{ background:rgba(255,93,108,.15); color:var(--red); border:1px solid rgba(255,93,108,.35); }
+  .tagline{
+    display:inline-block;
+    margin-top:12px;
+    font-size:12.5px;
+    padding:3px 11px;
+    border-radius:7px;
+    font-weight:600;
+  }
+  .tagline.ok{ background:rgba(61,220,151,.13); color:var(--green); }
+  .tagline.bad{ background:rgba(255,93,108,.13); color:var(--red); }
+
+  /* ---------- callout ---------- */
+  .callout{
+    background:linear-gradient(90deg,rgba(77,157,255,.13),rgba(77,157,255,.02));
+    border:1px solid var(--line);
+    border-left:3px solid var(--blue);
+    border-radius:12px;
+    padding:16px 20px;
+    color:#cfe0ff;
+    font-size:15px;
+  }
+  .callout b{ color:#fff; }
+  .callout.warn{
+    background:linear-gradient(90deg,rgba(255,93,108,.14),rgba(255,93,108,.02));
+    border-left-color:var(--red);
+    color:#ffd3d8;
+  }
+  .callout.warn b{ color:#fff; }
+  .callout.good{
+    background:linear-gradient(90deg,rgba(61,220,151,.12),rgba(61,220,151,.02));
+    border-left-color:var(--green);
+    color:#c6f4de;
+  }
+  .callout.good b{ color:#fff; }
+  .code{
+    font-family:"Cascadia Code",Consolas,"SF Mono",Menlo,monospace;
+    font-size:12.5px;
+    color:var(--faint);
+  }
+
+  /* ---------- misalign table ---------- */
+  .misalign{
+    border:1px solid var(--line);
+    border-radius:14px;
+    overflow:hidden;
+    background:var(--panel);
+  }
+  .mrow{
+    display:grid;
+    grid-template-columns:126px repeat(7,1fr);
+    border-bottom:1px solid rgba(110,155,255,.08);
+  }
+  .mrow:last-child{ border-bottom:none; }
+  .mrow.head{ background:var(--panel3); }
+  .mrow.head .mcell{ color:var(--faint); font-size:12.5px; letter-spacing:.06em; }
+  .mcell{
+    padding:11px 6px;
+    text-align:center;
+    font-size:13px;
+    border-right:1px solid rgba(110,155,255,.07);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:2px;
+    min-height:56px;
+  }
+  .mcell:last-child{ border-right:none; }
+  .mlabel{
+    background:var(--panel2);
+    color:var(--dim);
+    font-size:12.5px;
+    text-align:left;
+    padding-left:14px;
+    align-items:flex-start;
+    border-right:1px solid var(--line);
+  }
+  .mcell.ok{ background:rgba(61,220,151,.07); color:#a9ecc9; }
+  .mcell.bad{ background:rgba(255,93,108,.11); color:#ffb0b8; animation:pulse 2.4s ease-in-out infinite; }
+  .mcell.empty{ background:rgba(255,255,255,.02); color:var(--faint); }
+  .mcell small{ font-size:11px; opacity:.75; }
+  @keyframes pulse{
+    0%,100%{ background:rgba(255,93,108,.09); }
+    50%{ background:rgba(255,93,108,.20); }
+  }
+
+  /* ---------- waterline ---------- */
+  .levels{ display:flex; flex-direction:column; gap:10px; }
+  .lvl{
+    display:grid;
+    grid-template-columns:96px 1fr 168px;
+    align-items:center;
+    gap:16px;
+    background:linear-gradient(90deg,var(--panel2),var(--panel));
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px 18px;
+  }
+  .lvl-tag{
+    font-weight:800;
+    font-size:15px;
+    letter-spacing:.04em;
+  }
+  .lvl-what{ font-size:14px; color:var(--text); }
+  .lvl-what small{ display:block; color:var(--faint); font-size:12.5px; margin-top:2px; }
+  .lvl-act{
+    text-align:right;
+    font-size:13.5px;
+    padding:6px 12px;
+    border-radius:9px;
+    border:1px solid;
+    white-space:nowrap;
+  }
+  .l0 .lvl-tag{ color:var(--faint); }  .l0 .lvl-act{ color:var(--dim); border-color:rgba(147,165,201,.28); background:rgba(147,165,201,.06); }
+  .l1 .lvl-tag{ color:var(--blue); }   .l1 .lvl-act{ color:#a9caff; border-color:rgba(77,157,255,.38); background:rgba(77,157,255,.10); }
+  .l2 .lvl-tag{ color:var(--amber); }  .l2 .lvl-act{ color:#ffd79a; border-color:rgba(255,179,71,.42); background:rgba(255,179,71,.10); }
+  .l3 .lvl-tag{ color:var(--red); }    .l3 .lvl-act{ color:#ffb3ba; border-color:rgba(255,93,108,.45); background:rgba(255,93,108,.11); }
+
+  /* ---------- dialog mock ---------- */
+  .mockwrap{
+    display:grid;
+    grid-template-columns:1.05fr .95fr;
+    gap:16px;
+    align-items:start;
+  }
+  .dlg{
+    background:#0c1428;
+    border:1px solid var(--line2);
+    border-radius:14px;
+    overflow:hidden;
+    box-shadow:0 22px 48px rgba(0,0,0,.5);
+  }
+  .dlg-title{
+    padding:15px 18px;
+    font-weight:750;
+    font-size:15.5px;
+    border-bottom:1px solid var(--line);
+    background:var(--panel2);
+  }
+  .dlg-body{ padding:15px 18px; display:flex; flex-direction:column; gap:11px; }
+  .dlg-row{
+    display:flex;
+    align-items:center;
+    gap:11px;
+    font-size:13.5px;
+    background:rgba(255,255,255,.025);
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:9px 12px;
+  }
+  .dnum{
+    font-weight:800;
+    color:var(--cyan);
+    font-family:"Cascadia Code",Consolas,monospace;
+    font-size:13px;
+    min-width:34px;
+  }
+  .dtxt{ flex:1; color:var(--dim); }
+  .dbadge{
+    font-size:12px;
+    padding:2px 10px;
+    border-radius:6px;
+    font-weight:600;
+    white-space:nowrap;
+  }
+  .dbadge.amber{ background:rgba(255,179,71,.16); color:var(--amber); }
+  .dbadge.gray{ background:rgba(147,165,201,.14); color:var(--dim); }
+  .dbadge.red{ background:rgba(255,93,108,.16); color:var(--red); }
+  .dbadge.green{ background:rgba(61,220,151,.15); color:var(--green); }
+  .dbadge.blue{ background:rgba(77,157,255,.15); color:var(--blue); }
+  .dlg-warn{
+    font-size:13px;
+    color:#ffc9cf;
+    background:rgba(255,93,108,.10);
+    border:1px solid rgba(255,93,108,.30);
+    border-radius:9px;
+    padding:10px 12px;
+  }
+  .dlg-warn b{ color:#fff; }
+  .dlabel{ font-size:13px; color:var(--dim); margin-bottom:8px; }
+  .dopts{ display:flex; flex-wrap:wrap; gap:8px; }
+  .dopt{
+    font-size:13px;
+    padding:6px 13px;
+    border-radius:8px;
+    border:1px solid var(--line2);
+    color:var(--dim);
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    background:var(--panel);
+  }
+  .dopt i{
+    width:11px;height:11px;
+    border-radius:50%;
+    border:1.5px solid var(--faint);
+    display:inline-block;
+    flex:none;
+  }
+  .dopt.on{
+    color:#fff;
+    border-color:var(--blue);
+    background:rgba(77,157,255,.14);
+  }
+  .dopt.on i{ border-color:var(--blue); background:var(--blue); box-shadow:0 0 0 2.5px rgba(77,157,255,.22); }
+  .dlg-foot{
+    padding:13px 18px;
+    border-top:1px solid var(--line);
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
+    background:var(--panel2);
+  }
+  .btn{
+    font-size:13.5px;
+    padding:7px 22px;
+    border-radius:9px;
+    font-weight:650;
+  }
+  .btn.ghost{ border:1px solid var(--line2); color:var(--dim); }
+  .btn.primary{ background:linear-gradient(135deg,var(--blue),#3f7ae0); color:#fff; box-shadow:0 6px 18px rgba(77,157,255,.3); }
+  .btn.danger{ background:linear-gradient(135deg,#ff6b78,#e03e4e); color:#fff; box-shadow:0 6px 18px rgba(255,93,108,.28); }
+
+  .side-note{
+    background:linear-gradient(180deg,var(--panel2),var(--panel));
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:18px 20px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .side-note h3{ margin:0; font-size:15px; }
+  .badges{ display:flex; flex-wrap:wrap; gap:8px; }
+  .summarybar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+    background:rgba(77,157,255,.07);
+    border:1px solid var(--line2);
+    border-radius:11px;
+    padding:11px 14px;
+    font-size:13px;
+    color:#cfe0ff;
+  }
+  .dot{ color:var(--faint); margin:0 5px; }
+
+  /* ---------- code pane ---------- */
+  .codepane{
+    background:#070d1b;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:16px 18px;
+    font-family:"Cascadia Code",Consolas,"SF Mono",Menlo,monospace;
+    font-size:12.5px;
+    line-height:1.9;
+    color:#b9cdf0;
+    white-space:pre;
+    overflow-x:auto;
+  }
+  .codepane .c{ color:var(--faint); }
+  .codepane .g{ color:var(--green); }
+  .codepane .r{ color:var(--red); }
+  .codepane .y{ color:var(--amber); }
+  .codepane .b{ color:var(--blue); }
+  .k-sub{
+    font-size:12.5px;
+    color:var(--faint);
+    margin:6px 0 0;
+  }
+
+  /* ---------- decisions ---------- */
+  .dec{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(310px,1fr));
+    gap:11px;
+  }
+  .dec-item{
+    display:flex;
+    gap:13px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px 16px;
+  }
+  .dec-n{
+    flex:none;
+    width:24px;height:24px;
+    border-radius:7px;
+    background:rgba(55,224,212,.14);
+    color:var(--cyan);
+    border:1px solid rgba(55,224,212,.32);
+    display:grid;place-items:center;
+    font-size:12.5px;font-weight:800;
+    margin-top:2px;
+  }
+  .dec-item p{ margin:0; font-size:13.5px; color:var(--dim); }
+  .dec-item p b{ color:var(--text); display:block; margin-bottom:3px; font-size:14px; }
+  .dec-item .rec{ color:var(--green); }
+
+  .foot{
+    text-align:center;
+    color:var(--faint);
+    font-size:12.5px;
+    border-top:1px solid var(--line);
+    padding-top:26px;
+  }
+
+  @media (max-width:860px){
+    .grid3,.grid2,.mockwrap{ grid-template-columns:1fr; }
+    .lvl{ grid-template-columns:1fr; gap:8px; }
+    .lvl-act{ text-align:left; }
+    .mrow{ grid-template-columns:88px repeat(7,1fr); }
+    .mcell{ font-size:11px; padding:8px 3px; }
+    .mlabel{ font-size:11px; padding-left:8px; }
+    .wrap{ padding:36px 16px 64px; gap:46px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="kicker">T-16 · 拆镜头 / 合镜头</div>
+    <h1>一个会「静默出错」的坑</h1>
+    <p class="lead">
+      拆镜头这件事本身没问题，问题出在<b>拆完之后</b> —— 从拆点往后，每个镜头都会读到隔壁镜头的画面。
+      而且它<b>什么都不报</b>。
+    </p>
+    <div class="chips">
+      <div class="chip chip-red">坑 · 拆一镜，后面画面全错位</div>
+      <div class="chip chip-amber">险 · 不报错，成片直接错</div>
+      <div class="chip chip-green">解 · 分档提醒 + 自动改名 + 撤销</div>
+    </div>
+  </header>
+
+  <!-- 1 -->
+  <section class="sec">
+    <h2><span class="num">1</span>问题：一个镜号，同时干三份活</h2>
+    <p class="sub">把 51 个镜头想成 <b>51 个座位</b>，每个座位挂一个号。这个号，同时是三样东西 ——</p>
+    <div class="grid3">
+      <div class="card">
+        <div class="ico a">①</div>
+        <h3>座位号</h3>
+        <p>它在第几位。分镜表从上往下的顺序，靠它。</p>
+        <div class="tagline ok">拆完会跟着变</div>
+      </div>
+      <div class="card">
+        <div class="ico b">②</div>
+        <h3>身份牌</h3>
+        <p>Agent 写的分镜设计、渲染任务、单镜重渲，都靠这个号找对镜子。</p>
+        <div class="tagline bad">拆完不会变</div>
+      </div>
+      <div class="card">
+        <div class="ico c">③</div>
+        <h3>文件名</h3>
+        <p><span class="code">shot_007.mp4</span>、<span class="code">shot_007.body.html</span>、<span class="code">t_007.jpg</span></p>
+        <div class="tagline bad">拆完不会变</div>
+      </div>
+    </div>
+    <div class="callout">
+      你拆一镜 = 在队里插一个人 → <b>后面全体往后挤一位</b>。<br>
+      但只有第①个身份变了。磁盘上那 51 个文件<b>一个都没动</b>，文件里的编号也不会自己改。
+      <span class="code">（代码里 ReindexAndReload() 只做了一件事：改内存顺序）</span>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="sec">
+    <h2><span class="num">2</span>于是：从拆点往后，全错位一格</h2>
+    <p class="sub">假设你已经渲完 51 镜，现在把<b>第 3 镜</b>拆成两镜 ——</p>
+    <div class="misalign">
+      <div class="mrow head">
+        <div class="mcell mlabel">位置</div>
+        <div class="mcell">#1</div>
+        <div class="mcell">#2</div>
+        <div class="mcell">#3</div>
+        <div class="mcell">#4</div>
+        <div class="mcell">#5</div>
+        <div class="mcell">#6</div>
+        <div class="mcell">#7</div>
+      </div>
+      <div class="mrow">
+        <div class="mcell mlabel">这镜应该是</div>
+        <div class="mcell">原①</div>
+        <div class="mcell">原②</div>
+        <div class="mcell">原③前半</div>
+        <div class="mcell empty">原③后半<small>（新镜）</small></div>
+        <div class="mcell">原④</div>
+        <div class="mcell">原⑤</div>
+        <div class="mcell">原⑥</div>
+      </div>
+      <div class="mrow">
+        <div class="mcell mlabel">实际会读到</div>
+        <div class="mcell ok">shot_001</div>
+        <div class="mcell ok">shot_002</div>
+        <div class="mcell ok">shot_003</div>
+        <div class="mcell empty">没有文件</div>
+        <div class="mcell bad">shot_005<small>原⑤的画面</small></div>
+        <div class="mcell bad">shot_006<small>原⑥的画面</small></div>
+        <div class="mcell bad">shot_007<small>原⑦的画面</small></div>
+      </div>
+    </div>
+    <div class="callout warn">
+      从 <b>#5</b> 开始，每一镜读到的都是<b>隔壁镜的画面</b> —— 台词还是自己的，画面已经是别人的了。
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="sec">
+    <h2><span class="num">3</span>最要命的是：它不报错</h2>
+    <div class="callout warn">
+      你点「出片」，软件照常跑完，吐给你一个<b>整片错位的成片</b>。<br>
+      没有弹窗、没有红字、没有任何提示 —— <b>可能发出去之后才发现。</b>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <h3>附带问题 · 合并时设计会消失</h3>
+        <p>合并两镜，被合并那一镜的分镜设计（画面、动效、配图）<b style="color:var(--red)">直接没了</b>，连提示都没有。</p>
+      </div>
+      <div class="card">
+        <h3>附带问题 · 拆完设计「超范围」</h3>
+        <p>原镜的设计还在，但它已经写超了 —— 动效写着 <span class="code">0-3s / 3-6s / 6-9s</span> 三段，现在只剩 3.2 秒。界面毫无感知。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section class="sec">
+    <h2><span class="num">4</span>怎么修（1）：拆合随便拆，交棒才提醒</h2>
+    <p class="sub">核心态度：<b>不拦你</b>，只说清代价，然后帮你收拾干净。</p>
+
+    <div class="callout good">
+      <b>你定的规矩：所有交接只走「应用到下游」。</b>
+      没点它，下游读的还是<b>上一版镜头表</b> —— 拆合只改「草稿」，<b>产物不可能错位</b>。<br><br>
+      <b>分镜页现在恰恰没有这个按钮</b>（现状是拆完 / 合完<b>立刻落盘</b>），T-16 要补的就是它。<br>
+      补上之后：<b>拆合 → 只改草稿；点「应用到下游」→ 才重排 + 改名 + 标「待重渲」</b>。<br><br>
+      ★ 那个"静默错位"的坑，<b>不是靠"改名做得好"来解的，是靠"压根还没交接"来解的</b>。
+    </div>
+
+    <p class="sub" style="margin-top:14px">水位判的是「<b>这一次交接有多贵</b>」——<b>拆的时候一律不打扰</b>，交棒那一刻才按档提醒。</p>
+    <div class="levels">
+      <div class="lvl l0">
+        <div class="lvl-tag">L0</div>
+        <div class="lvl-what">刚切完口播，还没做分镜设计
+          <small>你说的「语义确定之前随便拆」就是这一档</small>
+        </div>
+        <div class="lvl-act">拆合不弹框 · 交接无代价</div>
+      </div>
+      <div class="lvl l1">
+        <div class="lvl-tag">L1</div>
+        <div class="lvl-what">分镜设计已经做好了
+          <small>拆合时轻问一句设计怎么处理；交接时轻确认</small>
+        </div>
+        <div class="lvl-act">拆合轻问设计 · 交接轻确认</div>
+      </div>
+      <div class="lvl l2">
+        <div class="lvl-tag">L2</div>
+        <div class="lvl-what">画面已经渲染了
+          <small>交接时要动磁盘上的文件名</small>
+        </div>
+        <div class="lvl-act">🔴 交接时红字：要改 44 个文件<br>自动帮你改，出错能回滚</div>
+      </div>
+      <div class="lvl l3">
+        <div class="lvl-tag">L3</div>
+        <div class="lvl-what">成片都已经出了
+          <small>同 L2，另外成片作废了</small>
+        </div>
+        <div class="lvl-act">🔴 同上 + 提醒「成片要重拼」</div>
+      </div>
+    </div>
+    <div class="callout">
+      <b>打个比方 —— 装修房子：</b><br>
+      毛坯随便砸墙（L0）　·　刚刷完漆再砸，问你一句（L1）　·　家具进场了要挪 44 件，我们帮你挪（L2）　·　都住进去了还得重新摆一遍（L3）<br><br>
+      <b>关键：砸墙这个动作本身随便做（改草稿），"挪家具"是交钥匙那一刻才发生的事（点交接）。</b>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section class="sec">
+    <h2><span class="num">5</span>怎么修（2）：原来那些设计怎么办</h2>
+    <div class="grid2">
+      <div class="card">
+        <h3 style="color:var(--cyan)">拆成两镜</h3>
+        <p style="margin-bottom:10px">
+          原来那一镜 → 设计<b style="color:var(--text)">保留</b>，但它现在只对得上前半段 → 挂「待复核」<br>
+          新出来的那一镜 → <b style="color:var(--text)">空着</b> → 挂「待补设计」
+        </p>
+        <p><b style="color:var(--text)">像把一篇文章从中间劈开：</b>前半段还是原文，后半段得重写。</p>
+        <p style="margin-top:8px;font-size:12.5px;color:var(--faint)">
+          <b style="color:var(--dim)">另一种选择：</b>两镜都清空、交给 Agent 重新设计 ——
+          弹框里就这<b>两个选项</b>（"按时间自动切分"是伪选项，已删）。
+        </p>
+      </div>
+      <div class="card">
+        <h3 style="color:var(--cyan)">合成一镜</h3>
+        <p style="margin-bottom:10px">
+          两镜的设计 → <b style="color:var(--text)">首尾拼起来</b>（合起来内容确实就是这两段连着）→ 挂「待复核」<br>
+          <b style="color:var(--red)">不再直接丢掉</b>
+        </p>
+        <p><b style="color:var(--text)">像把两篇文章接上：</b>接上正好是全文，但接缝要看一眼。</p>
+      </div>
+    </div>
+    <div class="callout good">
+      ★ 这些「待复核」标记，<b>只有你点「确认无误」才会消失</b>，系统不自动清 ——
+      自动清等于系统替你判断，正是现在出毛病的原因。
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section class="sec">
+    <h2><span class="num">6</span>怎么修（3）：给每个视频贴张防伪标签</h2>
+    <div class="grid2">
+      <div class="card">
+        <h3>是什么</h3>
+        <p>每个渲染好的视频旁边记一张小卡片，写着：<br>
+        「我是第 7 镜，我的台词 / 画面 / 动效 / 时长是这些。」</p>
+      </div>
+      <div class="card">
+        <h3>干嘛用</h3>
+        <p>搬完文件对一下卡片，就知道有没有搬错。光把文件名改对还不够 ——
+        得确认<b style="color:var(--text)">这个视频确实是这一镜的</b>。</p>
+      </div>
+    </div>
+    <div class="callout">
+      <b>像快递单号：</b>包裹换了位置，单号对得上，才算没送错。
+    </div>
+  </section>
+
+  <!-- 7 -->
+  <section class="sec">
+    <h2><span class="num">7</span>镜号到底该怎么办 —— 你说的两个方案</h2>
+    <div class="callout good">
+      <b>先说结论：这两个方案不是二选一，它们是同一件事的两半。</b><br>
+      合起来用才对 —— <b>顺推当主干，ID 当内核</b>。
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h3 style="color:var(--cyan)">镜号 —— 会变</h3>
+        <p>管「排第几」「叫什么名字」：<br>
+          ① 界面显示「第 7 镜」<br>
+          ② 文件名 <span class="code">shot_007.mp4</span><br>
+          ③ Agent 提示词里的镜头表<br>
+          ④ 组接页的块序<br>
+          ⑤ 你嘴上说的「第 7 镜重渲一下」</p>
+      </div>
+      <div class="card">
+        <h3 style="color:var(--green)">ID —— 永不变</h3>
+        <p>管「这份设计 / 这个产物是谁的」：<br>
+          ① 分镜设计归谁<br>
+          ② 渲染产物归谁<br>
+          ③ 留痕文件（Agent 回包 / 提示词）<br>
+          ④ 撤销<br>
+          ⑤ 对账：搬完文件核对有没有搬错</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <b>一句话记住：镜号是「座位号」，ID 是「身份证」。</b>
+      座位会换，身份证不换 —— <b>点名用座位号，找人对身份证。</b>
+    </div>
+
+    <div class="callout warn">
+      <b>那为什么只有镜号顺推还不够？</b>　没有 ID 的顺推 = <b>蒙着眼睛搬 44 个文件</b>，
+      搬错了也不知道（这正是现在的病）。<br>
+      有了 ID 才敢搬：能算清单、能校验、能回滚、<b>能撤销</b>。
+    </div>
+
+    <p class="sub" style="margin-top:6px">
+      于是剩下<b>一个真岔路</b>要你选：<b><span class="code">shot_007.mp4</span> 这个名字，跟不跟镜号走？</b>
+    </p>
+    <div class="grid2">
+      <div class="card" style="border-color:rgba(61,220,151,.42)">
+        <h3 style="color:var(--green)">甲 · 文件名跟着改名　<span class="dbadge green" style="margin-left:4px">推荐</span></h3>
+        <p>
+          拆一镜 → 后面 44 个文件跟着改名<br>
+          目录里一眼对上镜号　<span style="color:var(--green)">★★★</span><br>
+          下游（渲染页 / 组接页 / 提示词）<b style="color:var(--green)">零改动</b><br>
+          <span style="color:var(--amber)">风险：搬到一半崩了 → 靠「计划 + 校验 + 回滚」压住</span>
+        </p>
+      </div>
+      <div class="card">
+        <h3 style="color:var(--purple)">乙 · 文件名按 ID，磁盘永不动</h3>
+        <p>
+          拆一镜 → <b style="color:var(--green)">零磁盘操作</b>（不会半途而废）<br>
+          目录看不懂（"第 9 镜的产物怎么叫 shot_007？"）　<span style="color:var(--amber)">★</span><br>
+          下游 4 处要改（命名 / 解析 / 提示词 / 组接块序）<br>
+          <span style="color:var(--faint)">老项目要一次性把 51 个文件改名</span>
+        </p>
+      </div>
+    </div>
+    <div class="callout good">
+      <b>推荐甲。</b>下游零改动 + 目录可读 + 搬文件的风险有 ID 兜底。<br>
+      乙唯一的优势是「零磁盘风险」，代价是<b>人看不懂目录</b> —— 而这个软件的日常维护，
+      恰恰经常靠人翻目录。<br>
+      ★ <b>先做 ID 的好处是给未来留了门</b>：哪天你觉得搬文件烦，切乙只需改「命名 + 解析」这一层，
+      <b>数据层一行不用动</b>。
+    </div>
+
+    <div class="callout warn" style="border-left-color:var(--amber);background:linear-gradient(90deg,rgba(255,179,71,.12),rgba(255,179,71,.02));color:#ffe3b8">
+      <b>补一刀：ID「藏后台」✅ 但「只活在上游」❌</b><br>
+      产物按镜号命名（对）、ID 不进文件名（对）—— <b>但 ID 得跟着产物一路走到渲染页</b>，
+      否则没人会发现「产物过期」：
+      <div class="codepane" style="margin:12px 0;background:#0c0a06;border-color:rgba(255,179,71,.22);color:#f0dcc0">① 51 镜渲好        <span class="c">磁盘：shot_001..051.mp4（旧镜头表的产物）</span>
+② 回分镜页拆第 3 镜   <span class="c">镜头表变成 52 镜</span>
+③ <span class="r">磁盘一个文件没动</span>   shot_004.mp4 还是「旧第 4 镜」的画面
+                    可第 4 位现在坐的是「原第 3 镜的后半」
+④ 直接去出片        <span class="r">→ 整片错位，而且不报错</span></div>
+      ★ <b>「改名」和「重渲」是两件事</b>：拆一镜后，除拆点那一两镜，其余 40 多镜画面
+      <b>一模一样</b>（第 5 位装的就是原第 4 镜的画面）—— 所以<b>只需改个名字</b>（毫秒级），
+      <b>不必重渲</b>（十几分钟 + 电费）。你说的"按镜号渲染"要对，得"全部重渲"才行。<br>
+      <b>一句话：ID 不上门牌，但入住要刷它。</b>藏后台 ≠ 只在上游。
+    </div>
+
+    <p class="sub" style="margin-top:8px">不管选甲还是乙，<b>算法骨架是同一套</b>：</p>
+    <div class="codepane">拆 #k 成两镜：
+
+① 原镜 k          ID 不变，位置不变，标「待复核」
+② 新镜插入 k+1    分配<span class="b">新 ID</span>，设计字段全空，标「待补设计」
+③ k+1 之后的镜头   镜号 +1，<span class="g">ID 全都不变</span>
+④ 算搬迁计划      [ {id:"s07", from:"shot_007.mp4", to:"shot_008.mp4"}, … ]
+⑤ 执行            按「安全顺序」搬（见下面细节 1）
+⑥ 校验            按 <span class="g">ID + 指纹</span>逐条核对，确认没搬错
+⑦ 收尾            全成功 → 删计划；任一失败 → <span class="y">按计划反向回滚，恢复原状</span>
+
+合并 #k, #k+1：
+  保留靠前那个的 ID；后一个的 ID 记进 mergedInto 后作废
+  k 之后的镜号 −1，其余同上</div>
+
+    <p class="sub" style="margin-top:6px">★ 三个最容易翻车的地方（这才是"算法"的肉）：</p>
+    <div class="grid3">
+      <div class="card">
+        <div class="ico c">1</div>
+        <h3>改名得倒着来</h3>
+        <p style="margin-bottom:10px">从前往后搬会<b style="color:var(--red)">自己盖自己</b>：</p>
+        <div class="codepane" style="font-size:11.5px;padding:11px 12px">❌ 前 → 后
+shot_008 → shot_009
+  └ 盖掉了还没搬的
+    shot_009，<span class="r">原文件永久没了</span>
+
+✅ 后 → 前
+shot_051 → shot_052
+shot_050 → shot_051
+…
+shot_008 → shot_009</div>
+        <p class="k-sub">规则：镜号变大 → 从大号往小号；变小 → 反着来。图省事就统一走 <span class="code">.tmp</span> 中转。</p>
+      </div>
+      <div class="card">
+        <div class="ico c">2</div>
+        <h3>ID 里别带镜号</h3>
+        <p style="margin-bottom:10px">你举例的 <span class="code">123a</span> 这种不行 —— 镜号一变，
+        <b style="color:var(--red)">123 就成了撒谎的遗迹</b>，看 ID 反而误导。</p>
+        <div class="codepane" style="font-size:11.5px;padding:11px 12px">用跟位置无关的号：
+  s01  s02  s03 …
+
+血缘另记一个字段：
+  新镜记 fromId = "s07"
+  老镜记 mergedInto = "s12"</div>
+        <p class="k-sub">这样「它是谁」和「它从哪来」是两件事，各自都不会撒谎。</p>
+      </div>
+      <div class="card">
+        <div class="ico c">3</div>
+        <h3>只改"驱动流程"的，不动"留痕"的</h3>
+        <p style="margin-bottom:10px">
+          <b style="color:var(--green)">要改：</b><span class="code">shot-NNN.*</span> 产物、<span class="code">shot-overrides.json</span>、<span class="code">render-tasks.json</span>
+        </p>
+        <p style="margin-bottom:10px">
+          <b style="color:var(--red)">一个字不改：</b><span class="code">agent-response.json</span>、<span class="code">prompt.md</span>
+          —— 那是"当时发生了什么"的记录，改了就是篡改历史。
+        </p>
+        <p class="k-sub">留痕文件里<b>带上 ID 就够</b>：镜号后来变了，靠 ID 照样对得上。</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <b>老项目怎么办？</b>（比如 <span class="code">思辨与立场</span> 那 51 镜）<br>
+      <b>补发一次 ID 就行</b> —— 按当前顺序 1..51 各发一个号，写进 <span class="code">shotlist.json</span>。
+      <b>不改任何文件名、不动任何产物</b>，纯加字段，做完永不回头。
+    </div>
+  </section>
+
+  <!-- 8 -->
+  <section class="sec">
+    <h2><span class="num">8</span>UI 长什么样</h2>
+    <p class="sub">两个框，各管各的 —— <b>拆合时只问设计</b>，<b>点交接时才摊代价</b>：</p>
+
+    <div class="mockwrap">
+      <div class="dlg">
+        <div class="dlg-title">框 A · 把 #7 拆成两镜？</div>
+        <div class="dlg-body">
+          <div class="dlg-row">
+            <span class="dnum">#7</span>
+            <span class="dtxt">前半 3.2s · 设计保留</span>
+            <span class="dbadge amber">待复核</span>
+          </div>
+          <div class="dlg-row">
+            <span class="dnum">#8</span>
+            <span class="dtxt">后半 4.2s · 设计为空</span>
+            <span class="dbadge gray">待补设计</span>
+          </div>
+          <div>
+            <div class="dlabel">原来的设计怎么办？（两个选项）</div>
+            <div class="dopts">
+              <span class="dopt on"><i></i>保留原镜设计</span>
+              <span class="dopt"><i></i>彻底清空重设计</span>
+            </div>
+          </div>
+        </div>
+        <div class="dlg-foot">
+          <span class="btn ghost">取消</span>
+          <span class="btn primary">拆分</span>
+        </div>
+      </div>
+
+      <div class="side-note">
+        <h3>框 A 里为什么不谈产物</h3>
+        <p style="margin:0;color:var(--dim);font-size:13.5px">
+          拆完<b style="color:var(--text)">下游一个字都不动</b> —— 没点交接，下游读的还是上一版镜头表。<br><br>
+          所以"44 个视频要改名"放这里是<b style="color:var(--text)">吓唬人</b>，那是交钥匙那一刻的事。<br><br>
+          ① 直接把<b style="color:var(--text)">结果</b>摆出来，不让人自己脑补<br>
+          ② 只留<b style="color:var(--text)">两个</b>真需要你选的（保留 / 清空）<br>
+          ③ 原先那个「按时间自动切分」是<b style="color:var(--red)">伪选项</b>，已删 ——
+          句子自带时间，拆镜头必然按时间切，那是拆分的定义不是选项
+        </p>
+      </div>
+    </div>
+
+    <p class="sub" style="margin-top:14px">框 B · 点「应用到下游」时 —— <b>这里才摊代价</b>：</p>
+    <div class="mockwrap">
+      <div class="dlg">
+        <div class="dlg-title">把这份镜头表交给下游？（52 镜）</div>
+        <div class="dlg-body">
+          <div class="dlg-warn">
+            ⚠ 重排 52 个镜号（#4 起往后移一位）<br>
+            ⚠ 改名 48 个渲染产物（shot_004…051 → shot_005…052）<br>
+            ⚠ 48 个镜头标「待重渲」
+          </div>
+          <div>
+            <div class="dlabel">☐ 我知道从第 4 镜往后的画面会失效</div>
+          </div>
+        </div>
+        <div class="dlg-foot">
+          <span class="btn ghost">取消</span>
+          <span class="btn primary">交接</span>
+        </div>
+      </div>
+
+      <div class="side-note">
+        <h3>框 B 才是"分档"的地方</h3>
+        <p style="margin:0;color:var(--dim);font-size:13.5px">
+          <b style="color:var(--faint)">L0</b>　一行轻提示（直接过）<br>
+          <b style="color:var(--blue)">L1</b>　轻确认（只几镜设计待复核）<br>
+          <b style="color:var(--amber)">L2</b>　<b style="color:var(--red)">强确认</b>：红字 + 产物数 + 勾选才让点<br>
+          <b style="color:var(--red)">L3</b>　同 L2 + 「成片需重新组接」
+        </p>
+      </div>
+    </div>
+
+    <p class="sub" style="margin-top:14px">拆之后 —— 卡片挂徽章，顶部出汇总，旁边有后悔药：</p>
+    <div class="grid2">
+      <div class="card">
+        <h3>卡片上的状态徽章</h3>
+        <div class="badges" style="margin-top:10px">
+          <span class="dbadge amber">待复核</span>
+          <span class="dbadge gray">待补设计</span>
+          <span class="dbadge gray">待渲染</span>
+          <span class="dbadge red">待重渲</span>
+          <span class="dbadge green">已就绪</span>
+          <span class="dbadge blue">✎ 边界被调过</span>
+        </div>
+        <p style="margin-top:12px;font-size:12.5px;color:var(--faint)">
+          「✎」和设计状态是两件事，不合并 —— 一个管「重切分别覆盖我」，一个管「设计要复核」。
+        </p>
+      </div>
+      <div class="card">
+        <h3>顶部汇总条 + 撤销</h3>
+        <div class="summarybar" style="margin-top:10px">
+          <span>1 镜待复核<span class="dot">·</span>44 个文件已自动改名<span class="dot">·</span>1 镜要重渲</span>
+          <span class="btn danger" style="padding:6px 14px">撤销这次拆合</span>
+        </div>
+        <p style="margin-top:12px;font-size:12.5px;color:var(--faint)">
+          现在拆错了，没有任何后悔药。这一步要补上。
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9 -->
+  <section class="sec">
+    <h2><span class="num">9</span>要你拍板（6 条，另 2 条已定）</h2>
+    <div class="dec">
+      <div class="dec-item">
+        <div class="dec-n">✓</div>
+        <p><b>已定：交接只走「应用到下游」</b><span class="rec">分镜页补这个闸门；拆合只改草稿，点交接才推下游</span></p>
+      </div>
+      <div class="dec-item">
+        <div class="dec-n">✓</div>
+        <p><b>已定：拆分的「设计怎么处理」只有两个选项</b><span class="rec">保留原镜设计 / 彻底清空重设计（删掉"按时间自动切分"伪选项）</span></p>
+      </div>
+      <div class="dec-item">
+        <div class="dec-n">1</div>
+        <p><b>镜号怎么处理？</b>建议：<span class="rec">镜号顺推（你的方案1）+ 永久 ID（你的方案2）合起来用</span>；文件名保持 <span class="code">shot_007</span> 跟着改名（下游零改动）</p>
+      </div>
+      <div class="dec-item">
+        <div class="dec-n">2</div>
+        <p><b>已渲染的还让不让拆？</b><span class="rec">建议让拆</span>，代价在<b>点交接那一刻</b>说（红字强确认 + 勾选才能点）</p>
+      </div>
+      <div class="dec-item">
+        <div class="dec-n">3</div>
+        <p><b>合并时，被合并那镜的设计？</b><span class="rec">建议拼起来保留</span>，不要直接丢</p>
+      </div>
+      <div class="dec-item">
+        <div class="dec-n">4</div>
+        <p><b>要不要做防伪标签？</b><span class="rec">建议做</span>，顺手修掉④渲染页「只看文件在不在」的老毛病</p>
+      </div>
+      <div class="dec-item">
+        <div class="dec-n">5</div>
+        <p><b>要不要撤销？</b><span class="rec">建议做</span>，只做单步即可</p>
+      </div>
+      <div class="dec-item">
+        <div class="dec-n">6</div>
+        <p><b>跟 T-15 一起做还是分开？</b><span class="rec">建议一起</span> —— 同一个页面改两次 = 验两次</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot">
+    T-16 · 拆/合镜头运行逻辑 · 设计方案图解　|　完整版见 <span class="code">文档/拆合镜头运行逻辑-设计草案-T16.md</span><br>
+    当前状态：<b style="color:var(--amber)">只出方案，未动代码</b> —— 等你拍板
+  </div>
+
+</div>
+</body>
+</html>

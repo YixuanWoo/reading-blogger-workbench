@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>开场插片为什么没声音</title>
+<style>
+  :root{
+    --bg:#0b1020; --card:#141b2e; --line:#25314d;
+    --txt:#f3ecdc; --dim:#9aa8bf; --gold:#f0d68a; --blue:#8fb8d8;
+    --red:#e08a7a; --green:#7fc79b;
+  }
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);
+    font-family:'Noto Serif SC','Songti SC','Microsoft YaHei',system-ui,serif;}
+  body{
+    background-image:
+      linear-gradient(rgba(120,160,220,.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(120,160,220,.07) 1px, transparent 1px);
+    background-size:46px 46px, 46px 46px;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:44px 28px 60px;}
+  h1{font-size:29px;margin:0 0 6px;letter-spacing:1px;line-height:1.4;}
+  .sub{color:var(--dim);font-size:15px;margin-bottom:26px;}
+  .lead{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gold);
+    border-radius:14px;padding:18px 22px;font-size:17.5px;line-height:1.8;margin-bottom:28px;}
+  .lead b{color:var(--gold);}
+  .lead .dim{color:var(--dim);font-size:15px;}
+  h2{font-size:19px;margin:36px 0 14px;color:var(--gold);letter-spacing:1px;}
+  table{width:100%;border-collapse:collapse;background:var(--card);border-radius:14px;overflow:hidden;
+    font-size:14.5px;}
+  th,td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top;}
+  th{background:#182238;color:var(--gold);font-weight:600;font-size:13.5px;letter-spacing:.5px;}
+  tr:last-child td{border-bottom:none;}
+  td.yes{color:var(--green);font-weight:700;}
+  td.no{color:var(--red);font-weight:700;}
+  td.num{font-family:Consolas,monospace;color:var(--blue);text-align:right;}
+  code{background:#0a0f1c;border:1px solid var(--line);border-radius:5px;padding:1px 6px;
+    font-family:Consolas,monospace;font-size:13px;color:var(--blue);}
+  .box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 20px;
+    font-size:15px;line-height:1.8;}
+  .box.warn{border-left:4px solid var(--red);}
+  .box.ok{border-left:4px solid var(--green);}
+  .box.hl{border-left:4px solid var(--gold);}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:6px;}
+  @media(max-width:760px){.two{grid-template-columns:1fr;}}
+  .pick{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 20px;font-size:15px;line-height:1.8;}
+  .pick.hl{border-color:var(--gold);box-shadow:0 0 0 1px rgba(240,214,138,.25) inset;}
+  .pick h3{margin:0 0 8px;font-size:16.5px;}
+  .pick .k{color:var(--gold);font-weight:700;}
+  .foot{margin-top:34px;color:var(--dim);font-size:13px;line-height:1.9;border-top:1px solid var(--line);
+    padding-top:16px;}
+  svg text{font-family:'Microsoft YaHei',system-ui,sans-serif;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>开场那个镜头，为什么是<b>哑的</b></h1>
+  <div class="sub">你的判断没错：素材本来有声音 · 2026-10-03</div>
+
+  <div class="lead">
+    你引用的那段抖音素材 <b>自带原声</b>（实测平均 −11.3 dB，很清楚的响度）。<br>
+    问题出在<b>产品的一个老设定</b>：「插片」从分镜、提示词到组接一共四处，
+    都把它当成<b>「没有口播、成片静音」的画面段</b> —— 于是两头都把它关掉了。<br>
+    <span class="dim">已经修好：重渲了这一镜、把成片的前 10 秒换成素材原声。下面这段视频就是新的。</span>
+  </div>
+
+  <h2>① 三层证据：声音是怎么一路消失的</h2>
+  <table>
+    <tr><th style="width:34%">哪一层</th><th style="width:22%">实测响度</th><th>说明</th></tr>
+    <tr>
+      <td>素材 <code>douyin_upper_only.mp4</code></td>
+      <td class="num">−11.3 dB</td>
+      <td class="yes">✅ 有原声（max −0.3 dB，整段都有内容）</td>
+    </tr>
+    <tr>
+      <td>旧渲染产物 <code>shot_001.mp4</code></td>
+      <td class="num">−91.0 dB</td>
+      <td class="no">✗ 有音轨，但整条是数字静音</td>
+    </tr>
+    <tr>
+      <td>旧成片 0~10 秒</td>
+      <td class="num">−91.0 dB</td>
+      <td class="no">✗ 静音（组接时又补了一段静音）</td>
+    </tr>
+  </table>
+
+  <h2>② 关掉它的两扇门（各管一半）</h2>
+  <svg viewBox="0 0 1000 250" width="100%" height="250" role="img">
+    <defs>
+      <marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+        <path d="M0,0 L7,3 L0,6 z" fill="#9aa8bf"/>
+      </marker>
+    </defs>
+
+    <!-- 素材 -->
+    <rect x="12" y="86" width="176" height="74" rx="12" fill="#141b2e" stroke="#7fc79b" stroke-width="1.5"/>
+    <text x="100" y="116" fill="#7fc79b" font-size="14" text-anchor="middle">素材（40.3s）</text>
+    <text x="100" y="140" fill="#f3ecdc" font-size="15" text-anchor="middle">🔊 有原声 −11.3dB</text>
+
+    <line x1="190" y1="123" x2="246" y2="123" stroke="#9aa8bf" stroke-width="1.6" marker-end="url(#ar)"/>
+
+    <!-- 第一扇门 -->
+    <rect x="250" y="52" width="228" height="142" rx="12" fill="#141b2e" stroke="#e08a7a" stroke-width="1.5"/>
+    <text x="364" y="80" fill="#e08a7a" font-size="14.5" text-anchor="middle">门 ①：渲染层</text>
+    <text x="364" y="106" fill="#f3ecdc" font-size="13.5" text-anchor="middle">写镜头时把音量钉成 0</text>
+    <rect x="274" y="118" width="180" height="26" rx="6" fill="#0a0f1c" stroke="#25314d"/>
+    <text x="364" y="136" fill="#8fb8d8" font-size="12.5" text-anchor="middle" font-family="Consolas,monospace">data-volume="0"</text>
+    <text x="364" y="168" fill="#9aa8bf" font-size="12.5" text-anchor="middle">渲染引擎一看音量是 0，整段跳过</text>
+    <text x="364" y="186" fill="#9aa8bf" font-size="12.5" text-anchor="middle">→ 产物带了一条静音音轨</text>
+
+    <line x1="480" y1="123" x2="536" y2="123" stroke="#9aa8bf" stroke-width="1.6" marker-end="url(#ar)"/>
+
+    <!-- 第二扇门 -->
+    <rect x="540" y="52" width="228" height="142" rx="12" fill="#141b2e" stroke="#e08a7a" stroke-width="1.5"/>
+    <text x="654" y="80" fill="#e08a7a" font-size="14.5" text-anchor="middle">门 ②：组接层</text>
+    <text x="654" y="106" fill="#f3ecdc" font-size="13.5" text-anchor="middle">按设定在音轨上补等长静音</text>
+    <rect x="574" y="118" width="160" height="26" rx="6" fill="#0a0f1c" stroke="#25314d"/>
+    <text x="654" y="136" fill="#8fb8d8" font-size="12.5" text-anchor="middle" font-family="Consolas,monospace">IsSilence = true</text>
+    <text x="654" y="168" fill="#9aa8bf" font-size="12.5" text-anchor="middle">成片音轨是从原录音重建的</text>
+    <text x="654" y="186" fill="#9aa8bf" font-size="12.5" text-anchor="middle">渲染产物的音轨从来不用</text>
+
+    <line x1="770" y1="123" x2="826" y2="123" stroke="#9aa8bf" stroke-width="1.6" marker-end="url(#ar)"/>
+
+    <!-- 结果 -->
+    <rect x="830" y="86" width="158" height="74" rx="12" fill="#141b2e" stroke="#e08a7a" stroke-width="1.5"/>
+    <text x="909" y="116" fill="#e08a7a" font-size="14" text-anchor="middle">成片开头 10 秒</text>
+    <text x="909" y="140" fill="#f3ecdc" font-size="15" text-anchor="middle">🔇 全静音</text>
+  </svg>
+
+  <div class="box warn" style="margin-top:18px">
+    <b>关键</b>：这不是渲染 Agent 走神，是它<b>照章办事</b> —— 渲染提示词里那条原文就是
+    「<code>必须 data-volume="0"</code> —— 成片这一段本来就没有声音，素材原声不能漏出来」。
+    四条代码里都写着同一句话（提示词 / 分镜提示词 / 任务包 / 组接引擎）。
+  </div>
+
+  <h2>③ 已经修好的（这一期，没动你的分镜数据）</h2>
+  <table>
+    <tr><th style="width:30%">动作</th><th>结果</th></tr>
+    <tr>
+      <td>重渲第 1 镜（只这一镜）</td>
+      <td>音量和「有音轨」标记改对，末尾 0.4 秒淡出跟画面同步 →
+        <span class="num">−12.8 dB</span> <span class="yes">✅ 产物自己带原声了</span></td>
+    </tr>
+    <tr>
+      <td>成片前 10 秒换成该音轨</td>
+      <td><span class="num">−91.0 → −12.7 dB</span>，画面 <b>5976 帧一帧没动</b>（视频直接复制）</td>
+    </tr>
+    <tr>
+      <td>成片 10 秒之后</td>
+      <td class="yes">✅ 逐段实测与原来完全一致（−26.0 / −26.0 / −23.6 / −26.4）</td>
+    </tr>
+  </table>
+  <div class="box ok" style="margin-top:14px">
+    备份都留着：旧静音产物 <code>shot_001.silent.mp4</code>、旧成片 <code>…-成片.静音版.mp4</code>。想对比随时能翻。
+  </div>
+
+  <h2>④ 顺带一个发现（这条更值钱）</h2>
+  <div class="box hl">
+    <b>渲染引擎本来就支持把视频原声录进镜头产物</b> —— 这次一封一开、响度从
+    −91 dB 变成 −12.8 dB，就是最好的证明。<br>
+    也就是说：<b>以后任何插片素材的原声，都能直接用</b>，缺的只是产品给它开个口子。
+  </div>
+
+  <h2>⑤ 要不要把它做成正式能力？</h2>
+  <div class="two">
+    <div class="pick hl">
+      <h3>推荐：给插片加个「素材原声」开关</h3>
+      <div>
+        分镜表里插片那一行多一个勾选 + 音量（默认<b>关</b>，不影响你现有习惯）。<br>
+        勾上之后：提示词按音量写 <code>data-volume</code>；组接时这一段取产物的音轨，而不是补静音。<br>
+        <span class="k">改动 4 处、约 1~2 小时</span>，改完重开工作台即可。
+      </div>
+    </div>
+    <div class="pick">
+      <h3>或者：就这一期特殊处理</h3>
+      <div>
+        代码不动。以后遇到「插片素材有声音」，跟我说一声，我照这次的办法手动补一遍（一两分钟）。<br>
+        <span class="k">代价</span>：每次都要人盯，而且第④步的产物本身还是静音的，
+        下次再出片又得补。
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    本次改动：<code>渲染工作区\bodies\shot_001.body.html/.js</code>（音量 0→1、加音轨标记与淡出）、
+    重渲 <code>渲染产物\shot_001.mp4</code>、成片音轨前 10 秒替换、<code>…-成片_说明.json</code> 已记录。<br>
+    <b>未动</b>：分镜数据（26 行的时长/顺序）、其余 25 个镜头产物、精剪决策。
+  </div>
+
+</div>
+</body>
+</html>

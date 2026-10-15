@@ -1,0 +1,297 @@
+<!-- ============================================================
+     SettingsWindow.xaml - ★ V1.14.0 设置
+     ============================================================
+     三类设置，左侧切换：
+       ① 大模型配置 —— 直连大模型的地址 / 密钥 / 模型（原先藏在分镜页的弹窗里）
+       ② 路径配置   —— 项目默认路径、ffmpeg、渲染引擎、模板库、归档落点……
+                        （以前这些写死在代码里，想换地方只能改代码）
+       ③ 调试       —— 调试模式开关（界面操作全部记日志 + 开本机遥控口）
+
+     所有改动都是「点了保存才生效」—— 取消就什么都不写。
+     ============================================================ -->
+<Window x:Class="LiteCut.Workbench.Settings.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="设置" Height="680" Width="880"
+        MinHeight="520" MinWidth="780"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource BgDeep}"
+        Foreground="{StaticResource TextMain}"
+        FontFamily="Microsoft YaHei"
+        ShowInTaskbar="False">
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="190"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ============ 左：分类 ============ -->
+        <Border Grid.Column="0" Background="{StaticResource BgNav}"
+                BorderBrush="{StaticResource Border}" BorderThickness="0,0,1,0">
+            <StackPanel>
+                <TextBlock Text="设置" FontSize="17" FontWeight="SemiBold"
+                           Foreground="White" Margin="18,20,18,14"/>
+
+                <RadioButton x:Name="CatLlm" Content="大模型配置" GroupName="SetCat"
+                             Style="{StaticResource NavBtn}" IsChecked="True"
+                             Checked="Cat_Checked" Tag="llm"/>
+                <RadioButton x:Name="CatPaths" Content="路径配置" GroupName="SetCat"
+                             Style="{StaticResource NavBtn}"
+                             Checked="Cat_Checked" Tag="paths"/>
+                <RadioButton x:Name="CatDebug" Content="调试" GroupName="SetCat"
+                             Style="{StaticResource NavBtn}"
+                             Checked="Cat_Checked" Tag="debug"/>
+
+                <TextBlock Margin="18,22,18,0" FontSize="11" TextWrapping="Wrap"
+                           Foreground="{StaticResource TextFaint}"
+                           Text="这里的设置是全局的（对所有项目生效），存在 %APPDATA%\翊瑄的工作台\config.json。"/>
+            </StackPanel>
+        </Border>
+
+        <!-- ============ 右：内容 ============ -->
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" Padding="22,20,22,20">
+                <Grid>
+
+                    <!-- ==================== ① 大模型配置 ==================== -->
+                    <StackPanel x:Name="PageLlm">
+                        <TextBlock Text="大模型配置" FontSize="15" FontWeight="SemiBold" Foreground="White"/>
+                        <TextBlock Margin="0,6,0,0" FontSize="12" TextWrapping="Wrap"
+                                   Foreground="{StaticResource TextDim}"
+                                   Text="工作台自己调大模型就用这一份配置（分镜设计、镜头渲染都走它）。填了地址和密钥就走「直连」，进度条是真的在动；留空则退回「任务包文件」通道 —— 把任务写到项目里、等外部 Agent 来领。"/>
+
+                        <TextBlock Text="接口地址（OpenAI 兼容，一般填到 /v1）"
+                                   FontSize="12" Margin="0,16,0,4" Foreground="{StaticResource TextDim}"/>
+                        <TextBox x:Name="TxtUrl" Style="{StaticResource Tbx}"/>
+
+                        <TextBlock Text="API Key" FontSize="12" Margin="0,12,0,4"
+                                   Foreground="{StaticResource TextDim}"/>
+                        <PasswordBox x:Name="TxtKey" FontSize="13" Padding="8,6"
+                                     Background="{StaticResource BgInput}"
+                                     Foreground="{StaticResource TextMain}"
+                                     BorderBrush="{StaticResource Border}" BorderThickness="1"
+                                     CaretBrush="White"/>
+
+                        <TextBlock Text="模型名（如 deepseek-chat / gpt-4o-mini / 本地模型名）"
+                                   FontSize="12" Margin="0,12,0,4" Foreground="{StaticResource TextDim}"/>
+                        <TextBox x:Name="TxtModel" Style="{StaticResource Tbx}"/>
+
+                        <CheckBox x:Name="ChkStream" Content="流式（能看到逐字进度，推荐）"
+                                  FontSize="12.5" Margin="0,14,0,0"
+                                  Foreground="{StaticResource TextMain}"/>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                            <Button x:Name="BtnTestLlm" Content="检测连接"
+                                    Style="{StaticResource Btn}" FontSize="12.5"
+                                    Click="BtnTestLlm_Click"/>
+                            <TextBlock Text="← 填完先测一下，别等正式调用才发现配置错了"
+                                       FontSize="11.5" Margin="10,0,0,0"
+                                       VerticalAlignment="Center"
+                                       Foreground="{StaticResource TextFaint}"/>
+                        </StackPanel>
+
+                        <TextBlock x:Name="TxtLlmResult" FontSize="12.5" Margin="0,8,0,0"
+                                   TextWrapping="Wrap" Foreground="{StaticResource TextDim}"/>
+                    </StackPanel>
+
+                    <!-- ==================== ② 路径配置 ==================== -->
+                    <StackPanel x:Name="PagePaths" Visibility="Collapsed">
+                        <TextBlock Text="路径配置" FontSize="15" FontWeight="SemiBold" Foreground="White"/>
+                        <TextBlock Margin="0,6,0,0" FontSize="12" TextWrapping="Wrap"
+                                   Foreground="{StaticResource TextDim}"
+                                   Text="以前这些路径写死在代码里，想换个位置只能改代码重新编译。现在都在这里改。留空的项＝用默认值（默认值都指向 exe 旁边那个文件夹，整个软件夹拷走就能用）。"/>
+
+                        <!-- 项目默认路径 -->
+                        <Border Margin="0,16,0,0" Padding="14,12" CornerRadius="8"
+                                Background="{StaticResource BgCard}"
+                                BorderBrush="{StaticResource Border}" BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock Text="★ 项目默认路径" FontSize="13" FontWeight="SemiBold"
+                                           Foreground="White"/>
+                                <TextBlock Margin="0,4,0,8" FontSize="11.5" TextWrapping="Wrap"
+                                           Foreground="{StaticResource TextFaint}"
+                                           Text="每个项目是它下面的一个子文件夹。新建项目、项目列表，全部以这里为根。"/>
+
+                                <TextBox x:Name="TxtProjectRoot" Style="{StaticResource Tbx}"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <Button Content="浏览…" Style="{StaticResource Btn}" FontSize="12"
+                                            Padding="10,4" Click="BrowseProjectRoot_Click"/>
+                                    <Button Content="用默认值" Style="{StaticResource Btn}" FontSize="12"
+                                            Padding="10,4" Margin="6,0,0,0" Click="ResetProjectRoot_Click"/>
+                                    <Button Content="打开" Style="{StaticResource Btn}" FontSize="12"
+                                            Padding="10,4" Margin="6,0,0,0" Click="OpenProjectRoot_Click"/>
+                                    <TextBlock x:Name="TxtProjectRootNow" FontSize="11.5" Margin="10,0,0,0"
+                                               VerticalAlignment="Center"
+                                               Foreground="{StaticResource TextFaint}"
+                                               TextTrimming="CharacterEllipsis"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Text="其它重要路径" FontSize="13" FontWeight="SemiBold"
+                                   Foreground="White" Margin="0,20,0,0"/>
+                        <TextBlock Margin="0,4,0,0" FontSize="11.5" TextWrapping="Wrap"
+                                   Foreground="{StaticResource TextFaint}"
+                                   Text="下面这几项一般不用改 —— 只有换了电脑、换了硬盘位置才需要动。"/>
+
+                        <!-- ffmpeg -->
+                        <TextBlock Text="ffmpeg.exe" FontSize="12" Margin="0,14,0,4"
+                                   Foreground="{StaticResource TextDim}"/>
+                        <TextBox x:Name="TxtFfmpeg" Style="{StaticResource Tbx}"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                            <Button Content="浏览…" Style="{StaticResource Btn}" FontSize="12"
+                                    Padding="10,4" Click="BrowseFfmpeg_Click"/>
+                            <Button Content="自动检测" Style="{StaticResource Btn}" FontSize="12"
+                                    Padding="10,4" Margin="6,0,0,0" Click="AutoFfmpeg_Click"/>
+                            <TextBlock x:Name="TxtFfmpegNow" FontSize="11.5" Margin="10,0,0,0"
+                                       VerticalAlignment="Center"
+                                       Foreground="{StaticResource TextFaint}"
+                                       TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+
+                        <!-- 素材种子 -->
+                        <TextBlock Text="立项素材种子目录（新建项目时从这复制素材）"
+                                   FontSize="12" Margin="0,14,0,4" Foreground="{StaticResource TextDim}"/>
+                        <TextBox x:Name="TxtSeed" Style="{StaticResource Tbx}"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                            <Button Content="浏览…" Style="{StaticResource Btn}" FontSize="12"
+                                    Padding="10,4" Click="BrowseSeed_Click"/>
+                            <Button Content="用默认值" Style="{StaticResource Btn}" FontSize="12"
+                                    Padding="10,4" Margin="6,0,0,0" Click="ResetSeed_Click"/>
+                        </StackPanel>
+
+                        <!-- HyperFrames 引擎根 -->
+                        <TextBlock Text="渲染引擎根目录（HyperFrames 本体）"
+                                   FontSize="12" Margin="0,14,0,4" Foreground="{StaticResource TextDim}"/>
+                        <TextBox x:Name="TxtRenderRoot" Style="{StaticResource Tbx}"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                            <Button Content="浏览…" Style="{StaticResource Btn}" FontSize="12"
+                                    Padding="10,4" Click="BrowseRenderRoot_Click"/>
+                        </StackPanel>
+
+                        <!-- 模板库 -->
+                        <TextBlock Text="动效模板库目录"
+                                   FontSize="12" Margin="0,14,0,4" Foreground="{StaticResource TextDim}"/>
+                        <TextBox x:Name="TxtTemplateDir" Style="{StaticResource Tbx}"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                            <Button Content="浏览…" Style="{StaticResource Btn}" FontSize="12"
+                                    Padding="10,4" Click="BrowseTemplateDir_Click"/>
+                        </StackPanel>
+
+                        <!-- 归档落点 -->
+                        <TextBlock Text="归档落点根目录（归档时项目整包搬到这）"
+                                   FontSize="12" Margin="0,14,0,4" Foreground="{StaticResource TextDim}"/>
+                        <TextBox x:Name="TxtArchiveRoot" Style="{StaticResource Tbx}"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                            <Button Content="浏览…" Style="{StaticResource Btn}" FontSize="12"
+                                    Padding="10,4" Click="BrowseArchiveRoot_Click"/>
+                        </StackPanel>
+
+                        <!-- 转写兜底 -->
+                        <TextBlock Text="转写稿兜底目录（只在没打开项目时用）"
+                                   FontSize="12" Margin="0,14,0,8" Foreground="{StaticResource TextDim}"/>
+                        <TextBox x:Name="TxtTranscript" Style="{StaticResource Tbx}"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                            <Button Content="浏览…" Style="{StaticResource Btn}" FontSize="12"
+                                    Padding="10,4" Click="BrowseTranscript_Click"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- ==================== ③ 调试 ==================== -->
+                    <StackPanel x:Name="PageDebug" Visibility="Collapsed">
+                        <TextBlock Text="调试模式" FontSize="15" FontWeight="SemiBold" Foreground="White"/>
+                        <TextBlock Margin="0,6,0,0" FontSize="12" TextWrapping="Wrap"
+                                   Foreground="{StaticResource TextDim}"
+                                   Text="打开之后，工作台会做两件事：① 把界面上发生的每一件事（点了哪个按钮、改了哪个输入框、换了哪一页、哪些文件被创建/修改/删除）写进一份日志；② 在本机开一个只给 127.0.0.1 用的「遥控口」，让 AI 可以直接查控件清单、点按钮、填输入框 —— 像真人一样操作软件，不必靠截图猜。"/>
+
+                        <Border Margin="0,16,0,0" Padding="14,12" CornerRadius="8"
+                                Background="{StaticResource BgCard}"
+                                BorderBrush="{StaticResource Border}" BorderThickness="1">
+                            <StackPanel>
+                                <CheckBox x:Name="ChkDebug" FontSize="13.5" Foreground="White"
+                                          Content="打开调试模式"
+                                          Checked="ChkDebug_Changed" Unchecked="ChkDebug_Changed"/>
+                                <TextBlock Margin="0,6,0,0" FontSize="11.5" TextWrapping="Wrap"
+                                           Foreground="{StaticResource TextFaint}"
+                                           Text="默认关着。它只在本机开端口（外网连不进来），退出工作台就自动关掉。"/>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                                    <TextBlock Text="遥控口端口" FontSize="12" VerticalAlignment="Center"
+                                               Foreground="{StaticResource TextDim}"/>
+                                    <TextBox x:Name="TxtDebugPort" Style="{StaticResource Tbx}"
+                                             Width="90" Margin="10,0,0,0"/>
+                                    <TextBlock Text="（默认 18766；桥接占的是 18765，别撞上）"
+                                               FontSize="11.5" Margin="10,0,0,0"
+                                               VerticalAlignment="Center"
+                                               Foreground="{StaticResource TextFaint}"/>
+                                </StackPanel>
+
+                                <CheckBox x:Name="ChkDebugFile" FontSize="12.5" Margin="0,12,0,0"
+                                          Foreground="{StaticResource TextMain}"
+                                          Content="日志同时写文件（logs\debug_日期.log）"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Margin="0,14,0,0" Padding="14,12" CornerRadius="8"
+                                Background="{StaticResource BgCard}"
+                                BorderBrush="{StaticResource Border}" BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock Text="当前状态" FontSize="13" FontWeight="SemiBold"
+                                           Foreground="White"/>
+                                <TextBlock x:Name="TxtDebugStatus" Margin="0,8,0,0" FontSize="12"
+                                           TextWrapping="Wrap" Foreground="{StaticResource TextDim}"/>
+                                <TextBlock x:Name="TxtDebugLogPath" Margin="0,6,0,0" FontSize="11.5"
+                                           TextWrapping="Wrap" Foreground="{StaticResource TextFaint}"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                    <Button Content="打开日志文件夹" Style="{StaticResource Btn}"
+                                            FontSize="12" Padding="10,4" Click="OpenLogFolder_Click"/>
+                                    <Button Content="刷新状态" Style="{StaticResource Btn}"
+                                            FontSize="12" Padding="10,4" Margin="6,0,0,0"
+                                            Click="RefreshDebugStatus_Click"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Margin="0,14,0,0" Padding="14,12" CornerRadius="8"
+                                Background="#FF182636"
+                                BorderBrush="#FF2F4A6B" BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock Text="遥控口怎么用（给 AI / 排障的人看）"
+                                           FontSize="12.5" FontWeight="SemiBold" Foreground="#FFBBD4F0"/>
+                                <TextBlock Margin="0,8,0,0" FontSize="11.5" TextWrapping="Wrap"
+                                           Foreground="#FFBBD4F0" LineHeight="19"
+                                           Text="GET /health　看状态与全部接口清单&#x0a;GET /ui/tree?filter=文字　列出屏幕上所有可点的按钮、输入框、下拉&#x0a;POST /ui/click　{&quot;label&quot;:&quot;应用到下游&quot;}　点一个按钮&#x0a;POST /ui/input　{&quot;id&quot;:&quot;TxtUrl&quot;,&quot;text&quot;:&quot;…&quot;}　往输入框打字&#x0a;POST /ui/nav　{&quot;id&quot;:&quot;step.shots&quot;}　跳到某一页&#x0a;GET /log?since=游标　读刚才发生了什么的流水账"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                </Grid>
+            </ScrollViewer>
+
+            <!-- ============ 底部按钮 ============ -->
+            <Border Grid.Row="1" Padding="18,12" Background="#FF12151A"
+                    BorderBrush="{StaticResource Border}" BorderThickness="0,1,0,0">
+                <DockPanel>
+                    <TextBlock x:Name="TxtHint" DockPanel.Dock="Left" FontSize="11.5"
+                               VerticalAlignment="Center"
+                               Foreground="{StaticResource TextFaint}"
+                               Text="改完点「保存设置」生效。"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
+                                DockPanel.Dock="Right">
+                        <Button Content="保存设置" Style="{StaticResource BtnPrimary}"
+                                FontSize="12.5" Padding="18,6" Margin="0,0,8,0"
+                                Click="BtnSave_Click"/>
+                        <Button Content="取消" Style="{StaticResource Btn}"
+                                FontSize="12.5" Padding="14,6" Click="BtnCancel_Click"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

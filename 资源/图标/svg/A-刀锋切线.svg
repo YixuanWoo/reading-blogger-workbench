@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<defs>
+  <clipPath id="clipA"><rect width="256" height="256" rx="56"/></clipPath>
+  <linearGradient id="bgA" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#142C4E"/><stop offset="1" stop-color="#07121E"/>
+  </linearGradient>
+  <pattern id="gridA" width="32" height="32" patternUnits="userSpaceOnUse">
+    <path d="M32 0 H0 V32" fill="none" stroke="#27496F" stroke-width="1.4" opacity=".5"/>
+  </pattern>
+  <linearGradient id="blueA" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#9BD8FF"/><stop offset="1" stop-color="#4E9BE0"/>
+  </linearGradient>
+  <linearGradient id="goldA" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#FFE6B4"/><stop offset="1" stop-color="#E09B2E"/>
+  </linearGradient>
+</defs>
+<g clip-path="url(#clipA)">
+  <rect width="256" height="256" fill="url(#bgA)"/>
+  <rect width="256" height="256" fill="url(#gridA)"/>
+
+  <!-- 切割痕迹（斜向微光） -->
+  <path d="M92 86 L172 182" stroke="#F5F1E8" stroke-width="3" opacity=".22" stroke-linecap="round"/>
+
+  <!-- 被切断的时间线：左段 / 右段 -->
+  <rect x="34" y="130" width="76" height="22" rx="11" fill="url(#blueA)"/>
+  <rect x="146" y="130" width="78" height="22" rx="11" fill="url(#blueA)"/>
+
+  <!-- 刚被切飞、仍带着旋转惯性的一小块 -->
+  <g opacity=".38" transform="rotate(-20 129 141)">
+    <rect x="118" y="130" width="22" height="22" rx="7" fill="url(#blueA)"/>
+  </g>
+
+  <!-- 刀锋 -->
+  <path d="M124 44 h16 l-8 78 z" fill="url(#goldA)"/>
+  <path d="M124 44 h5.5 l-1.5 78 z" fill="#FFF6E4" opacity=".6"/>
+</g>
+</svg>

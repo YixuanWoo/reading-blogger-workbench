@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>⑤出片点了没反应 —— 音画轴差 1.34 秒</title>
+<style>
+  :root{
+    --bg:#0b1020; --card:#141b2e; --line:#25314d;
+    --txt:#f3ecdc; --dim:#9aa8bf; --gold:#f0d68a; --blue:#8fb8d8;
+    --red:#e08a7a; --green:#7fc79b;
+  }
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);
+    font-family:'Noto Serif SC','Songti SC','Microsoft YaHei',system-ui,serif;}
+  body{
+    background-image:
+      linear-gradient(rgba(120,160,220,.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(120,160,220,.07) 1px, transparent 1px);
+    background-size:46px 46px, 46px 46px;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:44px 28px 60px;}
+  h1{font-size:29px;margin:0 0 6px;letter-spacing:1px;}
+  .sub{color:var(--dim);font-size:15px;margin-bottom:26px;}
+  .lead{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gold);
+    border-radius:14px;padding:18px 22px;font-size:17.5px;line-height:1.75;margin-bottom:30px;}
+  .lead b{color:var(--gold);}
+  h2{font-size:19px;margin:38px 0 14px;color:var(--gold);letter-spacing:1px;}
+  .steps{display:grid;grid-template-columns:1fr;gap:10px;}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:13px 18px;font-size:15px;line-height:1.7;display:grid;
+    grid-template-columns:34px 1fr;gap:14px;align-items:start;}
+  .n{width:26px;height:26px;border-radius:50%;background:#1d2942;border:1px solid var(--line);
+    color:var(--gold);font-size:14px;text-align:center;line-height:25px;font-weight:700;}
+  .step.dead{border-left:4px solid var(--red);}
+  .step.ok{border-left:4px solid var(--green);}
+  .step code,.box code,.foot code{background:#0a0f1c;border:1px solid var(--line);border-radius:5px;
+    padding:1px 6px;font-family:Consolas,monospace;font-size:13px;color:var(--blue);}
+  table{width:100%;border-collapse:collapse;background:var(--card);border-radius:14px;overflow:hidden;
+    font-size:14.5px;}
+  th,td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--line);}
+  th{background:#182238;color:var(--gold);font-weight:600;font-size:13.5px;letter-spacing:.5px;}
+  tr:last-child td{border-bottom:none;}
+  td.yes{color:var(--green);font-weight:700;}
+  td.no{color:var(--red);font-weight:700;}
+  td code{background:#0a0f1c;border:1px solid var(--line);border-radius:5px;padding:1px 6px;
+    font-family:Consolas,monospace;font-size:13px;color:var(--blue);}
+  .flow{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .flow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+  .box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;}
+  .box .tag{font-size:12px;color:var(--dim);letter-spacing:1px;margin-bottom:8px;}
+  .box h3{margin:0 0 10px;font-size:16.5px;}
+  .box ul{margin:0;padding-left:18px;font-size:14px;line-height:1.85;color:#d7dfec;}
+  .box.hl{border-color:var(--gold);box-shadow:0 0 0 1px rgba(240,214,138,.25) inset;}
+  .box.bad{border-color:#5b2f2a;}
+  .num{font-family:Consolas,monospace;font-size:15px;}
+  .bar{height:26px;border-radius:6px;position:relative;background:#0a0f1c;border:1px solid var(--line);
+       overflow:hidden;margin:6px 0 2px;}
+  .bar i{position:absolute;top:0;bottom:0;left:0;display:block;}
+  .bar span{position:absolute;top:3px;font-size:12.5px;color:#0b1020;font-weight:700;padding-left:8px;}
+  .foot{margin-top:36px;color:var(--dim);font-size:13px;line-height:1.9;border-top:1px solid var(--line);
+    padding-top:16px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>⑤「出片」点了没反应 —— 不是没跑，是<b>拼之前的自检当场拒绝了</b></h1>
+  <div class="sub">现场诊断 · 2026-10-03 14:2x · 项目「粥糊了：我只是陈述事实是最大的语言陷阱」</div>
+
+  <div class="lead">
+    一句话：按下按钮它确实跑了，但自检发现 <b>画面轴 197.512 秒 ≠ 音轨 198.852 秒（差 1.34 秒，超过容忍上限 0.5 秒）</b>，
+    于是<b>拒绝出片</b>——一句明细只写进页面里的日志框，<b>不弹窗、不落盘</b>。<br>
+    所以你看到的就是"没反应"。<br>
+    <span style="color:var(--dim);font-size:15px;">好消息：拦你是对的。真放它过去，这条片子的声音会比画面晚 0.5 秒以上。</span>
+  </div>
+
+  <h2>① 先回答你问的：这两个按钮是重复的</h2>
+  <table>
+    <tr><th style="width:34%">按钮</th><th style="width:30%">点下去实际走哪条路</th><th>结论</th></tr>
+    <tr>
+      <td>「对齐并组接」<span style="color:var(--dim)">（轻量剪辑区底部）</span></td>
+      <td><code>BtnAssemble_Click</code> → <code>ExportFilmAsync()</code></td>
+      <td class="no">同一个函数</td>
+    </tr>
+    <tr>
+      <td>「开始出片」<span style="color:var(--dim)">（顶部，模式=画面成片）</span></td>
+      <td><code>BtnGo_Click</code> → <code>ExportFilmAsync()</code></td>
+      <td class="no">同一个函数</td>
+    </tr>
+    <tr>
+      <td>「逐块对齐预览」<span style="color:var(--dim)">（旁边那颗）</span></td>
+      <td><code>BtnAlignScan_Click</code>：只量时长，不写文件</td>
+      <td class="yes">这个才是只读的</td>
+    </tr>
+  </table>
+  <div class="step" style="margin-top:12px;border-left:4px solid var(--gold);">
+    <div class="n">i</div>
+    <div>历史原因：先有顶上的「开始出片」，后来加"轻量剪辑区"时又在面板底部放了一颗。
+      <b>两颗连弹出的保存对话框都是同一个</b>。建议合并成一颗（把「对齐并组接」去掉，或让它只是"从这张表出发"的快捷方式并改个名）。</div>
+  </div>
+
+  <h2>② 为什么"没东西落盘"—— 它压根没跑到 ffmpeg</h2>
+  <table>
+    <tr><th style="width:52%">查了什么</th><th>结果</th></tr>
+    <tr><td>26 个渲染产物在不在？</td><td class="yes">在（26/26，全部 &gt; 50KB，实测总长 200.533s）</td></tr>
+    <tr><td>源录音在不在？</td><td class="yes">在（大通回族土族自治县.m4a）</td></tr>
+    <tr><td>ffmpeg 找得到吗？</td><td class="yes">在（HyperFrames\_tools\bin\ffmpeg.exe）</td></tr>
+    <tr><td>临时目录有没有 conform 残骸？</td><td class="no">没有 → <b>一次 ffmpeg 都没启动过</b></td></tr>
+    <tr><td><code>stages\05-assemble\</code> 有东西吗？</td><td class="no">目录都不存在（这项目从没出过片）</td></tr>
+    <tr><td><code>Output.LastExportPath</code> 记住了吗？</td><td class="no">是空的 → 从没成功出过片</td></tr>
+  </table>
+
+  <h2>③ 卡在哪个数上</h2>
+  <div class="box">
+    <div class="bar"><i style="width:99.3%;background:#8fb8d8;"></i><span>画面轴（26 块设计时长之和）＝ 197.512 s</span></div>
+    <div class="bar"><i style="width:100%;background:#f0d68a;"></i><span>音轨（精剪 90 块 188.852 + 开头插片静音 10.000）＝ 198.852 s</span></div>
+    <div style="font-size:14.5px;margin-top:12px;line-height:1.8;">
+      差 <b style="color:var(--red)">+1.340 s</b>，自检阈值 <code>MaxAudioDriftSec = 0.5</code>。
+      超了 → <code>Problems</code> 非空 → <code>ExportFilmAsync</code> 直接 <code>return</code>：<b>不弹窗、不落盘</b>，
+      只留一句 <span class="num" style="color:var(--red)">"音轨 198.852s 与画面时间轴 197.512s 差 +1.340s —— 分镜不是按当前决策切的"</span>，
+      外加底部一个灰字「自检不通过，看上面的日志」。
+    </div>
+  </div>
+
+  <h2>④ 那 1.34 秒到底是什么（真正的原因）</h2>
+  <div class="flow">
+    <div class="box hl">
+      <div class="tag">音轨轴 = 精剪决策</div>
+      <h3>188.852 s</h3>
+      <ul>
+        <li>精剪里<b>保留下来的全部音频</b>，一条连续轴</li>
+        <li>★ 其中 <b>1.34 s 是"没有词"的声音</b>：<br>
+            开头 0.56 s 前导（第一句「打住」从 0.56 s 才开始）<br>
+            ＋ 镜头与镜头之间的停顿 0.78 s</li>
+      </ul>
+    </div>
+    <div class="box bad">
+      <div class="tag">画面轴 = 分镜表</div>
+      <h3>187.512 s</h3>
+      <ul>
+        <li>分镜是按<b>口播稿的行</b>切的</li>
+        <li>那 1.34 s 不带词 → <b>没有任何镜头认领它</b></li>
+        <li>于是画面轴比音轨轴短 1.34 s</li>
+      </ul>
+    </div>
+  </div>
+  <div class="step dead" style="margin-top:12px">
+    <div class="n">!</div>
+    <div><b>后果不是"少 1.34 秒"这么简单。</b>组接是从那条连续音轨上、按每一块的长度窗口去切的。
+      两轴一旦不同长，<b>每块分到的音频都整体挪位</b>：开头那块错约 0.56 秒，往后累积，到片尾差 1.34 秒。
+      音画会错位，最后那句「他这句话到底有道理在哪里」的尾巴还会被切掉半截。<br>
+      <span style="color:var(--dim)">→ 自检拦你，拦得对；它只是没把话说清楚、也没让你看见。</span></div>
+  </div>
+
+  <h2>⑤ 三条路，你挑一条</h2>
+  <div class="flow3">
+    <div class="box hl">
+      <div class="tag">A ★ 推荐</div>
+      <h3>让音轨跟着分镜走</h3>
+      <ul>
+        <li>改⑤：每块的音频<b>只取它自己的源区间</b>，不再从连续轴上按长度切</li>
+        <li>音画<b>由构造保证对齐</b>，自检那 1.34 s 的问题自然消失</li>
+        <li>代价：改 ~150 行 + 离线核对；<b>26 个已渲镜头一个都不用重渲</b></li>
+        <li>副作用：每块画面按"它自己的音频实长"微调（≤0.8 s 内裁/补，本来也在做）</li>
+      </ul>
+    </div>
+    <div class="box bad">
+      <div class="tag">B 不推荐</div>
+      <h3>让分镜跟着决策走</h3>
+      <ul>
+        <li>就是程序提示的"去第③步重切镜头"</li>
+        <li>★ <b>重切救不了</b>：轴差来自"决策保留了不带词的音频"，跟怎么切无关</li>
+        <li>还会让 <b>26 个已渲镜头全部作废重渲</b></li>
+      </ul>
+    </div>
+    <div class="box">
+      <div class="tag">C 只治"看不见"</div>
+      <h3>失败要响</h3>
+      <ul>
+        <li>自检不过 → <b>弹窗</b>说清哪一条不过</li>
+        <li>失败也往 <code>stages\05-assemble\</code> 写一份失败记录</li>
+        <li>10 分钟，零风险；但片子还是出不来</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="foot">
+    留痕：本次只做诊断，<b>未改任何代码、未动项目数据</b>。<br>
+    相关代码：⑤ <code>Views\Step4ExportView.xaml.cs</code>（<code>ExportFilmAsync</code> / <code>BtnAssemble_Click</code> / <code>BtnGo_Click</code> / <code>CollectSegments</code>）；
+    自检 <code>LiteCut.Core\Media\FFmpegAssembler.cs:329 Precheck</code>；音轨图 <code>BuildAudioGraph</code>。<br>
+    数据依据：<code>project.json</code>（Shots.Rows 26 · FineCut.Clips 90 · Applied=true）、<code>渲染产物\shot_001..026.mp4</code>（ffprobe 实测）。
+  </div>
+
+</div>
+</body>
+</html>

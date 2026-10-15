@@ -1,0 +1,13 @@
+{
+  "name": "litecut-agent-bridge",
+  "version": "1.0.0",
+  "description": "轻剪「交给 Agent」按钮的本地唤醒桥：转发 /wake 到 CodeBuddy Gateway，自动唤醒 WorkBuddy 会话里的 Agent。",
+  "private": true,
+  "main": "bridge.js",
+  "scripts": {
+    "start": "node bridge.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>V1.10.10 · 「渲完了，工作台里一片没变绿」根因与修法</title>
+<style>
+  :root{
+    --bg:#0b1020; --card:rgba(255,255,255,.045); --line:rgba(255,255,255,.10);
+    --tx:#eef2f8; --dim:#9aa6b8; --gold:#e8c37a; --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    min-height:100vh;padding:48px 24px 72px;color:var(--tx);
+    font-family:"Noto Sans SC","Microsoft YaHei",system-ui,sans-serif;
+    background-color:var(--bg);
+    background-image:
+      linear-gradient(rgba(120,160,220,.055) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(120,160,220,.055) 1px,transparent 1px);
+    background-size:44px 44px;
+  }
+  .wrap{max-width:1000px;margin:0 auto}
+  .kicker{font-size:13px;letter-spacing:.22em;color:var(--gold);margin-bottom:14px}
+  h1{font-size:34px;line-height:1.32;font-weight:700;letter-spacing:.01em}
+  h1 b{color:var(--gold)}
+  .lead{margin-top:14px;font-size:16px;line-height:1.85;color:var(--dim)}
+  .lead em{color:var(--tx);font-style:normal;border-bottom:1px dashed rgba(232,195,122,.55)}
+
+  .card{
+    margin-top:26px;padding:24px 26px;border:1px solid var(--line);border-radius:16px;
+    background:var(--card);backdrop-filter:blur(2px)
+  }
+  .card h2{font-size:17px;font-weight:600;color:var(--gold);margin-bottom:14px;letter-spacing:.04em}
+  .card p{font-size:15px;line-height:1.9;color:#dbe3ee}
+  .card p+p{margin-top:10px}
+  code{font-family:ui-monospace,Consolas,monospace;font-size:13.5px;
+       background:rgba(255,255,255,.07);padding:2px 6px;border-radius:5px;color:#cfe3ff}
+
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:26px}
+  @media(max-width:760px){.two{grid-template-columns:1fr}}
+  .box{padding:20px 22px;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+  .box .tag{font-size:12px;letter-spacing:.14em;color:var(--dim)}
+  .box .big{font-size:15px;line-height:1.85;margin-top:10px;color:#dbe3ee}
+  .box .big b{color:var(--tx)}
+  .dot{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:1px;margin-right:7px}
+
+  table{width:100%;border-collapse:collapse;margin-top:6px;font-size:14px}
+  th,td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--dim);font-weight:500;font-size:13px;letter-spacing:.05em}
+  td b{color:var(--gold);font-weight:600}
+  tr:last-child td{border-bottom:0}
+
+  .num{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:6px}
+  .pill{padding:8px 15px;border-radius:999px;border:1px solid var(--line);font-size:14px}
+  .pill.bad{border-color:rgba(239,68,68,.5);color:#ffb4b4}
+  .pill.ok{border-color:rgba(34,197,94,.5);color:#9becbb}
+  .arrow{color:var(--dim)}
+
+  .who{margin-top:8px;display:grid;grid-template-columns:auto 1fr;gap:10px 16px;font-size:14.5px;line-height:1.75;align-items:start}
+  .who .k{color:var(--dim);white-space:nowrap}
+
+  .foot{margin-top:30px;font-size:13px;line-height:1.9;color:var(--dim)}
+  .foot b{color:var(--tx)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="kicker">V1.10.10 · 2026-10-03</div>
+  <h1>「渲完了，工作台里一片<b>没变绿</b>」<br>是 bug，已修好</h1>
+  <p class="lead">
+    一句话根因：<em>渲染页只给"自己发的活"打勾，别人干的活它不认。</em><br>
+    而这个项目的常态就是"别人干"——你在 WorkBuddy 里说「领任务」，由外部 Agent 渲。
+  </p>
+
+  <div class="two">
+    <div class="box">
+      <div class="tag">修之前</div>
+      <div class="big">
+        <span class="dot" style="background:#22c55e"></span><b>6 个绿</b>（恰好是没写过意见的镜头）<br>
+        <span class="dot" style="background:#f59e0b"></span><b>20 个橙</b>「待重渲」· 明明全渲完了
+      </div>
+    </div>
+    <div class="box">
+      <div class="tag">修之后</div>
+      <div class="big">
+        <span class="dot" style="background:#22c55e"></span><b>26 个绿</b> · 0 个橙<br>
+        <span style="color:var(--dim)">拿「粥糊了」的真实数据复算过，不是估计</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>病根：一句"已经改好了"，从来没写进过磁盘</h2>
+    <p>「这一镜要不要重渲」只有两个来源。第二个来源出了问题：</p>
+    <table>
+      <tr><th style="width:34%">来源</th><th style="width:22%">记在哪</th><th>谁会说它"已完成"</th></tr>
+      <tr>
+        <td>① 你直接改了台词 / 构思 / 动效</td>
+        <td>内存</td>
+        <td>重渲完成后重采基线 —— 正常</td>
+      </tr>
+      <tr>
+        <td>② 你写了修改意见，还没落地</td>
+        <td><b>内存</b>（<code>AppliedNote</code>）</td>
+        <td><b>只有"工作台自己点的重渲"</b>会把它设成已完成</td>
+      </tr>
+    </table>
+    <p style="margin-top:16px">
+      你这次的 20 条意见（在 <code>shot-overrides.json</code> 里）是被<strong>外部 Agent</strong>渲进画面的。
+      工作台不知道这件事，于是那 20 条永远挂着「还没落地」→ <strong>状态灯永远橙着</strong>。
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>修法：判据从"内存里的记账"换成"磁盘上的事实"</h2>
+    <div class="who">
+      <div class="k">1 · 意见落地</div>
+      <div>产物比意见新，就算已经渲进去了 ——
+        <code>shot_NNN.mp4</code> 的写入时间 ≥ 这条意见的写下时间。<br>
+        <span style="color:var(--dim)">谁渲的不重要：工作台渲的、外部 Agent 渲的、手工跑脚本渲的，一视同仁。</span></div>
+
+      <div class="k">2 · 认领新产物</div>
+      <div>MP4 的写入时间比清单记的"渲染时刻"还新 → 说明有人重新渲过这一镜 → 自动重新登记。<br>
+        <span style="color:var(--dim)">副产品：整批重渲时<strong>边渲边绿</strong>，渲好一个绿一个。</span></div>
+
+      <div class="k">3 · 顺手修的隐患</div>
+      <div>老项目建基线时，时间戳取的是"现在"，会盖过所有产物，让上面第 2 条永远失效。改成取产物自己的写入时间。</div>
+
+      <div class="k">4 · 收敛到一处</div>
+      <div>状态的算法原来散在三个地方各算各的，现在只留 <code>RefreshOneStatus</code> 一处 —— 免得下次又走偏。</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>现在要做的：重开一次工作台</h2>
+    <p>
+      新版已经打包好了：<code>D:\视频创作\工作台\工作台.exe</code>，版本 <b style="color:var(--gold)">1.10.10</b>。<br>
+      关掉正在开着的工作台，双击它 → 进第④步渲染页，26 个镜头应该全是绿的。
+    </p>
+    <p style="margin-top:14px;color:var(--dim)">
+      为什么必须重开：改的是 exe 里的代码，不重开跑的还是旧那版。
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>顺手留下的两条规矩</h2>
+    <p>
+      <b>给你：</b>以后只要看到某个镜头是橙的「待重渲」，它就只有两种可能 ——
+      要么你改过设计/写了意见但还没渲，要么产物比实现旧。<strong>不会有第三种。</strong>
+    </p>
+    <p>
+      <b>给以后改代码的：</b>判定"干完了没有"，永远去看磁盘上的产物，别信内存里的状态变量 ——
+      内存里的状态只活在"谁写的代码谁设的"那条路径上，而真实工作流往往走的是另一条路。
+    </p>
+    <p style="margin-top:14px;color:var(--dim);font-size:14px">
+      残留的一点不确定性（如实说）：认领靠的是<strong>文件时间戳</strong>，不是内容指纹。
+      更硬的做法是让渲染执行者回写一份产物指纹，但那要改外部 Agent 的契约，现阶段不值当。已登记为 R-17。
+    </p>
+  </div>
+
+  <div class="foot">
+    改动文件：<b>Step3RenderView.xaml.cs</b>（主要）、<b>RenderManifest.cs</b>、<b>工作台.csproj</b>（版本号）。<br>
+    留痕：更新日志 <b>V1.10.10 整节</b> · 维护说明（两行） · 优化与风险登记（<b>R-17</b>） · 待办清单（<b>T-20</b>）。
+  </div>
+
+</div>
+</body>
+</html>

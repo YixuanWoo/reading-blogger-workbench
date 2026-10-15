@@ -1,0 +1,50 @@
+<!-- ============================================================
+     NumberField.xaml - ★ V1.15.0 可输入的数字卡（通用控件）
+     ============================================================
+     【它是什么】
+       一张小卡：上面一行标签、中间一个大号输入框、下面一行小字脚注。
+       长得像"数据卡"，但可以直接改 —— 不用"点编辑 → 弹窗口 → 保存"三步。
+
+     【为什么不做成"只读显示 + 编辑按钮"两态】
+       两态就得管"什么时候切回来"，还会出现"改了没保存就切走"的坑。
+       一态（永远是输入框）最简单，也不会骗人：看到的就是要保存的。
+
+     【它不知道自己在填什么】
+       标题/脚注/值都是外面塞进来的 —— 所以别的页要录数字也能直接用它。
+     ============================================================ -->
+<UserControl x:Class="LiteCut.Workbench.Controls.NumberField"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="Transparent">
+    <Border Background="{StaticResource BgCard}"
+            BorderBrush="{StaticResource Border}" BorderThickness="1"
+            CornerRadius="10" Padding="13,10,13,10">
+        <StackPanel>
+            <TextBlock x:Name="TxtTitle" FontSize="11"
+                       Foreground="{StaticResource TextDim}"/>
+
+            <Grid Margin="0,5,0,0">
+                <TextBox x:Name="TxtValue"
+                         FontSize="20" FontWeight="SemiBold"
+                         Foreground="{StaticResource TextMain}"
+                         Background="Transparent"
+                         BorderBrush="{StaticResource Border}"
+                         BorderThickness="0,0,0,1"
+                         Padding="0,0,0,3"
+                         CaretBrush="White"
+                         TextChanged="TxtValue_TextChanged"/>
+
+                <!-- 空的时候给一句灰提示（WPF 没有原生 placeholder） -->
+                <TextBlock x:Name="Ph" IsHitTestVisible="False"
+                           FontSize="20" FontWeight="SemiBold"
+                           Foreground="#FF4E555F"
+                           VerticalAlignment="Center"
+                           Text="—"/>
+            </Grid>
+
+            <TextBlock x:Name="TxtFoot" FontSize="10.5" Margin="0,6,0,0"
+                       TextWrapping="Wrap"
+                       Foreground="{StaticResource TextFaint}"/>
+        </StackPanel>
+    </Border>
+</UserControl>

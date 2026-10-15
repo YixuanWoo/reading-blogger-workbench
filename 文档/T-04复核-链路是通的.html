@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>T-04 复核 · 「没被唤醒」不成立</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    background:#0a1428;
+    background-image:
+      linear-gradient(rgba(70,130,200,.16) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(70,130,200,.16) 1px,transparent 1px);
+    background-size:48px 48px;
+    color:#e8eef8;
+    font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;
+    padding:44px 32px 60px;
+    min-height:100vh;
+  }
+  .wrap{max-width:1120px;margin:0 auto}
+  h1{font-size:30px;font-weight:800;letter-spacing:.5px;color:#ffffff}
+  h1 .sub{display:block;font-size:15px;font-weight:400;color:#8fb4dd;margin-top:10px;letter-spacing:0}
+  .verdict{
+    margin:28px 0 34px;padding:20px 24px;border-radius:14px;
+    background:rgba(20,44,78,.82);border:1px solid rgba(90,160,240,.35);
+    border-left:5px solid #4ea8ff;
+  }
+  .verdict b{color:#ffd166}
+  .verdict p{line-height:1.85;font-size:15.5px;color:#cfe1f7}
+  h2{font-size:18px;color:#8fc7ff;margin:34px 0 16px;font-weight:700}
+  .timeline{display:flex;flex-direction:column;gap:9px}
+  .row{
+    display:grid;grid-template-columns:92px 78px 1fr 132px;gap:14px;align-items:center;
+    padding:12px 16px;border-radius:11px;
+    background:rgba(16,34,60,.85);border:1px solid rgba(80,140,215,.22);
+    font-size:14px;
+  }
+  .row.hl{background:rgba(24,54,94,.95);border-color:rgba(120,190,255,.55);box-shadow:0 0 0 1px rgba(120,190,255,.18)}
+  .t{color:#9fc4ea;font-variant-numeric:tabular-nums}
+  .id{color:#6f8fb5;font-family:Consolas,monospace;font-size:12.5px}
+  .txt{color:#dae8fa}
+  .ok{color:#5ee39a;font-weight:700;text-align:right}
+  .bad{color:#ff8a8a;font-weight:700;text-align:right}
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .card{
+    background:rgba(18,38,66,.9);border:1px solid rgba(90,150,225,.28);
+    border-radius:14px;padding:20px 22px;
+  }
+  .card .tag{display:inline-block;font-size:12px;padding:3px 10px;border-radius:99px;margin-bottom:12px}
+  .tag.red{background:rgba(255,110,110,.16);color:#ff9d9d;border:1px solid rgba(255,110,110,.35)}
+  .tag.amber{background:rgba(255,200,90,.14);color:#ffd166;border:1px solid rgba(255,200,90,.35)}
+  .card h3{font-size:16px;margin-bottom:10px;color:#ffffff}
+  .card p{font-size:14px;line-height:1.8;color:#c3d6ec}
+  code{font-family:Consolas,monospace;background:rgba(80,140,215,.18);padding:1px 6px;border-radius:5px;color:#a9d4ff;font-size:13px}
+  ol{margin:8px 0 0 20px}
+  ol li{font-size:14.5px;line-height:2;color:#d6e6f8}
+  ol li b{color:#ffd166}
+  .foot{margin-top:34px;font-size:13px;color:#7a99bb;line-height:1.9}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>T-04 复核：「你也没被唤醒」——不成立
+    <span class="sub">2026-10-01 14:39 ~ 15:00 · 证据取自 WorkBuddy 网关自身日志（pid 18908，端口 59769）</span>
+  </h1>
+
+  <div class="verdict">
+    <p>每一次点击都<b>投进了当前会话</b>、<b>真的跑起了回合</b>、也<b>真的产出了回复</b>——
+    自检第 3 次回了 1265 字，你那次按钮实点回了 1307 字。<br>
+    真正的问题是另一件事：<b>每次要跑 1.5~2 分钟才回</b>，而且<b>回复的那 2 分钟里，看板一点动静都没有</b>（因为回合没去读任务包）。</p>
+  </div>
+
+  <h2>六个任务包的完整下落（网关亲手记的）</h2>
+  <div class="timeline">
+    <div class="row"><span class="t">14:39:46</span><span class="id">47785a1f</span><span class="txt">自检第 2 次</span><span class="ok">✓ 14:42:38 · 180 字</span></div>
+    <div class="row"><span class="t">14:43:28</span><span class="id">f77a5bd3</span><span class="txt">领任务（Agent 正忙）</span><span class="bad">✗ 被丢弃</span></div>
+    <div class="row"><span class="t">14:46:54</span><span class="id">9e1f4b4d</span><span class="txt">领任务（Agent 正忙）</span><span class="bad">✗ 被丢弃</span></div>
+    <div class="row"><span class="t">14:47:22</span><span class="id">af9ed0a2</span><span class="txt">领任务</span><span class="ok">✓ 14:49:49 · 1105 字</span></div>
+    <div class="row hl"><span class="t">14:55:58</span><span class="id">8fcfb2b8</span><span class="txt">★ 自检第 3 次（排队机制）</span><span class="ok">✓ 14:57:32 · 1265 字</span></div>
+    <div class="row hl"><span class="t">14:58:09</span><span class="id">a3844f56</span><span class="txt">★ 你点的那次「交给 Agent」</span><span class="ok">✓ 15:00:08 · 1307 字</span></div>
+  </div>
+
+  <h2>两个真因（这才是「看着像没弄好」）</h2>
+  <div class="cards">
+    <div class="card">
+      <span class="tag red">真因 1 · 不干活</span>
+      <h3>唤醒回合「只回话、没动手」</h3>
+      <p>任务包里 <code>"kind": ""</code> 是<b>空的</b>（就是 T-15 那个已知 bug），
+      所以唤醒消息写着 <code>kind=unknown</code>；回合 <code>toolCalls=0</code>，
+      目录里至今<b>没有</b> <code>agent-response.json</code>，任务包状态还停在 <code>pending</code>。<br>
+      → <b>你看板没动静，不是因为没被唤醒，是因为它没去读任务包。</b></p>
+    </div>
+    <div class="card">
+      <span class="tag amber">真因 2 · 2 分钟沉默</span>
+      <h3>日志延迟刷盘 + 回合要跑 2 分钟</h3>
+      <p>我第一次按 <code>runId</code> 搜日志时<b>全库搜不到</b>，几分钟后才出现——
+      网关日志是<b>延迟刷盘</b>的。<br>
+      再加上唤醒回合本身要跑 1.5~2 分钟才有回复。
+      → 急着查，必然得出「没收到」的错误结论（上一轮的误判就是这么来的）。</p>
+    </div>
+  </div>
+
+  <h2>接下来三步</h2>
+  <ol>
+    <li><b>重新打包发布工作台</b>——让 V1.1.2 的 <code>kind</code> 修复真正进 exe（否则永远是 <code>kind=unknown</code>）。</li>
+    <li>桥接再加一道<b>结果校验</b>：现在的 <code>OK</code> 只代表投递成功（HTTP 202），不代表回复到达。</li>
+    <li>你帮我确认一件事：<b>14:57 和 15:00 附近，聊天里有没有两条 1200~1300 字的我的回复？</b>
+      有 → 是「没等到」；没有 → 是 WorkBuddy 界面不渲染这种外部注入的回合，得换方案。</li>
+  </ol>
+
+  <div class="foot">
+    日志：<code>%USERPROFILE%\.workbuddy\logs\2026-10-01\更新__ec1265bd6eac642f78cb7f581a7fe085.log</code><br>
+    判定式：<code>got session 258b2b84…, isShared=true</code> → <code>runDefault</code> →
+    <code>idle→preparing→pending→agent_running</code> → <code>First meaningful token received</code> →
+    <code>completed, output length=N</code>
+  </div>
+</div>
+</body>
+</html>

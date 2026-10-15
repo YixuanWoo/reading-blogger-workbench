@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://litecut.local/schemas/shotplan.schema.json",
+  "title": "ShotPlan",
+  "description": "镜头设计。粗剪定稿后，为音频的每个时间段设计画面呈现。所有镜头的画布规格必须统一，否则拼不起来。",
+
+  "type": "object",
+  "required": ["schemaVersion", "audioDurationSec", "shots"],
+  "additionalProperties": true,
+
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "projectId": { "type": "string" },
+    "audioDurationSec": { "type": "number", "minimum": 0, "description": "粗剪后的音频总长，不是原始长度" },
+    "styleRef": { "type": "string", "description": "所用的风格档案标识" },
+    "canvas": { "$ref": "#/$defs/canvas" },
+    "shots": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/shot" }
+    },
+    "generatedAt": { "type": "string" }
+  },
+
+  "$defs": {
+    "canvas": {
+      "type": "object",
+      "properties": {
+        "width": { "type": "integer", "default": 1280 },
+        "height": { "type": "integer", "default": 720 },
+        "fps": { "type": "integer", "default": 30 }
+      }
+    },
+
+    "shot": {
+      "type": "object",
+      "required": ["index", "startSec", "endSec", "visualIdea"],
+      "properties": {
+        "index": { "type": "integer", "minimum": 1 },
+        "startSec": { "type": "number", "minimum": 0 },
+        "endSec": { "type": "number", "minimum": 0 },
+        "script": { "type": "string", "description": "这段时间说的话（抄自粗剪后文案）" },
+        "visualIdea": { "type": "string", "description": "画面要表达什么" },
+        "template": { "type": ["string", "null"], "description": "HyperFrames 模板名" },
+        "params": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "模板参数，键值均为字符串"
+        },
+        "renderPath": { "type": ["string", "null"] },
+        "renderDurationSec": {
+          "type": ["number", "null"],
+          "description": "产物实际时长。小于目标时长时，组接阶段用定格最后一帧补齐"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["planned", "rendering", "rendered", "failed", "skipped"],
+          "default": "planned"
+        },
+        "error": { "type": ["string", "null"] },
+        "attempts": { "type": "integer", "minimum": 0, "default": 0 }
+      }
+    }
+  }
+}

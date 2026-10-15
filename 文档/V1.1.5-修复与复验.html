@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V1.1.5 修了什么 + 怎么复验</title>
+<style>
+  :root{
+    --bg:#0b1220; --card:#121b2e; --card2:#16203a; --line:#25324d;
+    --txt:#e8eef8; --dim:#9fb0cc; --faint:#6f82a3;
+    --gold:#f0c674; --blue:#7fb3ff; --ok:#5fd39a; --warn:#ffb454; --red:#ff7b72;
+    --grid:rgba(92,130,200,.10);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:34px 30px 60px;background:var(--bg);color:var(--txt);
+    font-family:"Microsoft YaHei","PingFang SC",-apple-system,Segoe UI,sans-serif;
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:40px 40px;}
+  .wrap{max-width:1060px;margin:0 auto}
+  h1{font-size:26px;margin:0 0 8px;letter-spacing:.5px}
+  h1 .n{color:var(--gold)}
+  .sub{color:var(--dim);font-size:14px;margin:0 0 26px;line-height:1.75}
+  h2{font-size:15px;margin:30px 0 12px;color:var(--blue);letter-spacing:1px}
+  h2::before{content:"▍";color:var(--gold);margin-right:6px}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:16px 18px;margin-bottom:12px}
+  .card .h{font-size:15px;font-weight:700;margin:0 0 8px}
+  .card .p{font-size:13px;color:var(--dim);line-height:1.85}
+  .card .p b{color:var(--txt)}
+  .tag{display:inline-block;font-size:11px;padding:2px 9px;border-radius:20px;margin-right:7px;border:1px solid var(--line);background:var(--card2)}
+  .tag.r{color:var(--red);border-color:#5a2b2b} .tag.g{color:var(--ok);border-color:#2b5a44}
+  .tag.w{color:var(--warn);border-color:#5a452b} .tag.b{color:var(--blue);border-color:#2b425a}
+
+  .vs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+  .side{border-radius:9px;padding:13px 15px;border:1px solid var(--line);background:var(--card2)}
+  .side.bad{border-color:#5a2b2b;background:rgba(255,123,114,.06)}
+  .side.good{border-color:#2b5a44;background:rgba(95,211,154,.06)}
+  .side .t{font-size:13.5px;font-weight:700;margin-bottom:8px}
+  .side.bad .t{color:var(--red)} .side.good .t{color:var(--ok)}
+  .side code{font-size:12px;color:var(--gold);background:#0d1626;border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+  .side ul{margin:8px 0 0;padding-left:18px;font-size:12.5px;color:var(--dim);line-height:1.8}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:6px}
+  th,td{padding:10px 13px;text-align:left;border-bottom:1px solid var(--line);line-height:1.6}
+  th{background:var(--card2);color:var(--blue);font-size:12px}
+  tr:last-child td{border-bottom:none}
+  td.b{font-weight:600}
+
+  .steps{counter-reset:s;display:grid;gap:10px}
+  .steps .it{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 15px;display:grid;grid-template-columns:34px 1fr;gap:12px;align-items:start}
+  .steps .it::before{counter-increment:s;content:counter(s);width:34px;height:34px;border-radius:9px;background:var(--card2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--gold)}
+  .steps .it .x{font-size:13.5px;line-height:1.8}
+  .steps .it .x b{color:var(--txt)}
+  .steps .it .x i{color:var(--faint);font-style:normal}
+
+  .note{margin-top:24px;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--warn);border-radius:9px;padding:14px 16px;font-size:13px;line-height:1.85;color:var(--dim)}
+  .note b{color:var(--txt)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>V1.1.5 · <span class="n">你报的那个 bug 修好了</span>（已重新打包）</h1>
+  <p class="sub">
+    你点「✎确认无误」，按钮消失了、<b>「待复核」却赖着不走</b> —— 这不是没生效，是<b>生效了一半</b>。<br>
+    根子是一个<b>同名函数调错</b>，很隐蔽。另外我顺手查出同一片地方还有个兄弟问题，一并修了。
+  </p>
+
+  <h2>真因：分镜页有两个一模一样的函数名</h2>
+  <div class="vs">
+    <div class="side good">
+      <div class="t">✔ 页面级 <code>RefreshBadges()</code></div>
+      <div>它才<b>重算并写进徽章文字</b>：</div>
+      <ul>
+        <li>「待复核」</li>
+        <li>「待补设计」</li>
+        <li>「待渲染 / 待重渲 / 已就绪」</li>
+      </ul>
+    </div>
+    <div class="side bad">
+      <div class="t">✘ VM 级 <code>RefreshBadges()</code></div>
+      <div>名字一样，但它<b>只</b>通知两件事：</div>
+      <ul>
+        <li>「✎确认无误」按钮显不显示</li>
+        <li>整卡提示语</li>
+        <li><b>徽章文字一个字都不碰</b></li>
+      </ul>
+    </div>
+  </div>
+  <p class="sub" style="margin:12px 0 0">
+    「确认无误」的代码调的是<b>右边那个</b> → 于是你看到的：<span class="tag g">按钮消失（真生效了）</span>
+    <span class="tag r">「待复核」不动（没人重算文字）</span><br>
+    合并 / 拆分之所以没这毛病，是因为它俩走的路上<b>顺带</b>调了页面级那个。
+  </p>
+
+  <h2>修法</h2>
+  <table>
+    <tr><th style="width:38%">改哪</th><th>怎么改</th></tr>
+    <tr><td class="b">「✎确认无误」</td><td>改调<b>页面级</b> <code>RefreshBadges()</code> → 徽章文字当场重算</td></tr>
+    <tr><td class="b">VM 那个同名函数</td><td><b>改名 <code>RaiseBadgeVisibility()</code></b> —— 名字一样、意思又近，早晚还会有人调错</td></tr>
+  </table>
+
+  <h2>顺手修掉的兄弟问题：拆出来的后半镜挂着「待复核」</h2>
+  <div class="card">
+    <div class="p">
+      「待复核」的意思是 <b>“有设计，但边界变了，可能对不上”</b>。<br>
+      可拆 / 合时原来<b>无脑</b>写了「待复核」，于是：<span class="tag r">拆出来的后半镜（全新、根本没设计）也被要求复核一份不存在的设计</span>
+      <span class="tag r">选了「清空设计」也一样</span><br>
+      结果就是 <b>「待补设计」这枚徽章几乎从没机会出现过</b>。<br><br>
+      改判为 <b>“这一步之后还剩不剩设计”</b>：
+      <span class="tag g">有设计 → 待复核</span><span class="tag b">没设计 → 待补设计</span>
+    </div>
+  </div>
+
+  <h2>你这轮实点其实还顺带证明了 T-05 / T-16 的两件大事</h2>
+  <table>
+    <tr><th style="width:46%">我从磁盘读到的</th><th>说明什么</th></tr>
+    <tr><td class="b">已交接版 <b>55 镜，一个没动</b></td><td class="b" style="color:var(--ok)">✔ 拆 / 合确实<b>只改草稿</b>（交接闸门是真的）</td></tr>
+    <tr><td class="b">草稿 <b>56 镜</b>、其中 <b>4 镜带 ✎</b></td><td style="color:var(--ok)">✔ 合并 / 拆分确实生效（这正是 T-05 要验的）</td></tr>
+    <tr><td class="b">草稿里躺着 1 个「待复核」的镜（第 4 镜）</td><td style="color:var(--warn)">→ 我特意<b>没清掉</b>：它就是复验修复的现成靶子</td></tr>
+  </table>
+
+  <h2>复验就 3 步（不用重走那 4 步）</h2>
+  <div class="steps">
+    <div class="it"><div class="x">双击 <b>D:\视频创作\工作台\LiteCut.exe</b>（新包 16:07）→ 打开「思辨与立场」→ 进 <b>③ 分镜页</b>。</div></div>
+    <div class="it"><div class="x">往下找到 <b>第 4 镜</b>（卡上挂着橙色 <b>「待复核」</b>）→ 点它的 <b>「✎确认无误」</b>。<br>
+      <i>修好了的话：徽章应当<b>当场变化</b>（它没设计 → 会变成「待补设计」），按钮同时消失。</i><br>
+      <i>以前是：按钮没了，徽章纹丝不动。</i></div></div>
+    <div class="it"><div class="x">再随便点一张卡「<b>拆分</b>」→ 看<b>拆出来的后半镜</b>。<br>
+      <i>修好了的话：它应当挂 <b>「待补设计」</b>，而不是「待复核」。</i></div></div>
+  </div>
+
+  <div class="note">
+    <b>关于你的草稿：</b>现在草稿是 56 镜、和已交接的 55 镜不一样 —— 这是你这轮实点的痕迹，
+    <b>我原封没动</b>（它既是复验靶子，也是"闸门只改草稿"的证据）。<br>
+    你复验完说一声，我再把它清回和已交接版一致，不留尾巴。
+  </div>
+
+</div>
+</body>
+</html>

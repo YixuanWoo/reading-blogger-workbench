@@ -1,0 +1,201 @@
+﻿<Window x:Class="LiteCut.Workbench.WorkbenchWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:LiteCut.Workbench"
+        mc:Ignorable="d"
+        Title="翊瑄的工作台"
+        Height="900" Width="1500"
+        MinHeight="700" MinWidth="1100"
+        WindowStartupLocation="CenterScreen"
+        Background="#FF0E1013"
+        FontFamily="Microsoft YaHei"
+        Foreground="#FFE6E9EF">
+
+    <!-- ============================================================
+         顶栏的样式（V1.14.0）
+         「文件 / 设置」这一排要像一般软件那样：扁平、整齐、一眼看到。
+         所以不能用页面里那种大按钮，单独定义一档。
+         ============================================================ -->
+    <Window.Resources>
+        <Style x:Key="TopMenuBtn" TargetType="Button" BasedOn="{StaticResource Btn}">
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Setter Property="Margin" Value="0,0,4,0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+    </Window.Resources>
+
+    <!-- ============================================================
+         外壳只做三件事：画左侧导航、画顶栏、把页面塞进 ContentHost。
+         具体有哪些导航项、点开哪个页面，全由 NavTree 决定（见 Navigation/）。
+         ============================================================ -->
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <!-- 全屏模式下这一列收成 0（见 WorkbenchWindow.xaml.cs 的 ToggleFullscreen） -->
+            <ColumnDefinition x:Name="NavColumn" Width="204"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ============================================================
+             左侧导航
+             ============================================================ -->
+        <Border x:Name="NavPanel" Grid.Column="0" Background="{StaticResource BgNav}"
+                BorderBrush="{StaticResource Border}" BorderThickness="0,0,1,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>   <!-- 标题 -->
+                    <RowDefinition Height="Auto"/>   <!-- 当前项目 -->
+                    <RowDefinition Height="Auto"/>   <!-- 分组标题 -->
+                    <RowDefinition Height="*"/>      <!-- 导航列表（NavHost 往里铺） -->
+                    <RowDefinition Height="Auto"/>   <!-- 底部：ffmpeg -->
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0" Margin="14,20,14,14">
+                    <TextBlock Text="翊瑄的工作台" FontSize="16" FontWeight="SemiBold"
+                               Foreground="White"/>
+                    <TextBlock Text="自媒体创作流水线" FontSize="11"
+                               Foreground="{StaticResource TextFaint}" Margin="0,3,0,0"/>
+                </StackPanel>
+
+                <!-- 当前项目（没打开项目时整块隐藏） -->
+                <Border x:Name="ProjectBox" Grid.Row="1" Margin="10,0,10,12" Padding="11,10"
+                        Background="#FF1A1E24" CornerRadius="8"
+                        BorderBrush="{StaticResource Border}" BorderThickness="1"
+                        Visibility="Collapsed">
+                    <StackPanel>
+                        <Button x:Name="BtnBackToProjects" Content="← 全部项目"
+                                Click="BtnBackToProjects_Click"
+                                Style="{StaticResource Btn}" FontSize="11"
+                                Padding="8,3" HorizontalAlignment="Left"
+                                ToolTip="回到项目列表（会自动保存当前项目）"/>
+                        <TextBlock x:Name="TxtProjectName" FontSize="13" FontWeight="SemiBold"
+                                   Foreground="White" Margin="0,9,0,0"
+                                   TextTrimming="CharacterEllipsis"/>
+                        <TextBlock x:Name="TxtProjectMeta" FontSize="10.5"
+                                   Foreground="{StaticResource TextFaint}" Margin="0,3,0,0"
+                                   TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock x:Name="TxtNavGroup" Grid.Row="2" Text="工作区" FontSize="10.5"
+                           Foreground="{StaticResource TextFaint}"
+                           Margin="18,0,0,6"/>
+
+                <!-- NavHost 会往这里铺按钮 -->
+                <StackPanel x:Name="NavList" Grid.Row="3"/>
+
+                <Border Grid.Row="4" Margin="10,0,10,12" Padding="10,8,10,8"
+                        Background="#FF171B21" CornerRadius="6"
+                        BorderBrush="{StaticResource Border}" BorderThickness="1">
+                    <StackPanel>
+                        <TextBlock x:Name="TxtFfmpegStatus" Text="检测 ffmpeg…"
+                                   FontSize="10.5" Foreground="{StaticResource TextFaint}"
+                                   TextWrapping="Wrap"/>
+                        <Button Content="指定 ffmpeg 位置" Style="{StaticResource Btn}"
+                                FontSize="10.5" Padding="6,4,6,4" Margin="0,6,0,0"
+                                Click="BtnPickFfmpeg_Click"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- ============================================================
+             右侧：顶栏 + 内容 + 状态栏
+             ============================================================ -->
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Border x:Name="TopBar" Grid.Row="0" Padding="18,10,16,10"
+                    Background="#FF12151A" BorderBrush="{StaticResource Border}"
+                    BorderThickness="0,0,0,1">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                                VerticalAlignment="Center">
+                        <TextBlock x:Name="TxtSaveState" FontSize="11.5"
+                                   VerticalAlignment="Center" Margin="0,0,10,0"
+                                   Foreground="{StaticResource TextFaint}"/>
+                        <!-- ★★ V1.10.5 **撤掉**这个「保存」按钮。
+                             为什么撤而不是改名：
+                               · project.json本来就有定时自动保存（20 秒，见 AutoSaveTick）
+                               · 稿子（script.md）现在也改成自动存了（见 WorkbenchWindow 的 AutoSaveTick）
+                               · 于是「手动保存」变成了**冗余动作**，而它跟写作台里的
+                                 「保存稿子」同名同形，是用户说"两个保存按钮很迷"的根源。
+                             留着的唯一价值是"想立刻存"，所以改成纯文字提示：
+                             顶栏只说"多久之前存过"，按保存交给 Ctrl+S 和各页面自己的按钮。
+
+                             —— 真要"立刻落盘"，用 Ctrl+S（全局：当前页该存什么就存什么）。
+                          -->
+                        <Button x:Name="BtnSave" Content="保存项目" Click="BtnSave_Click"
+                                Style="{StaticResource BtnPrimary}" FontSize="12"
+                                Padding="14,5" Visibility="Collapsed"
+                                ToolTip="保存项目：项目设置、分镜表，&#x0a;以及稿子（script.md）—— 稿子是项目的一部分&#x0a;快捷键 Ctrl+S　（平时也会每 20 秒自动保存）"/>
+                    </StackPanel>
+
+                    <!-- 顶栏常驻：下游此刻按哪一份剪辑决策在走（粗剪/精剪） -->
+                    <TextBlock x:Name="TxtDecisionBadge" DockPanel.Dock="Right"
+                               FontSize="11.5" VerticalAlignment="Center" Margin="0,0,16,0"
+                               Foreground="{StaticResource TextFaint}"
+                               TextTrimming="CharacterEllipsis" MaxWidth="320"/>
+
+                    <!-- ============================================================
+                         ★ V1.14.0 顶栏菜单条（像一般软件那样：一排功能按钮）
+                         「文件」下拉 + 「设置」。它们在**两个作用域下都在**，
+                         因为它们管的是"程序级"的东西，不属于任何一个项目。
+                         ============================================================ -->
+                    <StackPanel x:Name="MenuBar" DockPanel.Dock="Left" Orientation="Horizontal"
+                                VerticalAlignment="Center" Margin="0,0,14,0">
+                        <Button x:Name="BtnFile" Content="文件 ▾" Click="BtnFile_Click"
+                                Style="{StaticResource TopMenuBtn}"
+                                ToolTip="项目级操作（导入外部项目等）">
+                            <!-- 下拉菜单内容。左键点按钮时由代码打开它（见 BtnFile_Click） -->
+                            <Button.ContextMenu>
+                                <ContextMenu x:Name="MenuFile" Placement="Bottom">
+                                    <MenuItem x:Name="MiImportProject" Header="导入外部项目…"
+                                              Click="MiImportProject_Click"
+                                              IsEnabled="False"
+                                              ToolTip="【未开放】把一个已经存在的项目文件夹导入工作台。&#x0a;将来做这个功能：选一个文件夹 → 读它的 project.json → 挂到项目列表里，&#x0a;而不是在「项目」目录下重新建一个。"/>
+                                    <Separator/>
+                                    <MenuItem x:Name="MiOpenProjectRoot" Header="打开项目根目录" Click="MiOpenProjectRoot_Click"
+                                              ToolTip="在资源管理器里打开「项目」文件夹"/>
+                                    <MenuItem x:Name="MiOpenLogFolder" Header="打开日志文件夹" Click="MiOpenLogFolder_Click"
+                                              ToolTip="在资源管理器里打开 exe 旁的 logs\"/>
+                                </ContextMenu>
+                            </Button.ContextMenu>
+                        </Button>
+
+                        <Button x:Name="BtnSettings" Content="设置" Click="BtnSettings_Click"
+                                Style="{StaticResource TopMenuBtn}"
+                                ToolTip="大模型配置 / 路径配置 / 调试模式"/>
+                    </StackPanel>
+
+                    <TextBlock x:Name="TxtBreadcrumb" FontSize="13.5" VerticalAlignment="Center"
+                               Foreground="{StaticResource TextMain}"
+                               TextTrimming="CharacterEllipsis"/>
+                </DockPanel>
+            </Border>
+
+            <!-- 页面容器 -->
+            <Grid x:Name="ContentHost" Grid.Row="1"/>
+
+            <!-- 底部状态栏（全屏模式下隐藏） -->
+            <Border x:Name="StatusBar" Grid.Row="2" Padding="14,7,14,7" Background="#FF12151A"
+                    BorderBrush="{StaticResource Border}" BorderThickness="0,1,0,0">
+                <Grid>
+                    <TextBlock x:Name="TxtStatus" Text="就绪" FontSize="11.5"
+                               Foreground="{StaticResource TextDim}"
+                               VerticalAlignment="Center"/>
+                    <TextBlock x:Name="TxtClock" HorizontalAlignment="Right" FontSize="11.5"
+                               Foreground="{StaticResource TextFaint}"
+                               VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>数据复盘页 · 细化方案图解</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+    background:#0d1117 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48'%3E%3Cpath d='M48 0H0v48' fill='none' stroke='%23161d29' stroke-width='1'/%3E%3C/svg%3E");
+    color:#e6edf3;line-height:1.6;padding:28px 20px 56px
+  }
+  .wrap{max-width:1080px;margin:0 auto}
+  h1{font-size:26px;font-weight:600;margin-bottom:6px}
+  .sub{color:#8b98a5;font-size:13.5px;margin-bottom:24px}
+  h2{font-size:17px;font-weight:600;margin:30px 0 13px;padding-left:11px;border-left:4px solid #1f6feb}
+
+  .card{background:#161b22;border:1px solid #263041;border-radius:12px;padding:17px 19px;margin-bottom:11px}
+  .card h3{font-size:15px;font-weight:600;margin-bottom:8px}
+  .card p{font-size:13.5px;color:#b6c2cf}
+
+  .alert{background:#2a1405;border:1px solid #7a4a10;border-left:5px solid #ef9f27;border-radius:12px;padding:19px 21px;margin-bottom:11px}
+  .alert .t{font-size:17px;font-weight:600;color:#ffc978;margin-bottom:9px}
+  .alert p{font-size:14px;color:#e8d5b8}
+  .alert b{color:#ffd9a0}
+
+  .good{background:#0f2a18;border:1px solid #1f6f3f;border-left:5px solid #3fb950;border-radius:12px;padding:19px 21px;margin-bottom:11px}
+  .good .t{font-size:17px;font-weight:600;color:#7ee2a0;margin-bottom:9px}
+  .good p{font-size:14px;color:#c8e6d2}
+  .good b{color:#a8f0c0}
+
+  .dec{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:11px;margin:6px 0 4px}
+  .dc{background:#161b22;border:1px solid #263041;border-radius:10px;padding:14px 16px}
+  .dc .k{font-size:14px;font-weight:600;color:#7ee2a0;margin-bottom:5px}
+  .dc .v{font-size:13px;color:#b6c2cf;line-height:1.55}
+  .dc .w{font-size:12px;color:#6e7b8a;margin-top:6px}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:7px;background:#161b22;border-radius:10px;overflow:hidden}
+  th{background:#1c2330;color:#9fb0c0;font-weight:600;text-align:left;padding:9px 12px;font-size:12.5px}
+  td{padding:8px 12px;border-top:1px solid #21262d;color:#c9d1d9}
+  .yes{color:#3fb950;font-weight:600}
+  .no{color:#f85149;font-weight:600}
+  .mid{color:#d29922;font-weight:600}
+
+  /* 页面结构示意 */
+  .mock{background:#0d1117;border:1px solid #263041;border-radius:10px;padding:14px;margin:10px 0}
+  .band{background:#161b22;border:1px solid #2f3b4d;border-radius:8px;padding:11px 13px;margin-bottom:8px}
+  .band .bh{font-size:12.5px;font-weight:600;color:#ffc978;margin-bottom:7px;display:flex;align-items:center;gap:7px}
+  .n{width:17px;height:17px;border-radius:50%;background:#2a1405;border:1px solid #7a4a10;color:#ffc978;font-size:11px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 17px}
+  .fields{display:flex;flex-wrap:wrap;gap:6px;margin-top:3px}
+  .f{background:#0d1117;border:1px solid #2f3b4d;border-radius:5px;padding:4px 9px;font-size:12px;color:#8b98a5}
+  .f.calc{background:#12251a;border-color:#1f6f3f;color:#7ee2a0}
+  .bars{margin-top:4px}
+  .bar{display:flex;align-items:center;gap:8px;margin:3px 0;font-size:11.5px;color:#8b98a5}
+  .bar .lab{width:52px;text-align:right;flex:0 0 52px}
+  .bar .bg{flex:1;background:#0d1117;border-radius:3px;height:13px;position:relative;overflow:hidden}
+  .bar .fl{height:100%;border-radius:3px}
+  .bar .v{width:44px;flex:0 0 44px;color:#b6c2cf}
+  .cols{display:flex;align-items:flex-end;gap:16px;height:62px;margin-top:6px;padding:0 8px}
+  .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+  .col .cl{width:100%;border-radius:3px 3px 0 0}
+  .col .cv{font-size:11.5px;color:#ffc978}
+  .col .cn2{font-size:11px;color:#8b98a5}
+  .concl{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:3px}
+  @media(max-width:700px){.concl{grid-template-columns:1fr}}
+  .cc{background:#0d1117;border:1px solid #2f3b4d;border-left:3px solid #3fb950;border-radius:6px;padding:8px 10px;font-size:12px;color:#8b98a5}
+  .cc2{border-left-color:#f85149}
+  .cc3{border-left-color:#58a6ff}
+
+  .chain{display:flex;gap:0;flex-wrap:wrap;margin:14px 0}
+  .step{flex:1;min-width:118px;background:#161b22;border:1px solid #263041;padding:11px 13px}
+  .step:first-child{border-radius:10px 0 0 10px}
+  .step:last-child{border-radius:0 10px 10px 0}
+  .step+.step{border-left:none}
+  .step.r1{background:#0f2a18;border-color:#1f6f3f}
+  .step .k{font-size:11.5px;color:#8b98a5}
+  .step.r1 .k{color:#7ee2a0}
+  .step .n{font-size:14px;font-weight:600;margin:2px 0}
+  .step .d{font-size:12px;color:#8b98a5}
+  .step .c{font-size:12px;color:#b6c2cf;margin-top:3px}
+
+  ul{list-style:none;font-size:13.5px;color:#b6c2cf}
+  li{padding-left:16px;position:relative;margin:5px 0}
+  li::before{content:"▸";position:absolute;left:0;color:#4d5c6e}
+  code{background:#0d1117;border:1px solid #263041;border-radius:4px;padding:1px 6px;font-family:Consolas,monospace;font-size:12px;color:#a5d6ff}
+  .foot{margin-top:32px;padding-top:15px;border-top:1px solid #21262d;font-size:12.5px;color:#6e7b8a}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>数据复盘页 · 细化方案</h1>
+  <div class="sub">翊瑄的工作台 LiteCut · 2026-10-02 · 基线 V1.10.2 · 待拍板，代码一行未动<br>上位规范：skill「内容创作工作流」v1.6.0（§触发词表 / §定时复盘）</div>
+
+  <div class="alert">
+    <div class="t">你说得对：这是整条工作流最不合理的一个缺口</div>
+    <p>「立项 → 撰稿 → 录音 → 成片 → 发布」全在公司里跑通了，<b>唯独最后一环「效果到底怎么样」断了</b>。出了片就没下文。<br>
+    所以这一页不是「加个功能」，是<b>把一条已经缺口的闭环补上</b>。</p>
+  </div>
+
+  <h2>断在哪（已核实，不是推测）</h2>
+  <table>
+    <thead><tr><th style="width:24%">环节</th><th style="width:26%">你的规范里</th><th>工作台里</th></tr></thead>
+    <tbody>
+      <tr><td>⑥ 发布</td><td>「发布了」触发词</td><td class="no">发布页已砍掉<br><span style="color:#6e7b8a;font-size:12px">NavTree.cs:16 注释原文</span></td></tr>
+      <tr><td>⑦ 复盘</td><td>「定时任务到点」抓数据写报告</td><td class="no">从未存在过</td></tr>
+      <tr><td>数据中枢</td><td>飞书多维表格「视频作品与数据」</td><td class="no">工作台零处引用飞书</td></tr>
+      <tr><td>飞轮</td><td>「复盘结论回填素材索引」</td><td class="no">结论无处可查</td></tr>
+    </tbody>
+  </table>
+  <div class="card">
+    <p>★ 你的规范里这段是<strong>完整的、一直没变的</strong>——但它100% 落在「对话 + 飞书」上，而出片已经搬进工作台了。<strong>搬家搬了一半。</strong></p>
+    <p style="margin-top:7px">唯一留下的复盘相关产物是 <code>《思辨与立场》\export\抖音发布文案.md</code>，但它写的是<strong>发布前</strong>的物料（标题三选一、正文、标签、封面建议）。发布之后呢？没有落点。</p>
+  </div>
+
+  <h2>★ 缺这一环的代价，是复利流失</h2>
+  <div class="card">
+    <ul>
+      <li><b>不知道什么选题行</b> —— 做过 3 支片，哪支数据好、为什么好，<b>记不住也查不到</b>，下一个选题靠感觉</li>
+      <li><b>不知道什么封面行</b> —— 你已经写了「首推 / 抓眼球 / 收尾」三选一封面建议，但<strong>没人记哪张真被点了</strong></li>
+      <li><b>多版本没法比</b> —— 三标题三封面是<strong>天然的 A/B 结构</strong>，录下来才能比。现在结果数据没地方放，等于把一个天然的实验白白扔掉</li>
+    </ul>
+  </div>
+
+  <h2>三个决定（都基于「手动填也行」）</h2>
+  <div class="dec">
+    <div class="dc"><div class="k">不碰平台接口</div>
+      <div class="v">第一版纯手动录入，一个字段都不自动抓</div>
+      <div class="w">抖音后台无公开 API；网页抓取要登录态、随时被改版打断。这是最容易被「看起来很智能」骗进去的坑</div></div>
+    <div class="dc"><div class="k">数据落项目里</div>
+      <div class="v"><code>项目\&lt;名&gt;\stages\06-review\</code></div>
+      <div class="w">项目自包含铁律所在。数据跟着片子走，备份/迁移/离线全都免费</div></div>
+    <div class="dc"><div class="k">画图用 WPF 原生</div>
+      <div class="v"><code>Canvas</code> 手绘 + 一套共用坐标换算</div>
+      <div class="w">工程现在只有 NAudio 一个依赖。为 3 张图引图表库不值</div></div>
+  </div>
+
+  <h2>做成什么样：项目内第 6 页「复盘」</h2>
+  <div class="mock">
+    <div class="band">
+      <div class="bh"><span class="n">1</span>数据录入 —— 一屏填完，字段只留 8 个</div>
+      <div class="fields">
+        <span class="f">平台 ▾</span><span class="f">发布日</span><span class="f">统计日</span>
+        <span class="f">播放</span><span class="f">完播率</span><span class="f">点赞</span>
+        <span class="f">评论</span><span class="f">转发</span><span class="f">收藏</span>
+        <span class="f">涨粉</span><span class="f">主页访问</span>
+        <span class="f calc">互动总数</span><span class="f calc">每千播放涨粉</span>
+      </div>
+    </div>
+
+    <div class="band">
+      <div class="bh"><span class="n">2</span>图表 —— 只画三类，不做通用图表引擎</div>
+      <div class="bars">
+        <div class="bar"><div class="lab">完播率</div><div class="bg"><div class="fl" style="width:78%;background:#1f6feb"></div></div><div class="v">38.2%</div></div>
+        <div class="bar"><div class="lab">互动率</div><div class="bg"><div class="fl" style="width:61%;background:#3fb950"></div></div><div class="v">4.1%</div></div>
+        <div class="bar"><div class="lab">涨粉率</div><div class="bg"><div class="fl" style="width:44%;background:#d29922"></div></div><div class="v">0.8%</div></div>
+      </div>
+      <div style="font-size:11.5px;color:#6e7b8a;margin-top:8px">多版本 A/B 对比（你已有的三选一，终于能比了）</div>
+      <div class="cols">
+        <div class="col"><div class="cv">12.4k</div><div class="cl" style="height:34px;background:#1f6feb"></div><div class="cn2">主推·痛点</div></div>
+        <div class="col"><div class="cv">8.1k</div><div class="cl" style="height:22px;background:#3d5a80"></div><div class="cn2">备选A·好奇</div></div>
+        <div class="col"><div class="cv">6.3k</div><div class="cl" style="height:17px;background:#3d5a80"></div><div class="cn2">备选B·调性</div></div>
+      </div>
+    </div>
+
+    <div class="band">
+      <div class="bh"><span class="n">3</span>复盘结论 —— 必填，不是可填</div>
+      <div class="concl">
+        <div class="cc">这条讲对了什么</div>
+        <div class="cc cc2">哪里没接住</div>
+        <div class="cc cc3">下次具体改什么</div>
+      </div>
+      <div style="font-size:12px;color:#8b98a5;margin-top:8px">→ 导出 <code>stages\06-review\复盘报告.md</code>（四段固定模板，AI 也能往里填建议）</div>
+    </div>
+  </div>
+
+  <h2>三个设计判断</h2>
+  <div class="card">
+    <ul>
+      <li><b>录入是表格式，不是一个表单框</b> —— 每次要填的字段完全一样；做成逐行输入框会让你每次都「找哪个框是点赞」</li>
+      <li><b>只画三类图，不做通用引擎</b> —— 趋势线 / 横向条 / 对比柱，覆盖 90% 复盘需求。「自选图表类型」是 Excel 的活</li>
+      <li><b>横条图为主</b> —— 中文长词指标名（完播率 / 涨粉）竖着写要旋转文字，而工程<strong>禁止旋转文字</strong>；横条也比长短最容易</li>
+    </ul>
+  </div>
+
+  <h2>分期：建议只做 R1 + R2</h2>
+  <div class="chain">
+    <div class="step r1"><div class="k">先做</div><div class="n">R1 · 录入+落盘+报告</div><div class="c">~600 行 / 1.5 天</div><div class="d">零依赖，当天能用</div></div>
+    <div class="step r1"><div class="k">接着</div><div class="n">R2 · 三类图</div><div class="c">~450 行 / 1 天</div><div class="d">填完第一份再定图</div></div>
+    <div class="step"><div class="k">攒够 5~8 支</div><div class="n">R3 · 跨片总览</div><div class="c">~400 行</div><div class="d">样本不够时排行是噪声</div></div>
+    <div class="step"><div class="k">可选</div><div class="n">R4 · 飞书镜像</div><div class="c">~200 行</div><div class="d">对外协作用，不影响你自用</div></div>
+  </div>
+  <div class="card">
+    <p>★ <b>「看不到」的问题要靠「能录入」解决，不是靠「自动抓」。</b>别在 R1 之前碰 R4/R5。</p>
+    <p style="margin-top:7px;color:#8b98a5">R1 + R2 就完整回答了「我这部片行不行」，且<strong>不依赖任何外部系统</strong>。全部新增代码，不动现有六页任何一行逻辑，不引任何依赖。</p>
+  </div>
+
+  <h2>与飞书的分工（要定死）</h2>
+  <div class="card">
+    <table>
+      <thead><tr><th style="width:22%">谁</th><th>干什么</th></tr></thead>
+      <tbody>
+        <tr><td class="yes">工作台</td><td><b>数据唯一真相</b>（<code>metrics.json</code>）+ 复盘页 + 报告。离线可用、随项目备份</td></tr>
+        <tr><td>飞书多维表格</td><td>给人看 / 协作的<b>副本</b>（跨项目汇总、团队共享）</td></tr>
+        <tr><td>同步方向</td><td>工作台 → 飞书，<b>单向</b>。不做反向同步</td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:9px">★ 不做反向同步的理由与写作台那条同源：<strong>同一份数据不值得再付一次双向同步的代价</strong>（<code>ScriptStore.cs</code> 已为此交过学费）。界面要让人知道「飞书那份是副本」。</p>
+  </div>
+
+  <h2>永远做不到 / 明确不做</h2>
+  <div class="card">
+    <ul>
+      <li><b>完播率自动算</b> —— 它是平台内部指标。工作台只能读成片时长去<b>估算</b>，UI 上必须和真实抓取值<b>视觉分开</b>（预估值标灰，工程已有此规矩）</li>
+      <li><b>自动抓平台数据</b> —— 第一版不做。手动填是正解，不是妥协</li>
+      <li><b>AI 代替你写结论</b> —— 值得做，但要<strong>在你手写之后</strong>（读你的结论 + 数据给建议）</li>
+    </ul>
+  </div>
+
+  <h2>最大的死因：录入坚持不下来</h2>
+  <div class="card">
+    <p>填一次很轻松，填五次就烦了。三条对策：</p>
+    <ul style="margin-top:7px">
+      <li>字段<b>控制在 8 个</b>，不再加</li>
+      <li>提供<b>「复制上次数据」</b>——平台和字段不用每次重选</li>
+      <li><b>天数满 7 天才提示</b>复盘，不到期绝不催你</li>
+    </ul>
+    <p style="margin-top:8px">另一条约束：<b>标记「已复盘」时结论不能为空</b>——没写结论的复盘等于没复盘，保存时直接挡住。</p>
+  </div>
+
+  <div class="foot">详细版：<code>文档\数据复盘页-细化方案.md</code>　·　数据模型、代码落点、风险登记见该文档 §3~§9<br>拍板 §9 第 1 条即可开工 R1 —— 当天就能给你一个能填数据、能出报告的页面。</div>
+
+</div>
+</body>
+</html>

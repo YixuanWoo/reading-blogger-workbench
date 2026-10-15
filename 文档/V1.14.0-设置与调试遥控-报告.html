@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V1.14.0 · 设置与调试遥控 · 报告</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 44px 24px 72px;
+    background-color: #0a1420;
+    background-image:
+      linear-gradient(rgba(90,150,220,.075) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(90,150,220,.075) 1px, transparent 1px);
+    background-size: 40px 40px;
+    color: #e8eef6;
+    font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    line-height: 1.7; font-size: 15px;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 32px; }
+  .kicker {
+    display: inline-block; font-size: 13px; letter-spacing: .12em;
+    color: #7fb6ff; border: 1px solid rgba(127,182,255,.35);
+    border-radius: 999px; padding: 4px 16px; margin-bottom: 16px;
+  }
+  h1 { font-size: 28px; margin: 0 0 10px; font-weight: 600; }
+  header p { color: #93a6bd; margin: 0; font-size: 15px; }
+
+  .card {
+    background: #111e2d; border: 1px solid rgba(120,180,255,.14);
+    border-radius: 14px; padding: 24px 26px; margin-bottom: 20px;
+  }
+  .card h2 {
+    font-size: 17px; margin: 0 0 4px; font-weight: 600;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .card h2 .num {
+    width: 25px; height: 25px; flex: none; border-radius: 7px;
+    background: rgba(127,182,255,.14); color: #7fb6ff;
+    font-size: 13px; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .card .sub { color: #93a6bd; font-size: 13px; margin: 0 0 16px; }
+
+  .verdict {
+    border: 1px solid rgba(240,198,116,.35);
+    background: linear-gradient(180deg, rgba(240,198,116,.10), rgba(240,198,116,.02));
+    border-radius: 14px; padding: 22px 26px; margin-bottom: 20px;
+  }
+  .verdict .big { font-size: 19px; color: #f5d99a; font-weight: 600; line-height: 1.55; }
+  .verdict .small { color: #93a6bd; margin-top: 8px; font-size: 13.5px; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+  th, td { text-align: left; padding: 9px 11px; font-size: 13.5px; border-bottom: 1px solid rgba(120,180,255,.10); vertical-align: top; }
+  th { color: #93a6bd; font-weight: 500; font-size: 12.5px; letter-spacing: .04em; }
+  td b { color: #cfe2ff; }
+  tr:last-child td { border-bottom: none; }
+
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 6px; }
+  .side { border-radius: 12px; padding: 15px 16px; font-size: 13.5px; }
+  .side h3 { margin: 0 0 9px; font-size: 14px; font-weight: 600; }
+  .side.old { background: rgba(240,140,140,.07); border: 1px solid rgba(240,140,140,.22); }
+  .side.old h3 { color: #f0a0a0; }
+  .side.new { background: rgba(120,220,160,.08); border: 1px solid rgba(120,220,160,.28); }
+  .side.new h3 { color: #86e0a8; }
+  .side ul { margin: 0; padding-left: 18px; }
+  .side li { margin-bottom: 5px; }
+
+  .mock {
+    background: #0c1726; border: 1px solid rgba(120,180,255,.18);
+    border-radius: 11px; padding: 14px 16px; font-size: 13px; line-height: 2;
+  }
+  .btn {
+    display: inline-block; background: rgba(127,182,255,.14);
+    border: 1px solid rgba(127,182,255,.34); border-radius: 8px;
+    padding: 2px 12px; font-size: 12.5px; color: #cfe2ff; margin-right: 7px;
+  }
+
+  ul { margin: 6px 0 0; padding-left: 20px; }
+  li { margin-bottom: 5px; }
+  .tag { display:inline-block; font-size:11.5px; padding:1px 8px; border-radius:999px; margin-left:6px; }
+  .ok   { background: rgba(120,220,160,.15); color:#86e0a8; border:1px solid rgba(120,220,160,.35); }
+  .warn { background: rgba(240,198,116,.13); color:#f0c674; border:1px solid rgba(240,198,116,.35); }
+
+  code {
+    background: rgba(127,182,255,.10); border: 1px solid rgba(127,182,255,.18);
+    border-radius: 6px; padding: 1px 7px; font-size: 12.5px;
+    font-family: Consolas, "Cascadia Mono", monospace; color: #cfe2ff;
+  }
+  pre {
+    background: #0c1726; border: 1px solid rgba(120,180,255,.14);
+    border-radius: 11px; padding: 14px 16px; overflow-x: auto;
+    font-size: 12.5px; line-height: 1.7; color: #cfe2ff;
+    font-family: Consolas, "Cascadia Mono", monospace;
+  }
+  .quote {
+    border-left: 3px solid rgba(127,182,255,.45);
+    padding: 4px 0 4px 14px; color: #a9bdd4; font-size: 13.5px; margin: 10px 0 0;
+  }
+  footer { text-align: center; color: #6b8098; font-size: 12.5px; margin-top: 30px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">更新报告 · V1.14.0</div>
+    <h1>顶栏多了两个按钮，还给工作台装上了「记录仪 + 遥控手」</h1>
+    <p>2026-10-15　·　编译 0 警告 0 错误　·　新程序已发布到 D:\工作台\工作台.exe</p>
+  </header>
+
+  <div class="verdict">
+    <div class="big">这次你要的三件事都做好了：顶栏按钮、设置窗、debug 模式。</div>
+    <div class="small">
+      其中 <strong>debug 模式最要紧</strong> —— 它不只是"记日志"，
+      而是让我<strong>能像真人一样点你的软件、读你的软件</strong>。
+      以后你让我帮你测功能，我不用再截图、也不用写一堆测试代码，
+      <strong>开起来点一遍就行</strong>。另外复盘页已经搬到一级菜单了。
+    </div>
+  </div>
+
+  <!-- 1 -->
+  <div class="card">
+    <h2><span class="num">1</span>顶栏多了两个按钮</h2>
+    <p class="sub">就在左上角，跟一般软件那样排着</p>
+    <div class="mock">
+      <span class="btn">文件 ▾</span><span class="btn">设置</span>
+      <span style="color:#6b8098;font-size:12.5px">　← 就在这一排</span>
+      <div style="color:#93a6bd;font-size:12.5px;margin-top:8px">
+        「文件 ▾」点开有三项：<br>
+        　· <b>导入外部项目…</b> —— <span class="tag warn">先灰着</span>（你要的未来功能，位置先占住）<br>
+        　· 打开项目根目录<br>
+        　· 打开日志文件夹
+      </div>
+    </div>
+    <p class="sub" style="margin-top:14px">
+      ★ 一个技术上的小讲究：Windows 的下拉菜单**默认只有右键才弹**。
+      我特意写成"左键点一下也弹" —— 不然就不像"一般软件"了。
+    </p>
+  </div>
+
+  <!-- 2 -->
+  <div class="card">
+    <h2><span class="num">2</span>设置窗：三类，都在一个地方了</h2>
+    <p class="sub">左边选类别，右边填；底下「保存设置」</p>
+    <table>
+      <tr><th style="width:22%">类别</th><th>里面有什么</th><th style="width:34%">为什么放这儿</th></tr>
+      <tr>
+        <td><b>大模型配置</b></td>
+        <td>接口地址 / 密钥 / 模型名 / 是否流式 + 一个「测试连接」</td>
+        <td>★ 你说的"**API 配置不用再在项目面板里进行了**" —— 已经从那边搬过来了</td>
+      </tr>
+      <tr>
+        <td><b>路径配置</b></td>
+        <td><b>项目根目录</b> · ffmpeg · 素材模板 · 渲染引擎 · 模板库 · 归档盘 · 转写兜底</td>
+        <td>★ 你说的"**不用把路径写死在代码里**" —— 每个格子下面还写着"现在实际用的是哪个"，免得改了个名字其实没生效</td>
+      </tr>
+      <tr>
+        <td><b>调试</b></td>
+        <td>开关 · 端口 · 是否落盘 · 状态 · 「打开日志文件夹」</td>
+        <td>见下一节</td>
+      </tr>
+    </table>
+    <p class="sub" style="margin-top:14px">
+      ★ <b>一句话安心</b>：你没动过设置的话，软件的走法跟以前<b>一模一样</b> ——
+      设置只是把原本藏在代码里的"中间那层"露出来给改，改了才生效。
+    </p>
+  </div>
+
+  <!-- 3 -->
+  <div class="card">
+    <h2><span class="num">3</span>★ 调试模式：给软件装「记录仪」+「遥控手」</h2>
+    <p class="sub">这是这次改动里最有分量的一块</p>
+
+    <p style="margin:0 0 12px">
+      打个比方：以前的软件像一个<b>黑盒子</b>——你在外面看它亮没亮，但不知道里面发生了什么；
+      我想帮你查，只能<b>拍张照片</b>回来猜。现在不一样了：
+    </p>
+    <div class="two">
+      <div class="side new">
+        <h3>📹 记录仪（自动记账）</h3>
+        <ul>
+          <li>谁被<b>点了</b>（哪个按钮、上面写的什么字）</li>
+          <li>哪个框<b>打了字</b>、哪个下拉<b>换了项</b></li>
+          <li>切到了<b>哪一页</b>、哪个项目</li>
+          <li>底部状态栏<b>说了什么</b>（比如"已保存一条数据"）</li>
+          <li>文件<b>增 / 改 / 删 / 改名</b></li>
+        </ul>
+      </div>
+      <div class="side new">
+        <h3>🖐 遥控手（直接操作）</h3>
+        <ul>
+          <li>我能<b>点</b>软件里任何一个按钮</li>
+          <li>我能往输入框<b>打字</b>、勾选、拨下拉</li>
+          <li>我能<b>跳到任意一页</b></li>
+          <li>我能<b>读屏幕上写的字</b>（不用截图）</li>
+          <li>弹出来的确认框，我也能<b>读到内容并点掉</b></li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="sub" style="margin-top:16px"><b>以前 / 现在，对比一下就懂：</b></p>
+    <div class="two">
+      <div class="side old">
+        <h3>以前</h3>
+        <ul>
+          <li>想验一个按钮 → 我得<b>截图</b>看，或者写一段专门的测试代码</li>
+          <li>点完发生了什么 → <b>看不见</b>，只能猜</li>
+          <li>一个流程要你手动点好几步给我看</li>
+        </ul>
+      </div>
+      <div class="side new">
+        <h3>现在</h3>
+        <ul>
+          <li>开起来，我<b>直接点</b>，点完<b>直接读账本</b></li>
+          <li>每一步的结果（成功 / 失败 / 弹了什么框）<b>都留痕</b></li>
+          <li>一个流程我<b>几十秒自己跑完</b>，还顺手附证据</li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="sub" style="margin-top:16px">
+      ★ 它不是"偷偷"在跑：<b>默认是关的</b>，而且<b>只连本机</b>（外网 / 局域网都连不进来），
+      要开得你自己去 <b>设置 → 调试</b> 里拨一下。
+    </p>
+  </div>
+
+  <!-- 4 -->
+  <div class="card">
+    <h2><span class="num">4</span>复盘：搬到一级了</h2>
+    <p class="sub">从"项目里第 6 步"挪到"最外面那一级"—— 就像你要的那样</p>
+    <div class="mock">
+      <div style="color:#93a6bd;font-size:12.5px">左边菜单（一级）：</div>
+      <div style="margin-top:4px">
+        灵感　·　进行中　·　已归档　·　<b style="color:#7fb6ff">复盘</b>　<span style="color:#6b8098">← 搬这儿了</span>
+      </div>
+    </div>
+    <p class="sub" style="margin-top:14px">
+      ★ 一级页面没有"当前打开的项目"这个概念，而复盘数据是长在项目里的，
+      所以我在页面顶上加了一个<b>「看哪个项目」下拉框</b> —— 选谁看谁，默认帮你选"刚打开的那个"。
+    </p>
+    <p class="sub">
+      ⚠️ <b>一个要提前说清的取舍</b>：因为复盘变成一级页了，<b>当你正开着某个项目时，
+      左边菜单里就看不到「复盘」了</b>（它不在项目里了）。
+      想看的话先点一下 <b>「← 全部项目」</b> 回到一级，再点「复盘」。
+      这不是坏了，是"级别"带来的必然结果 —— 将来做双类型时可以把这一步做得更顺。
+    </p>
+    <p class="sub">
+      <b>你说的大工程（项目复盘 / 账号复盘）这次没动</b>，按你的要求先写了待办：
+      <code>工作台\文档\复盘页-改造待办.md</code> / <code>.html</code>（含开工前要你先拍板的四条）。
+    </p>
+  </div>
+
+  <!-- 5 -->
+  <div class="card">
+    <h2><span class="num">5</span>我怎么验的（证据）</h2>
+    <p class="sub">这次全程只走"遥控手"，<b>没截一张图</b> —— 正好也证明这套东西是通的</p>
+    <pre>列界面      → 看到 4 个导航项（含「复盘」）
+点导航      → 跳到「进行中」
+点项目卡片  → 打开「AI时代读书的价值」，落在粗剪页      ★ 点对了
+看左栏      → 7 项（写作台…素材库），<b>没有复盘</b>      ★ 符合设计
+回一级      → 点「← 全部项目」
+进复盘      → 出现「看哪个项目」下拉
+切下拉      → 换到「思辨与立场（已归档）」
+读屏        → 读出了归档说明条全文、项目信息          ★ 不用截图
+点保存      → 弹出校验框
+读弹窗内容  → 「统计日」得填一个 —— 一份数据要知道是哪天统计的。
+              ★ 读到正文 = 证明项目确实挂上了（否则会说"没有打开项目"）
+关弹窗      → 关掉
+读流水      → 点 / 跳页 / 状态栏 / 文件改动 全都在账上</pre>
+    <p class="sub" style="margin-top:12px">
+      另外顺手查了「文件增删改」能不能记到 —— 在项目里建了个临时夹再删，账上确实有记录。
+    </p>
+    <p class="sub">
+      <b>发布出来的那个 exe 也照样验了一遍</b>（不是只验了开发版）：
+      双击 <code>D:\工作台\工作台.exe</code> → 顶栏 4 个一级菜单 + 「文件 ▾ / 设置」都在 →
+      左键点开「文件 ▾」看到三项（「导入外部项目」确实是灰的）→ 点「设置」→
+      三个分类（大模型 / 路径 / 调试）都能切、都能读出来。
+    </p>
+  </div>
+
+  <!-- 6 -->
+  <div class="card">
+    <h2><span class="num">6</span>你要做什么 / 接下来</h2>
+    <table>
+      <tr><th style="width:38%">想做</th><th>怎么做</th></tr>
+      <tr>
+        <td><b>用上新的设置窗</b></td>
+        <td>直接双击 <code>D:\工作台\工作台.exe</code>，点顶栏「设置」</td>
+      </tr>
+      <tr>
+        <td><b>让我帮你测功能</b></td>
+        <td>点「设置」→「调试」→ 打开调试模式。开着我就能直接点、直接读。<span class="tag ok">推荐</span></td>
+      </tr>
+      <tr>
+        <td><b>不想让我连了</b></td>
+        <td>同一个地方关掉即可。★ <b>现在它是关着的</b>（我测试时开过，收尾已经帮你关回去了）</td>
+      </tr>
+      <tr>
+        <td><b>看复盘</b></td>
+        <td>点一级的「复盘」→ 顶上选项目</td>
+      </tr>
+      <tr>
+        <td><b>推进复盘双类型</b></td>
+        <td>看一眼 <code>文档\复盘页-改造待办.md</code> 第 3 节那四条，拍个板我就能开工</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- 7 -->
+  <div class="card">
+    <h2><span class="num">7</span>这次没做的（避免你找不到）</h2>
+    <ul>
+      <li><b>「导入外部项目」还是灰的</b> —— 你说的未来功能，只把位置占住了。</li>
+      <li><b>复盘双类型没做</b> —— 项目复盘 / 账号复盘是大工程，只出了待办（等你拍板）。</li>
+      <li><b>复盘页没有图表</b> —— 现在还是"录入 + 看表 + 出报告"，图表排在后头。</li>
+      <li><b>遥控手读不到"画上去的字"</b> —— 屏幕上正常写的字都能读；
+        但如果是用代码画在画布上的字（很少见），暂时读不到。</li>
+    </ul>
+    <p class="sub" style="margin-top:14px">
+      ★ <b>收尾说明</b>：我测试时临时打开过调试开关、也切过页面，<b>收尾已经全部还原</b>
+      （开关关回去了、默认落地页改回「进行中」）。原配置备份在
+      <code>更新\_备份\config.json.bak-20261015-201703</code>，随时可比对。
+    </p>
+  </div>
+
+  <footer>
+    留痕见 <code>文档\更新日志.md</code> V1.14.0　·　用法见 <code>文档\维护说明.md</code> 第九 / 十节
+  </footer>
+
+</div>
+</body>
+</html>

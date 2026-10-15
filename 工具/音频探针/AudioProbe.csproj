@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- ============================================================
+       音频探针 —— 一次性验证 / 回归验证用的小工具（不是产品的一部分）
+
+       它把音频这条链路上"看不见的不变量"固化成可重跑的断言：
+         · 每段到底读的是源素材的哪个位置（用"值即下标"的合成素材反推）
+         · 增量重拼的结果必须和整条重拼逐样本一致
+         · 该拒绝的必须拒绝（要更多源素材、换源文件、旧包络为 0 …）
+         · 缓存指纹、后台预热、播放设备复用
+         · m4a"跳读"和"顺读"差多少（这是当初放弃"只重读改动那块"的证据）
+
+       用法：
+         cd 工具\音频探针
+         dotnet run -c Release
+
+       退出码 0 = 全部通过，1 = 有失败项。
+
+       注意：其中三个用例需要用到真实的项目文件和大段 m4a 素材
+       （见 Program.cs 顶部的 RealProjectJson / RealM4a）。
+       找不到时会自动跳过并打印提示，不会当成失败。
+       ============================================================ -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>AudioProbe</AssemblyName>
+    <LangVersion>12.0</LangVersion>
+    <StartupObject>AudioProbe.Program</StartupObject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\轻剪\轻剪.csproj" />
+  </ItemGroup>
+
+</Project>

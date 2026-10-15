@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>T-17 分镜页交接闸门实点验证清单</title>
+<style>
+  :root{
+    --bg:#0b1220; --card:#121b2e; --card2:#16203a; --line:#25324d;
+    --txt:#e8eef8; --dim:#9fb0cc; --faint:#6f82a3;
+    --gold:#f0c674; --blue:#7fb3ff; --ok:#5fd39a; --warn:#ffb454; --red:#ff7b72;
+    --grid:rgba(92,130,200,.10);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;padding:34px 30px 60px;background:var(--bg);color:var(--txt);
+    font-family:"Microsoft YaHei","PingFang SC",-apple-system,Segoe UI,sans-serif;
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:40px 40px;
+  }
+  .wrap{max-width:1080px;margin:0 auto}
+  h1{font-size:27px;margin:0 0 6px;letter-spacing:.5px}
+  h1 .n{color:var(--gold)}
+  .sub{color:var(--dim);font-size:14px;margin:0 0 26px;line-height:1.7}
+  .sub b{color:var(--txt)}
+  h2{font-size:15px;margin:32px 0 12px;color:var(--blue);letter-spacing:1px}
+  h2::before{content:"▍";color:var(--gold);margin-right:6px}
+
+  .grid5{display:grid;grid-template-columns:repeat(5,1fr);gap:11px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:13px 14px}
+  .stat .k{font-size:11.5px;color:var(--faint);margin-bottom:6px}
+  .stat .v{font-size:22px;font-weight:700;line-height:1.15}
+  .stat .u{font-size:11.5px;color:var(--dim);font-weight:400;margin-left:3px}
+  .stat.hot{border-color:var(--gold);background:linear-gradient(180deg,rgba(240,198,116,.10),transparent)}
+
+  .steps{display:grid;gap:11px}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:14px 16px;display:grid;grid-template-columns:44px 1fr;gap:14px}
+  .step .no{width:44px;height:44px;border-radius:10px;background:var(--card2);border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:700;color:var(--gold)}
+  .step .t{font-size:15px;font-weight:700;margin:2px 0 7px}
+  .step .do{font-size:13px;color:var(--dim);line-height:1.75}
+  .step .do b{color:var(--txt);background:#1d2a45;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-weight:600}
+  .step .see{margin-top:9px;font-size:12.5px;color:var(--ok);line-height:1.7;
+    border-left:3px solid var(--ok);background:rgba(95,211,154,.06);border-radius:0 6px 6px 0;padding:7px 10px}
+  .step .see i{color:var(--dim);font-style:normal}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  th,td{padding:10px 13px;text-align:left;border-bottom:1px solid var(--line);line-height:1.6}
+  th{background:var(--card2);color:var(--blue);font-size:12px;font-weight:600;letter-spacing:.5px}
+  tr:last-child td{border-bottom:none}
+  td.b{color:var(--txt);font-weight:600}
+  td.g{color:var(--ok)} td.w{color:var(--warn)} td.r{color:var(--red)}
+
+  .note{margin-top:26px;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--warn);
+    border-radius:9px;padding:14px 16px;font-size:13px;line-height:1.85;color:var(--dim)}
+  .note b{color:var(--txt)}
+  .note .tag{color:var(--warn);font-weight:700}
+  .note.red{border-left-color:var(--red)} .note.red .tag{color:var(--red)}
+  .pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;border:1px solid var(--line);background:var(--card2);color:var(--dim);margin-right:6px}
+  code{background:#1d2a45;border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-size:12px;color:var(--gold)}
+
+  .dlg{background:#0e1526;border:1px solid var(--line);border-radius:9px;padding:13px 15px;margin-top:10px;font-size:12.5px;line-height:1.85}
+  .dlg .ttl{color:var(--txt);font-weight:700;font-size:13px;margin-bottom:8px}
+  .dlg .l{color:var(--dim)}
+  .dlg .l.hot{color:var(--red)}
+  .dlg .chk{margin-top:9px;color:var(--warn)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>T-17 <span class="n">交接闸门</span> · 实点验证清单</h1>
+  <p class="sub">
+    验的是<b>「应用到下游」那一下</b> —— 整条流水线里<b>唯一会真的动磁盘文件</b>的动作：<br>
+    重排镜号、给渲染产物改名、把被合并的产物停放起来、标「待重渲」，而且<b>可撤销</b>。
+  </p>
+
+  <h2>你现在的状态（我刚从磁盘量的）</h2>
+  <div class="grid5">
+    <div class="stat"><div class="k">已交接版</div><div class="v">55<span class="u">镜</span></div></div>
+    <div class="stat hot"><div class="k">草稿（待交接）</div><div class="v">59<span class="u">镜</span></div></div>
+    <div class="stat"><div class="k">渲染产物</div><div class="v">51<span class="u">个 mp4</span></div></div>
+    <div class="stat"><div class="k">成片</div><div class="v">3<span class="u">个 mp4</span></div></div>
+    <div class="stat hot"><div class="k">交接水位</div><div class="v">L3<span class="u">成片已出</span></div></div>
+  </div>
+
+  <h2>这一下会发生什么（我离线算过了）</h2>
+  <table>
+    <tr><th style="width:170px">动作</th><th style="width:90px">数量</th><th>说明</th></tr>
+    <tr><td class="b">镜头表重排</td><td class="b">55 → 59</td><td>草稿成为新的「已交接版」，镜号重排 1…59</td></tr>
+    <tr><td class="b">产物改名</td><td class="g b">49 个</td><td>产物按<b>永久 ID</b>认，序号整体后移 → <code>shot_003.mp4</code> 之类要改到新位置</td></tr>
+    <tr><td class="b">产物停放</td><td class="w b">2 个</td><td><code>s01</code> / <code>s02</code> 在新表里已不存在（被并掉了）→ 挪进 <code>渲染产物\_已废弃\</code></td></tr>
+    <tr><td class="b">标「待重渲」</td><td class="b">拆合过的那些</td><td>内容指纹对不上 → 渲染页会标出来</td></tr>
+  </table>
+  <p class="sub" style="margin-top:10px">
+    <span class="pill">仅供参考</span>屏幕上的「改名 N 个」可能<b>比 49 略大</b> —— 除了 49 个 mp4，
+    镜头的实现源文件若也在白名单里，会一起搬。
+  </p>
+
+  <h2>四步</h2>
+  <div class="steps">
+
+    <div class="step">
+      <div class="no">1</div>
+      <div>
+        <div class="t">进 ③ 分镜页，先看交接条</div>
+        <div class="do">卡片流上方那条「<b>下游当前使用：…</b>」。现在是「草稿和已交接版不一致」的状态。</div>
+        <div class="see">应显示「<b>草稿 59 镜（有还没交下去的改动）</b>」，旁边按钮从灰的「✓ 已在生效」变成可点的「<b>应用到下游</b>」。</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="no">2</div>
+      <div>
+        <div class="t">点「应用到下游」→ 弹出确认框</div>
+        <div class="do">因为水位是 L3（已经渲过、成片都出了），这里是<b>代价最重的一档弹框</b>。</div>
+        <div class="dlg">
+          <div class="ttl">把这份镜头表交给下游？（59 镜）</div>
+          <div class="l">镜头表 55 镜 → 59 镜</div>
+          <div class="l hot">镜头表 55 镜 → 59 镜，改名 N 个渲染产物/实现文件，停放 2 个被合并镜头的产物到 _已废弃\</div>
+          <div class="l hot">拆 / 合过的那些镜头内容已经变了 —— 要重渲</div>
+          <div class="l hot">成片需要到第⑤步重新组接</div>
+          <div class="chk">☐ 我知道从改动那个位置往后的画面会失效，需要重渲</div>
+        </div>
+        <div class="see">
+          核对点：<b>镜数 55 → 59</b>、<b>改名数 ≈ 49</b>、<b>停放 2</b>。
+          <i>（第 1 行和第 2 行都会出现「55 镜 → 59 镜」，那是实现上的小冗余，看到不用奇怪。）</i>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="no">3</div>
+      <div>
+        <div class="t">勾上那行确认 → 确定</div>
+        <div class="do">不勾的话确定按钮应该点不动（这是危险操作的强确认）。</div>
+        <div class="see">
+          底部状态栏：「<b>已应用到下游：镜头表 59 镜 —— 镜头表 55 镜 → 59 镜，改名…</b>」<br>
+          卡片流上方多出一条<b>绿色汇总条</b>：「本次交接：… · 镜头表 59 镜」，右侧两个按钮「撤销这次交接」「知道了」。
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="no">4</div>
+      <div>
+        <div class="t">点「撤销这次交接」→ 退回原样</div>
+        <div class="do">会先弹一个 Yes/No。确认后：镜头表退回 <b>55 镜</b>，磁盘上被改名的产物<b>反向搬回</b>，草稿清空。</div>
+        <div class="see">状态栏：「<b>已撤销这次交接：… —— 镜头表退回交接前那一版</b>」，绿色汇总条消失。</div>
+      </div>
+    </div>
+
+  </div>
+
+  <h2>该看到什么（判据速查）</h2>
+  <table>
+    <tr><th style="width:200px">你看到的</th><th>判定</th></tr>
+    <tr><td class="b">弹框没出现，直接交接了</td><td class="r">✘ 不对 —— L3 水位必须弹代价框</td></tr>
+    <tr><td class="b">镜数不是 55 → 59</td><td class="r">✘ 不对 —— 草稿或已交接被别的东西动过，告诉我</td></tr>
+    <tr><td class="b">不勾选也能点确定</td><td class="r">✘ 不对 —— 危险操作漏了强确认</td></tr>
+    <tr><td class="b">状态栏 + 绿色汇总条都出现</td><td class="g">✔ 交接这半程对了</td></tr>
+    <tr><td class="b">点撤销后镜表退回 55 镜</td><td class="g">✔ 撤销这半程对了</td></tr>
+  </table>
+
+  <div class="note red">
+    <span class="tag">安全边界（重要）</span><br>
+    · 「撤销这次交接」<b>只保留最近一次</b>，而且<b>离开分镜页就失效</b> —— 觉得不对要<b>当场撤</b>，别切页再去别的页面逛一圈。<br>
+    · 交接后<b>第 8 镜会显示一段 <code>[测试]</code> 开头的中文</b>（那是我为验徽章写进去的假数据）。<b>不用管它</b>，撤销会一起退回去。<br>
+    · 全程可逆：改名走的是「双缓冲」（先改成 <code>.tmp</code> 再落新名），失败会自动回滚。
+  </div>
+
+  <div class="note">
+    <span class="tag">验完我来收尾</span><br>
+    你点完告诉我结果，我<b>直接读 <code>stages\03-shot\reindex-log-&lt;时间&gt;.json</code></b>（交接留痕），
+    跟你屏幕上看到的数字对一遍 —— 不用靠"好像对了"。然后清掉 <code>[测试]</code> 数据和草稿，恢复干净状态。
+  </div>
+
+</div>
+</body>
+</html>

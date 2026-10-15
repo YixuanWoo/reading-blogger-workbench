@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>T-28 对稿 · 操作手顺（你会怎么用）</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 48px 24px 80px;
+    background-color: #0a1420;
+    background-image:
+      linear-gradient(rgba(90,150,220,.075) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(90,150,220,.075) 1px, transparent 1px);
+    background-size: 40px 40px;
+    color: #e8eef6;
+    font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    line-height: 1.75; font-size: 15px;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 40px; }
+  .kicker {
+    display: inline-block; font-size: 13px; letter-spacing: .12em;
+    color: #7fb6ff; border: 1px solid rgba(127,182,255,.35);
+    border-radius: 999px; padding: 4px 16px; margin-bottom: 18px;
+  }
+  h1 { font-size: 28px; margin: 0 0 12px; font-weight: 600; }
+  header p { color: #93a6bd; margin: 0; font-size: 15.5px; }
+
+  .card {
+    background: #111e2d; border: 1px solid rgba(120,180,255,.14);
+    border-radius: 14px; padding: 26px 28px; margin-bottom: 22px;
+  }
+  .card h2 { font-size: 18px; margin: 0 0 6px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+  .card h2 .num {
+    width: 26px; height: 26px; flex: none; border-radius: 7px;
+    background: rgba(127,182,255,.14); color: #7fb6ff;
+    font-size: 13px; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .card .sub { color: #93a6bd; font-size: 13.5px; margin: 0 0 20px; }
+
+  .verdict {
+    border: 1px solid rgba(240,198,116,.35);
+    background: linear-gradient(180deg, rgba(240,198,116,.10), rgba(240,198,116,.02));
+    border-radius: 14px; padding: 26px 28px; margin-bottom: 22px;
+  }
+  .verdict .big { font-size: 19px; color: #f5d99a; font-weight: 600; line-height: 1.55; }
+  .verdict .small { color: #93a6bd; margin-top: 12px; font-size: 14px; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+  th, td { text-align: left; padding: 10px 12px; font-size: 13.5px; border-bottom: 1px solid rgba(120,180,255,.10); vertical-align: top; }
+  th { color: #93a6bd; font-weight: 500; font-size: 12.5px; letter-spacing: .04em; }
+  tr:last-child td { border-bottom: none; }
+  code { font-family: "Cascadia Mono", Consolas, monospace; font-size: 12.5px; background: rgba(127,182,255,.10); color: #9cc7ff; padding: 1px 6px; border-radius: 4px; }
+  .you { color: #ffb4a2; }
+  .agent { color: #c9b8ff; }
+  .auto { color: #8fe3bd; }
+  .mid { color: #f5d99a; }
+  .new { color: #8fe3bd; font-size: 11.5px; border: 1px solid rgba(95,207,154,.4); border-radius: 5px; padding: 0 6px; margin-left: 6px; }
+  .note { color: #93a6bd; font-size: 13px; margin-top: 14px; }
+
+  ol.steps { margin: 8px 0 0; padding-left: 22px; }
+  ol.steps li { margin-bottom: 9px; font-size: 14px; }
+  ol.steps li b { color: #cfe2ff; }
+
+  .q { border: 1px solid rgba(120,180,255,.20); border-radius: 12px; padding: 16px 20px; margin-top: 12px; background: rgba(127,182,255,.04); }
+  .q b { color: #cfe2ff; font-size: 14.5px; }
+  .q p { margin: 6px 0 0; font-size: 13.5px; color: #cfdcea; }
+  .q .mine { color: #8fe3bd; }
+
+  footer { text-align: center; color: #6f8299; font-size: 13px; margin-top: 34px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">操 作 手 顺 · T-28　2026-10-10</div>
+    <h1>对稿之后，我到底怎么操作？</h1>
+    <p>从「录音做完」到「进入分镜」，你自己的手，一步步在干什么。</p>
+  </header>
+
+  <div class="verdict">
+    <div class="big">③ 精剪这一页没有被拿走 —— 你照样能拖块、调气口。<br>变的只是：<b>你进来的时候，它大概率已经是对的了。</b></div>
+    <div class="small">你从「造一遍」变成「验收一遍」。这正是「对稿」的全部目的。<br><b>⚠ 前提说明：对稿（T-28）还没开工。以下是设计出来的操作，做完才知道真实手感。</b></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">1</span>今天你的手顺（现状 · 逐屏）</h2>
+    <p class="sub">你现在的真实操作，一字不夸张。</p>
+
+    <p style="margin:0 0 6px;color:#9cc7ff;font-size:14px"><b>第 ① 步 · 粗剪页</b></p>
+    <ol class="steps">
+      <li>把录音<b>拖进窗口</b>（或点「加载音频/视频」）。</li>
+      <li>点<b>「复制转写提示词」</b>→ 贴给我 → 我转写 → 拿到 <code>transcript.json</code>。</li>
+      <li>点<b>「导入转写稿（可选）」</b>，把它读进来。</li>
+      <li>选<b>节奏</b>（激进/适中/保守），勾检测项（填充词 / 半截重说 / 重复）。</li>
+      <li>点<b>「开始粗剪」</b>。</li>
+      <li>出来一张<b>决策表</b>（比如 200 行）。你<b>逐行看</b>，<b>双击一行 = 切换「保留 / 剪掉」</b>。</li>
+      <li>右边还有一栏 <b>「拿不准的（需你确认）」</b> —— 逐条勾选，点「按勾选更新决策」。</li>
+      <li>点<b>「应用到下游」</b>。</li>
+    </ol>
+
+    <p style="margin:20px 0 6px;color:#9cc7ff;font-size:14px"><b>第 ③ 步 · 精剪页</b></p>
+    <ol class="steps">
+      <li>时间轴已经铺好（就是粗剪的结果），你<b>逐段拖、调句间气口、删或留</b>。</li>
+      <li>改完点<b>「应用到下游」</b> → 进第 ④ 步。</li>
+    </ol>
+    <p class="note"><b>你的时间主要花在两处：</b>① 决策表逐行判 200 条；③ 时间轴逐段调。这两处就是「对稿」要替你吃掉的。</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">2</span>对稿后你的手顺（逐屏 · 标出变化）</h2>
+    <p class="sub">同一位置，少了什么、多了什么。</p>
+
+    <p style="margin:0 0 6px;color:#9cc7ff;font-size:14px"><b>第 ① 步 · 粗剪页</b></p>
+    <ol class="steps">
+      <li>拖入录音。<span class="new">系统自动认出项目里有 script.md</span></li>
+      <li>点「复制转写提示词」→ 给我 → 拿到转写稿 → <b>导入转写稿</b>。</li>
+      <li>点新按钮 <b>「对稿」</b><span class="new">新增</span> —— 系统拿 <code>script.md</code> 和转写稿<b>逐段对齐</b>。</li>
+      <li>决策表出来，<b>分两类</b>：
+        <br>· <b class="auto">自动定</b>：对得上稿子的 / 「保后不保前」判得实的 → 已经标好「剪 / 留」，<b>你不用管</b>；
+        <br>· <b class="you">要你看</b>：只有几处 ——「这句你说岔了」「这里像是临场加的，稿子里没有」。</li>
+      <li>你<b>只看那几处</b>，双击切一下 → 点<b>「应用到下游」</b>。</li>
+    </ol>
+
+    <p style="margin:20px 0 6px;color:#9cc7ff;font-size:14px"><b>第 ③ 步 · 精剪页</b></p>
+    <ol class="steps">
+      <li>时间轴铺好。<b>多数情况下已经是对的</b> —— 你不改，或只调 2~3 处。能力全在（拖块 / 调气口照旧）。</li>
+      <li>点<b>「应用到下游」</b> → 进第 ④ 步。</li>
+    </ol>
+    <p class="note">唯一"多说一句"的：你要先在<b>写作台</b>里写过 <code>script.md</code>。要是某个项目你压根没写稿（比如即兴聊），点「对稿」会告诉你"没稿可对"，然后<b>自动退回今天的纯音频做法</b> —— 不会硬套，不会更差。</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">3</span>「你要点几下」对照</h2>
+    <p class="sub">数量级估计，不是精确值 —— 做完实测会校准。</p>
+    <table>
+      <tr><th></th><th>今天</th><th>对稿后</th></tr>
+      <tr><td>决策表要你判的行数</td><td class="you">约 200 行 / 逐行</td><td class="auto">2~5 处</td></tr>
+      <tr><td>「拿不准」栏要勾的</td><td class="you">逐条</td><td class="auto">基本空栏</td></tr>
+      <tr><td>精剪页要拖的</td><td class="you">逐段</td><td class="auto">多数不用动</td></tr>
+      <tr><td><b>合计你点几下</b></td><td class="you"><b>数百次</b></td><td class="auto"><b>十几次</b></td></tr>
+    </table>
+    <p class="note">节省量不吹牛：真正省下来的是「判断」这一层，不是「点击」本身。判断少了，你才不会累。</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">4</span>保底：③ 的能力一样没少</h2>
+    <ul class="steps">
+      <li>对稿只改<b>「你进来时看到什么」</b>——不改精剪页本身。</li>
+      <li>任何时候你想精细调（嫌气口短了、想改某句），<b>照旧能拖、能调</b>。</li>
+      <li>对稿<b>只对新项目生效</b>；老项目（没写稿的）走原路，完全不动。</li>
+      <li>认不准就退回纯音频 —— <b>下限 = 今天，上限 = 替你看掉大半精剪。</b></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">5</span>还没定的两个小问题（做完前要你拍板）</h2>
+    <div class="q">
+      <b>①「对稿」按钮放哪？</b>
+      <p>放在<b>粗剪页</b>（跟「开始粗剪」并排）最省事 —— <span class="mine">我倾向这个</span>。也可以做成自动：只要检测到有 <code>script.md</code>，粗剪时就顺手对一遍，你连按钮都不用点。</p>
+    </div>
+    <div class="q">
+      <b>②「要你看」的那几处，怎么展示？</b>
+      <p>我的倾向：直接<b>在决策表里高亮 + 置顶</b>，和现在「拿不准的（需你确认）」并成一块，不新开页面——你已经熟悉这个位置了。</p>
+    </div>
+    <p class="note">这两点定了，T-28 就可以开工。其余都是实现细节，不用你操心。</p>
+  </div>
+
+  <footer>T-28 对稿 · 操作手顺（设计稿，未动代码）　|　配套：《压缩后期-只写作录音-方案》</footer>
+
+</div>
+</body>
+</html>

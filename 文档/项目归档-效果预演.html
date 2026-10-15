@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>点一次「归档」会发生什么 · 效果预演</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 44px 24px 72px;
+    background-color: #0a1420;
+    background-image:
+      linear-gradient(rgba(90,150,220,.075) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(90,150,220,.075) 1px, transparent 1px);
+    background-size: 40px 40px;
+    color: #e8eef6;
+    font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    line-height: 1.7; font-size: 15px;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 34px; }
+  .kicker {
+    display: inline-block; font-size: 13px; letter-spacing: .12em;
+    color: #7fb6ff; border: 1px solid rgba(127,182,255,.35);
+    border-radius: 999px; padding: 4px 16px; margin-bottom: 16px;
+  }
+  h1 { font-size: 28px; margin: 0 0 10px; font-weight: 600; }
+  header p { color: #93a6bd; margin: 0; font-size: 15px; }
+
+  .card {
+    background: #111e2d; border: 1px solid rgba(120,180,255,.14);
+    border-radius: 14px; padding: 24px 26px; margin-bottom: 20px;
+  }
+  .card h2 {
+    font-size: 17px; margin: 0 0 4px; font-weight: 600;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .card h2 .num {
+    width: 25px; height: 25px; flex: none; border-radius: 7px;
+    background: rgba(127,182,255,.14); color: #7fb6ff;
+    font-size: 13px; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .card .sub { color: #93a6bd; font-size: 13px; margin: 0 0 16px; }
+
+  .verdict {
+    border: 1px solid rgba(240,198,116,.35);
+    background: linear-gradient(180deg, rgba(240,198,116,.10), rgba(240,198,116,.02));
+    border-radius: 14px; padding: 22px 26px; margin-bottom: 20px;
+  }
+  .verdict .big { font-size: 19px; color: #f5d99a; font-weight: 600; line-height: 1.55; }
+  .verdict .small { color: #93a6bd; margin-top: 8px; font-size: 13.5px; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+  th, td { text-align: left; padding: 9px 11px; font-size: 13.5px; border-bottom: 1px solid rgba(120,180,255,.10); vertical-align: top; }
+  th { color: #93a6bd; font-weight: 500; font-size: 12.5px; letter-spacing: .04em; }
+  td b { color: #cfe2ff; }
+
+  .flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 6px; }
+  .step {
+    background: rgba(127,182,255,.10); border: 1px solid rgba(127,182,255,.22);
+    border-radius: 10px; padding: 8px 12px; font-size: 13px;
+  }
+  .step b { color: #7fb6ff; }
+  .arrow { color: #5c7a99; font-size: 14px; }
+
+  /* 每个项目一行：条形图 */
+  .proj { margin-top: 18px; }
+  .proj:first-child { margin-top: 6px; }
+  .proj .name { font-size: 14.5px; font-weight: 600; color: #cfe2ff; }
+  .proj .meta { font-size: 12.5px; color: #93a6bd; margin-bottom: 7px; }
+  .bar { height: 26px; border-radius: 7px; overflow: hidden; display: flex; border: 1px solid rgba(120,180,255,.14); }
+  .bar .seg { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 11.5px; white-space: nowrap; overflow: hidden; }
+  .seg-keep { background: rgba(110,220,160,.26); color: #b6f0cf; }
+  .seg-gone { background: rgba(255,140,140,.20); color: #ffc9c9; }
+  .seg-disk { background: rgba(127,182,255,.22); color: #cfe2ff; }
+  .legend { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 14px; font-size: 12.5px; color: #93a6bd; }
+  .legend i { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+
+  .three { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+  .col { border-radius: 11px; padding: 14px 16px; font-size: 13.5px; }
+  .col h3 { margin: 0 0 9px; font-size: 14px; font-weight: 600; }
+  .col ul { margin: 0; padding-left: 18px; }
+  .col li { margin-bottom: 6px; }
+  .col.keep { background: rgba(110,220,160,.09); border: 1px solid rgba(110,220,160,.26); }
+  .col.keep h3 { color: #8ee8b5; }
+  .col.gone { background: rgba(255,140,140,.08); border: 1px solid rgba(255,140,140,.24); }
+  .col.gone h3 { color: #ffb3b3; }
+
+  .gate {
+    display: flex; gap: 12px; align-items: flex-start;
+    background: rgba(255,140,140,.07); border-left: 3px solid #ff8c8c;
+    border-radius: 0 10px 10px 0; padding: 11px 15px; margin-bottom: 9px; font-size: 13.5px;
+  }
+  .gate .g-ico { flex: none; font-size: 15px; line-height: 1.5; }
+  .gate b { color: #ffc9c9; }
+
+  .num-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 4px 0 8px; }
+  .num-box { background: rgba(127,182,255,.07); border: 1px solid rgba(127,182,255,.16); border-radius: 11px; padding: 13px 12px; text-align: center; }
+  .num-box .v { font-size: 21px; font-weight: 600; color: #7fb6ff; line-height: 1.25; }
+  .num-box .v.green { color: #6edca0; }
+  .num-box .k { font-size: 12px; color: #93a6bd; margin-top: 3px; }
+
+  footer { text-align: center; color: #5c7a99; font-size: 12.5px; margin-top: 34px; }
+  @media (max-width: 720px) {
+    .three, .num-row { grid-template-columns: 1fr; }
+    .num-row { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">归档改造 · 上线前预演</div>
+    <h1>点一次「归档」，到底发生什么</h1>
+    <p>用真实项目跑出来的预期数字 —— 不看代码，看结果</p>
+  </header>
+
+  <div class="verdict">
+    <div class="big">一句话：本地从 <span style="color:#ffb3b3">452&nbsp;MB</span> 瘦到 <span style="color:#8ee8b5">2.8&nbsp;MB</span>，省下 99%。</div>
+    <div class="small">重件（成片、原声、渲染中间产物）整包搬去移动硬盘；本地只留一个「小桩」——
+      工程档案、脚本、分镜稿、封面小图、复盘数据。工作台照旧读得到这个项目。</div>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">1</span>点下去之后，机器按这个顺序干活</h2>
+    <p class="sub">顺序是铁律，不可颠倒 —— 它决定了"素材会不会丢"</p>
+    <div class="flow">
+      <div class="step"><b>①</b> 认盘<br><span style="color:#93a6bd;font-size:12px">卷序列号，不是盘符</span></div>
+      <span class="arrow">→</span>
+      <div class="step"><b>②</b> 出清单<br><span style="color:#93a6bd;font-size:12px">弹窗让你确认</span></div>
+      <span class="arrow">→</span>
+      <div class="step"><b>③</b> 复制到硬盘</div>
+      <span class="arrow">→</span>
+      <div class="step"><b>④</b> 逐个校验指纹<br><span style="color:#93a6bd;font-size:12px">对不上就停</span></div>
+      <span class="arrow">→</span>
+      <div class="step"><b>⑤</b> 全过了，才删本地</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">2</span>三道「什么都不删」的闸</h2>
+    <p class="sub">任何一道没过，本地一个文件都不动 —— 宁可搬不完，绝不丢东西</p>
+    <div class="gate"><span class="g-ico">🛑</span><div><b>硬盘没插 / 不是那块盘</b> —— 直接拒绝，什么都不做。</div></div>
+    <div class="gate"><span class="g-ico">🛑</span><div><b>复制途中出错 / 掉线</b> —— 立刻中止，本地一个都不删。</div></div>
+    <div class="gate"><span class="g-ico">🛑</span><div><b>复制过去了但对不上</b>（大小或指纹不一致）—— 中止，本地一个都不删，并列出是哪几个。</div></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">3</span>三个真实项目的预演结果</h2>
+    <p class="sub">条越长 = 占的地方越大。绿 = 归档后本地剩下的小桩</p>
+
+    <div class="proj">
+      <div class="name">思辨与立场</div>
+      <div class="meta">归档前 1440 个文件 · 452.2 MB</div>
+      <div class="bar">
+        <div class="seg seg-keep" style="width:0.62%"></div>
+        <div class="seg seg-disk" style="width:76.7%">搬去硬盘 346.9 MB</div>
+        <div class="seg seg-gone" style="width:23.3%">直接销毁 105.3 MB</div>
+      </div>
+      <div class="num-row" style="margin-top:12px">
+        <div class="num-box"><div class="v">921</div><div class="k">个 → 硬盘</div></div>
+        <div class="num-box"><div class="v">920</div><div class="k">个本地删掉</div></div>
+        <div class="num-box"><div class="v green">520</div><div class="k">个留下（桩）</div></div>
+        <div class="num-box"><div class="v green">2.8 MB</div><div class="k">本地最终大小</div></div>
+      </div>
+    </div>
+
+    <div class="proj">
+      <div class="name">粥糊了：我只是陈述事实是最大的语言陷阱</div>
+      <div class="meta">归档前 234 个文件 · 122.1 MB</div>
+      <div class="bar">
+        <div class="seg seg-keep" style="width:1.1%"></div>
+        <div class="seg seg-disk" style="width:80.2%">搬去硬盘 97.9 MB</div>
+        <div class="seg seg-gone" style="width:19.9%">直接销毁 24.3 MB</div>
+      </div>
+      <div class="num-row" style="margin-top:12px">
+        <div class="num-box"><div class="v">205</div><div class="k">个 → 硬盘</div></div>
+        <div class="num-box"><div class="v">156</div><div class="k">个本地删掉</div></div>
+        <div class="num-box"><div class="v green">78</div><div class="k">个留下（桩）</div></div>
+        <div class="num-box"><div class="v green">1.3 MB</div><div class="k">本地最终大小</div></div>
+      </div>
+    </div>
+
+    <div class="proj">
+      <div class="name">AI时代读书的价值</div>
+      <div class="meta">刚立项：只有 2 个小文件 · 69.9 KB · 还没有成片</div>
+      <div class="bar">
+        <div class="seg seg-keep" style="width:100%">全是小桩，没有可搬的大件</div>
+      </div>
+      <div style="margin-top:11px;font-size:13px;color:#f5d99a">
+        ⚠ 归档按不下去 —— 没有成片时按钮不生效（这是设计好的门槛，免得把半成品搬走）
+      </div>
+    </div>
+
+    <div class="legend">
+      <span><i style="background:rgba(110,220,160,.5)"></i>留下的小桩（本地）</span>
+      <span><i style="background:rgba(127,182,255,.5)"></i>搬去移动硬盘</span>
+      <span><i style="background:rgba(255,140,140,.45)"></i>直接销毁（两头都不留）</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">4</span>以「思辨与立场」为例：什么留、什么走</h2>
+    <p class="sub">左边是归档后本地还剩的东西，右边是被清掉的</p>
+    <div class="three">
+      <div class="col keep">
+        <h3>✔ 留在本地（2.8 MB）</h3>
+        <ul>
+          <li><b>stages\</b> 全套文本 · 289 个（转写、分镜稿、渲染任务、提示词）</li>
+          <li><b>旧镜头代码</b> · 222 个（每个镜头渲染时的 .html）</li>
+          <li><b>project.json</b> · 工程档案（含归档信息）</li>
+          <li><b>封面小图</b> · 2 张</li>
+          <li><b>背景图 / 速览页</b> · 各 1 份</li>
+        </ul>
+      </div>
+      <div class="col gone">
+        <h3>✘ 清掉的（449.4 MB）</h3>
+        <ul>
+          <li><b>成片 / 原声 / 素材视频</b> · 4 个 · 185.6 MB <span style="color:#93a6bd">→ 硬盘</span></li>
+          <li><b>大件</b> · 2 个 · 140.4 MB <span style="color:#93a6bd">→ 硬盘</span></li>
+          <li><b>逐镜渲染画面</b> · 489 个 · 104.9 MB <span style="color:#ffb3b3">→ 销毁</span></li>
+          <li><b>渲染工作区</b> · 393 个 · 17.4 MB <span style="color:#93a6bd">→ 硬盘</span></li>
+          <li><b>历史备份</b> · 2 个 · 615 KB <span style="color:#93a6bd">→ 硬盘</span></li>
+          <li><b>旧卡片图</b> · 4 个 · 416 KB <span style="color:#ffb3b3">→ 销毁</span></li>
+          <li><b>渲染器临时残留</b> · 26 个 <span style="color:#ffb3b3">→ 销毁</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">5</span>「销毁」的那部分，为什么敢删</h2>
+    <p class="sub">只有一类东西会被两头都不留 —— 因为它们是「代码渲染出来的」，随时能再生成一遍</p>
+    <table>
+      <tr><th>类型</th><th>为什么可再生</th></tr>
+      <tr><td><b>逐镜渲染画面</b>（shot_xxx.mp4）</td><td>由 <b>渲染工作区</b> 里的镜头代码 + 原声现跑出来的</td></tr>
+      <tr><td><b>卡片图</b>（渲染产物 images）</td><td>同上，渲染时顺带出的静态帧</td></tr>
+      <tr><td><b>渲染器临时残留</b></td><td>渲染中途的锁文件，正常跑完本就该被自己清掉</td></tr>
+    </table>
+    <div style="margin-top:14px;font-size:13.5px;color:#93a6bd">
+      ★ 而<b style="color:#cfe2ff">成片</b>、<b style="color:#cfe2ff">原声</b>、<b style="color:#cfe2ff">镜头代码</b>、<b style="color:#cfe2ff">封面</b>、<b style="color:#cfe2ff">分镜稿</b>
+      一律<b style="color:#8ee8b5">不销毁</b>：要么搬去硬盘、要么留本地。它们是不可再生的。
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">6</span>归档之后，项目还能用吗</h2>
+    <div class="three" style="grid-template-columns:1fr 1fr">
+      <div class="col keep" style="background:rgba(127,182,255,.08);border-color:rgba(127,182,255,.26)">
+        <h3 style="color:#7fb6ff">还能看</h3>
+        <ul>
+          <li>项目卡片<b>照旧在列表里</b>，不会消失</li>
+          <li>点开直接落<b>「复盘」页</b> —— 填播放、点赞、涨粉、收藏…</li>
+          <li>基础信息（立项时间、归档时间、归档位置）都在</li>
+        </ul>
+      </div>
+      <div class="col" style="background:rgba(240,198,116,.08);border:1px solid rgba(240,198,116,.26)">
+        <h3 style="color:#f5d99a">暂时看不了</h3>
+        <ul>
+          <li>原视频、成片、逐镜画面（已经在硬盘上了）</li>
+          <li>想接着改？点<b>「取回工程」</b> —— 整包拷回本地，硬盘那份保留</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <footer>翊瑄的工作台 · V1.13.0 归档改造 · 预演数据由离线脚本按归档代码的同一套规则算出</footer>
+
+</div>
+</body>
+</html>

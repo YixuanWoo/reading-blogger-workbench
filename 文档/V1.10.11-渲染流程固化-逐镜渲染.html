@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>V1.10.11 · 渲染流程固化：逐镜渲染 + 逐镜验收</title>
+<style>
+  :root{
+    --bg:#0b1020; --card:rgba(20,30,54,.82); --line:rgba(143,184,216,.22);
+    --gold:#f0d68a; --cream:#f3ecdc; --blue:#8fb8d8; --dim:rgba(243,236,220,.62);
+    --red:#ff8a8a; --green:#7fe0a8;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--cream);
+    font-family:'Noto Serif SC','Songti SC','Microsoft YaHei',serif;}
+  body{
+    background-color:#0b1020;
+    background-image:
+      linear-gradient(rgba(143,184,216,.075) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(143,184,216,.075) 1px, transparent 1px);
+    background-size:60px 60px, 60px 60px;
+    padding:52px 40px 72px;
+  }
+  .wrap{max-width:1180px;margin:0 auto;}
+  .kicker{color:var(--gold);letter-spacing:.28em;font-size:13px;margin-bottom:14px;}
+  h1{font-size:40px;line-height:1.28;margin:0 0 18px;font-weight:700;}
+  h1 em{color:var(--gold);font-style:normal;}
+  .lead{font-size:19px;line-height:1.85;color:var(--dim);max-width:900px;margin:0 0 40px;}
+  .lead b{color:var(--cream);}
+
+  h2{font-size:22px;margin:52px 0 20px;padding-left:14px;border-left:5px solid var(--gold);}
+  h2 span{font-size:14px;color:var(--dim);font-weight:400;margin-left:12px;letter-spacing:.06em;}
+
+  .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 18px;}
+  .card .no{font-size:12px;color:var(--gold);letter-spacing:.2em;margin-bottom:10px;}
+  .card .t{font-size:17px;font-weight:700;margin-bottom:10px;line-height:1.45;}
+  .card .d{font-size:13.5px;line-height:1.75;color:var(--dim);}
+
+  .vs{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .vs .col{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;}
+  .vs .col.bad{border-color:rgba(255,138,138,.42);}
+  .vs .col.good{border-color:rgba(127,224,168,.42);}
+  .vs h3{margin:0 0 14px;font-size:17px;}
+  .vs .bad h3{color:var(--red);} .vs .good h3{color:var(--green);}
+  .vs ul{margin:0;padding-left:20px;font-size:14px;line-height:1.9;color:var(--dim);}
+  .vs .sum{margin-top:14px;padding-top:14px;border-top:1px dashed var(--line);font-size:15px;}
+  .vs .bad .sum{color:var(--red);} .vs .good .sum{color:var(--green);}
+
+  .steps{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;}
+  .step{flex:1 1 150px;background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:16px 14px;position:relative;}
+  .step .n{font-size:12px;color:var(--gold);letter-spacing:.16em;margin-bottom:8px;}
+  .step .t{font-size:14.5px;font-weight:700;margin-bottom:8px;line-height:1.5;}
+  .step .d{font-size:12.5px;line-height:1.7;color:var(--dim);}
+  .loop{margin-top:14px;font-size:14px;color:var(--gold);text-align:center;
+    border:1px dashed rgba(240,214,138,.4);border-radius:10px;padding:12px;}
+
+  table{width:100%;border-collapse:collapse;background:var(--card);
+    border:1px solid var(--line);border-radius:14px;overflow:hidden;font-size:14.5px;}
+  th,td{padding:14px 16px;text-align:left;border-bottom:1px solid var(--line);line-height:1.7;}
+  th{background:rgba(143,184,216,.09);font-size:13.5px;color:var(--blue);letter-spacing:.05em;}
+  tr:last-child td{border-bottom:none;}
+  td.q{color:var(--gold);white-space:nowrap;font-weight:700;}
+  td .bad{color:var(--red);} td .ok{color:var(--green);}
+
+  .audit{display:grid;grid-template-columns:1.35fr 1fr;gap:16px;}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;}
+  .panel h3{margin:0 0 14px;font-size:16.5px;}
+  .panel h3 .tag{font-size:12px;padding:3px 9px;border-radius:20px;margin-left:8px;vertical-align:2px;}
+  .panel h3 .tag.done{background:rgba(127,224,168,.16);color:var(--green);}
+  .panel h3 .tag.new{background:rgba(240,214,138,.18);color:var(--gold);}
+  .panel ol,.panel ul{margin:0;padding-left:22px;font-size:14px;line-height:1.95;color:var(--dim);}
+  .panel b{color:var(--cream);}
+  .panel .quote{color:var(--gold);}
+
+  .warn{margin-top:26px;background:rgba(255,138,138,.09);border:1px solid rgba(255,138,138,.4);
+    border-radius:14px;padding:20px 22px;font-size:15px;line-height:1.9;}
+  .warn b{color:var(--red);}
+  .foot{margin-top:34px;font-size:13px;color:rgba(243,236,220,.42);line-height:1.9;
+    border-top:1px solid var(--line);padding-top:18px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="kicker">V1.10.11 · 2026-10-03</div>
+  <h1>渲染不再「批量翻车」——<em>逐镜渲、逐镜验</em></h1>
+  <p class="lead">
+    批量渲 26 镜时，同一处错误会被<b>复制到全部 26 个镜头</b>，交出来才发现 → 只能整体返工。<br>
+    改成逐镜之后，错只错一镜，改完再走下一个 —— 实际效果是 <b>9 镜重渲 9/9 一次通过</b>。
+  </p>
+
+  <h2>这次改了四件事 <span>让经验"能被读到"，而不只是"被记下来"</span></h2>
+  <div class="cards">
+    <div class="card">
+      <div class="no">01 · SKILL</div>
+      <div class="t">开工必读索引</div>
+      <div class="d">顶部新增跳转表：凡渲染任务，先读 SOP → 坑表 → 逐镜流程 → 排障，不读不许动手。</div>
+    </div>
+    <div class="card">
+      <div class="no">02 · 提示词</div>
+      <div class="t">规矩写进任务书</div>
+      <div class="d">渲染提示词开篇即「逐镜 + 四条验收」，六类坑也装上 —— <b>每次派任务自带</b>，绕不过去。</div>
+    </div>
+    <div class="card">
+      <div class="no">03 · 脚手架</div>
+      <div class="t">脚本可整目录复用</div>
+      <div class="d">生成 / 渲染 / 验收三个脚本 + 作业规范，项目根自动识别，新项目拷过去就能跑。</div>
+    </div>
+    <div class="card">
+      <div class="no">04 · 补漏</div>
+      <div class="t">三条漏掉的经验</div>
+      <div class="d">画面文字别照抄转写稿、主体太小算不合格、抽帧看到别镜内容先查产物没覆盖。</div>
+    </div>
+  </div>
+
+  <h2>为什么定死逐镜 <span>同一个错误，代价差 26 倍</span></h2>
+  <div class="vs">
+    <div class="col bad">
+      <h3>✕ 批量渲染（旧）</h3>
+      <ul>
+        <li>一次把 26 镜全渲完</li>
+        <li>提交前看不到画面</li>
+        <li>一处错误 → 26 镜全带病</li>
+        <li>发现问题时已全部白干</li>
+      </ul>
+      <div class="sum">代价：26 镜整体返工</div>
+    </div>
+    <div class="col good">
+      <h3>✓ 逐镜渲染（新）</h3>
+      <ul>
+        <li>渲一镜 → 立刻抽帧看图</li>
+        <li>列齐四条判据，对不上不放行</li>
+        <li>错只错这一镜，改完再下一个</li>
+        <li>交出来时每一镜都已经人眼验过</li>
+      </ul>
+      <div class="sum">代价：最多多渲一两镜</div>
+    </div>
+  </div>
+
+  <h2>逐镜作业七步 <span>每一步都留痕，不靠记忆</span></h2>
+  <div class="steps">
+    <div class="step"><div class="n">STEP 1</div><div class="t">写实现</div><div class="d">这一镜的画面与动效，样式写全，不借未验证的旧代码</div></div>
+    <div class="step"><div class="n">STEP 2</div><div class="t">拼装 + 查语法</div><div class="d">生成页面文件，先过一遍语法检查再送渲</div></div>
+    <div class="step"><div class="n">STEP 3</div><div class="t">只渲这一镜</div><div class="d">绝不带上别的镜号</div></div>
+    <div class="step"><div class="n">STEP 4</div><div class="t">机检</div><div class="d">覆盖确认 / 时长 / 体积 / 抽帧，四项自动出数</div></div>
+    <div class="step"><div class="n">STEP 5</div><div class="t">人眼验</div><div class="d">把抽出来的帧真的看一遍，逐个元素核对</div></div>
+    <div class="step"><div class="n">STEP 6</div><div class="t">不对就回炉</div><div class="d">改到对为止，再进下一镜</div></div>
+    <div class="step"><div class="n">STEP 7</div><div class="t">收尾</div><div class="d">核时长、换缩略图、清残渣、写回包</div></div>
+  </div>
+  <div class="loop">↻ 核心就一句：没过第 5 步，不许开第 3 步的下一镜</div>
+
+  <h2>四条验收判据 <span>缺一条 = 这镜没验过</span></h2>
+  <table>
+    <tr><th style="width:150px">判据</th><th>怎么查</th><th style="width:300px">不通过长什么样</th></tr>
+    <tr>
+      <td class="q">① 覆盖确认</td>
+      <td>新产物的写入时间，必须晚于本次渲染开始</td>
+      <td><span class="bad">时间没变 = 渲的是旧文件</span>（文件被占用，写入失败却看不出）</td>
+    </tr>
+    <tr>
+      <td class="q">② 时长</td>
+      <td>≈ 台词时长 + 0.10s 安全尾，偏差 &lt; 0.12 秒</td>
+      <td><span class="bad">偏差大 = 成片拼起来错位</span></td>
+    </tr>
+    <tr>
+      <td class="q">③ 体积</td>
+      <td>真画面几十 KB 起步；&lt; 20KB 就要警惕</td>
+      <td><span class="bad">体积异常小 = 底图/元素根本没上去</span></td>
+    </tr>
+    <tr>
+      <td class="q">④ 抽帧肉眼</td>
+      <td>取 2~3 个时间点抽帧，逐个核对设计要求的元素</td>
+      <td><span class="bad">元素缺失 / 塌左上角 / 被裁一半 / 主体过小</span></td>
+    </tr>
+  </table>
+
+  <h2>经验审计结果 <span>批量翻车的教训，逐条对账</span></h2>
+  <div class="audit">
+    <div class="panel">
+      <h3>早已沉淀 <span class="tag done">9 类 · 在 skill 里</span></h3>
+      <ol>
+        <li>整屏塌左上角 —— 改样式时一处转义把括号吃掉，成了非法样式</li>
+        <li>元素飞到别处 —— 居中的百分比是相对"自己的父容器"，不是相对画面</li>
+        <li>元素凭空消失 —— 图形图元写在普通容器里，浏览器静默忽略</li>
+        <li>元素塌在某角 —— 只写了类名，没给定位坐标</li>
+        <li>卡片整体偏半身位 —— 已经内部定位的容器又叠了一次自身居中</li>
+        <li>描边动画不发生 —— 该动画方法只对外一种图元有效</li>
+        <li>画面完全不动 —— 视频地址用脚本赋值，引擎抽帧时还没跑</li>
+        <li>整批漏渲个别镜 —— 编号补零被当成八进制</li>
+        <li>报成功但产物没变 —— 旧文件被占用，写入失败而脚本只判"文件在不在"</li>
+      </ol>
+    </div>
+    <div class="panel">
+      <h3>本次补录 <span class="tag new">3 条 · 之前漏了</span></h3>
+      <ul>
+        <li><b>画面文字别照抄转写稿。</b><br>
+          转写是同音字重灾区：<span class="quote">「糊粥总比没粥好」</span>被写成
+          <span class="quote">「梅州总比胡州好」</span>。画面上的错字观众直接看得见 —— 以语义通顺为准。</li>
+        <li><b>主体过小 / 画面空 = 不合格。</b><br>
+          有一镜位置全对、也没被裁，但人和道具太小、四周空荡 → 判不合格，放大后才过。</li>
+        <li><b>抽帧看到"别的镜头的内容"→ 先怀疑产物没被覆盖。</b><br>
+          那是渲染失败后旧文件留在原位，不是设计串台 —— 别急着改页面。</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="warn">
+    <b>还有一步没完成：重新打包。</b><br>
+    改动要生效必须换掉正在运行的程序 —— 而工作台这会儿正开着，
+    新版程序打不进去（文件被占用）。<br>
+    <b>关掉工作台</b>后说一声，我立刻重新打包；软件夹里那个刚生成的新版 <code>LiteCut.exe</code>
+    也能直接双击先用。
+  </div>
+
+  <div class="foot">
+    留痕：<code>文档\更新日志.md</code>（V1.10.11 整节）· <code>文档\维护说明.md</code> ·
+    <code>文档\优化与风险登记.md</code>（R-18：逐镜是流程约定、非代码强制）· 待办清单 T-21 ·
+    skill <code>litecut-workbench</code> 顶部索引 + §5.27 · 脚手架 <code>工具\渲染脚手架\</code>（含渲染作业规范.md）
+  </div>
+
+</div>
+</body>
+</html>

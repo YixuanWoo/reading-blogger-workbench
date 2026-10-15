@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>V1.1.6 · 拆分为什么拆出空镜，怎么修的</title>
+<style>
+  :root{
+    --bg:#0E1520; --card:#161F2E; --line:#26344A;
+    --text:#E6ECF5; --dim:#9AA7BA; --faint:#6C7A90;
+    --warn:#F59E0B; --ok:#34D399; --accent:#7FB3FF; --danger:#F87171; --purple:#A78BFA;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:26px 22px 36px;
+    background:
+      linear-gradient(rgba(127,179,255,.055) 1px, transparent 1px) 0 0/28px 28px,
+      linear-gradient(90deg, rgba(127,179,255,.055) 1px, transparent 1px) 0 0/28px 28px,
+      radial-gradient(1100px 560px at 50% -12%, #17273F 0%, var(--bg) 68%);
+    color:var(--text);
+    font:15px/1.72 "Microsoft YaHei","PingFang SC",system-ui,sans-serif;
+  }
+  .wrap{max-width:1000px;margin:0 auto}
+  h1{font-size:26px;margin:0 0 6px}
+  .sub{color:var(--dim);font-size:14px;margin:0 0 22px}
+  h2{font-size:16.5px;margin:28px 0 12px;color:var(--accent)}
+  h2 span{color:var(--faint);font-weight:400;font-size:13px;margin-left:8px}
+  .yes{background:linear-gradient(180deg,#1B2E26,#16241F);border:1px solid #24503C;
+       border-left:4px solid var(--ok);border-radius:10px;padding:14px 18px;margin:0 0 22px}
+  .yes b{color:var(--ok)}
+  code{background:#0B1119;border:1px solid var(--line);border-radius:4px;
+       padding:1.5px 6px;font-size:12.5px;color:#A8C7FF;font-family:Consolas,monospace}
+  table{width:100%;border-collapse:collapse;font-size:14px;background:var(--card);
+        border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  th,td{padding:10px 13px;text-align:left;border-bottom:1px solid var(--line)}
+  th{background:#1A2536;color:var(--dim);font-weight:600;font-size:13px}
+  tr:last-child td{border-bottom:none}
+
+  /* 时间轴 */
+  .tl{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px 22px 16px;position:relative}
+  .tl .bar{position:relative;height:46px;border-radius:6px;overflow:hidden;
+           background:#101827;border:1px solid #2A3850}
+  .seg{position:absolute;top:0;height:100%;display:flex;align-items:center;justify-content:center;
+       font-size:12.5px;color:#E8F0FA;white-space:nowrap;overflow:hidden}
+  .s1{background:linear-gradient(180deg,#2B4A72,#22395A)}
+  .s2{background:linear-gradient(180deg,#4A3A6E,#382C55)}
+  .mark{position:absolute;top:-6px;bottom:-6px;width:2px}
+  .lbl{position:absolute;font-size:12px;white-space:nowrap;transform:translateX(-50%)}
+  .axis{position:relative;height:26px;margin-top:6px}
+  .axis .pos{position:absolute;font-size:11.5px;color:var(--faint);transform:translateX(-50%)}
+  .legend{display:flex;gap:22px;margin-top:12px;font-size:13px;color:var(--dim);flex-wrap:wrap}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:middle}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .box{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .box.bad{border-color:#5A2A2A;background:linear-gradient(180deg,#241618,#1C1416)}
+  .box.good{border-color:#24503C;background:linear-gradient(180deg,#16241F,#141F1B)}
+  .box .t{font-weight:600;margin-bottom:8px;font-size:14.5px}
+  .box ul{margin:0;padding-left:19px;font-size:13.3px;color:var(--dim);line-height:1.75}
+  .box code{font-size:12px}
+  .k{color:var(--ok);font-weight:600}
+  .x{color:var(--danger);font-weight:600}
+  .menu{background:#1B2331;border:1px solid #33425C;border-radius:9px;padding:8px;width:430px;
+        box-shadow:0 12px 30px rgba(0,0,0,.45);font-size:13.4px}
+  .mi{padding:7px 11px;border-radius:6px;color:#D5DEEC;display:flex;justify-content:space-between;gap:12px}
+  .mi.head{color:var(--faint);font-size:12.5px;border-bottom:1px solid #2A3648;border-radius:0;margin-bottom:4px;padding-bottom:8px}
+  .mi.hl{background:#243356;color:#fff}
+  .mi .r{color:var(--warn);font-size:12px;white-space:nowrap}
+  .sep{height:1px;background:#2A3648;margin:5px 0}
+  ol{margin:8px 0 0;padding-left:22px} ol li{margin:7px 0}
+  ol li em{color:var(--dim);font-style:normal}
+  .kbd{background:#0B1119;border:1px solid #31405A;border-bottom-width:2px;border-radius:5px;
+       padding:1px 7px;font-size:12.5px;color:#CFE0FF}
+  .note{background:#141C29;border:1px dashed #2C3A50;border-radius:9px;padding:12px 16px;
+        color:var(--dim);font-size:13.3px;margin-top:16px}
+  .note b{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>拆出来的"空下一镜"—— 找到了，也修了</h1>
+  <p class="sub">你三个问题里，第 3 个是真 bug，而且是个<b>必然出错</b>的算式。</p>
+
+  <div class="yes">
+    <b>先说结论：</b>旧代码挑切点时，看的是一句话的<b>开头</b>在哪 —— 只要这一镜里有一句
+    "开头在中点之前、却一直说到镜尾"，它就会被选中，于是<b>切点落在镜子的结尾</b>：
+    后半镜长度 0、台词空；前半镜一个字没少。
+    <br>—— 这跟你描述的「台词还在第四镜，只多了个空的第五镜」<b>一个字都不差</b>。
+  </div>
+
+  <h2>你那个第 4 镜的真实数据 <span>7.125s → 10.205s，中点 8.665s</span></h2>
+  <div class="tl">
+    <div class="bar">
+      <div class="seg s1" style="left:0%;width:54%">血压蹭蹭往上涨</div>
+      <div class="seg s2" style="left:55%;width:45%">但是完全没有办法解释和反驳</div>
+      <div class="mark" style="left:54.5%;background:#3D4E68"></div>
+      <div class="mark" style="left:70.4%;background:var(--danger)"></div>
+      <div class="mark" style="left:100%;background:#3D4E68"></div>
+    </div>
+    <div class="lbl" style="left:54.5%;top:-22px;color:#8FA3BF">中点 8.665s</div>
+    <div class="lbl" style="left:70.4%;top:56px;color:var(--danger)">✗ 旧算法的切点 = 8.665 之后那半句…</div>
+    <div class="axis">
+      <div class="pos" style="left:0%">7.125</div>
+      <div class="pos" style="left:100%">10.205</div>
+    </div>
+    <div class="legend">
+      <span><i style="background:#2B4A72"></i>第 1 句 [7.125→8.300]</span>
+      <span><i style="background:#4A3A6E"></i>第 2 句 [8.325→10.205]</span>
+      <span style="color:var(--danger)">✗ 旧切点 = 10.205 = 镜尾 → 空镜</span>
+      <span style="color:var(--ok)">✓ 新切点 = 8.300（第 1 句说完）</span>
+    </div>
+  </div>
+
+  <p class="sub" style="margin:14px 0 0">
+    旧算法问的是"哪一句的<b>开头</b>在中点之前"——第 2 句开头 8.325 &lt; 8.665，中选，
+    于是切点成了它自己的结尾 10.205。而它<b>就是镜尾</b>。
+  </p>
+
+  <h2>修法：候选切点排除最后一句 <span>一句话的事，但必须排</span></h2>
+  <div class="grid2">
+    <div class="box bad">
+      <div class="t x">✗ 旧</div>
+      <ul>
+        <li><code>linesIn.Last(l =&gt; l.StartSec &lt;= mid)</code></li>
+        <li>按<b>起点</b>筛中点</li>
+        <li>会选中"跨到镜尾"的长句</li>
+        <li>切到的位置可以 <b>= 镜尾</b> → 空镜</li>
+      </ul>
+    </div>
+    <div class="box good">
+      <div class="t k">✓ 新</div>
+      <ul>
+        <li><code>cands = linesIn.Take(n - 1)</code> ← <b>排除最后一句</b></li>
+        <li>再取"<b>结尾</b>最接近中点"的那句</li>
+        <li>后面永远至少还剩一句 → 拆不空</li>
+        <li>另加兜底：切点碰镜尾直接拒绝</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 style="font-size:15px;margin:20px 0 10px;color:var(--dim)">拿你项目的真实句子跑一遍（同一批 58 镜）</h3>
+  <table>
+    <tr><th style="width:150px">算法</th><th style="width:150px">拆得好</th><th>拆出空镜</th></tr>
+    <tr><td>旧</td><td>51</td><td><span class="x">4 个</span> ← 正好对上磁盘上躺着的 s63 / s64 / s66 / s67</td></tr>
+    <tr><td>新</td><td><span class="k">55</span></td><td><span class="k">0</span></td></tr>
+  </table>
+  <div class="note">
+    旧算法<b>精确复现</b>了你磁盘上那 4 个垃圾镜 —— 说明这不是偶发，是"只要撞上跨中点的长句就必然错"。
+    那 4 个空镜我已经清掉了（草稿 62 → 58 镜）。
+  </div>
+
+  <h2>顺带：拆分按钮现在是下拉菜单了 <span>不再弹窗</span></h2>
+  <div class="menu">
+    <div class="mi head"><span>第 4 镜 · 7.1 → 10.2s · 共 2 句</span></div>
+    <div class="mi hl"><span>在「血压蹭蹭往上涨」之后切 ｜ 前半 1.2s · 后半 1.9s</span><span class="r">◀ 推荐</span></div>
+    <div class="sep"></div>
+    <div class="mi"><span>这一镜有设计 —— 前半保留它并标「待复核」</span></div>
+  </div>
+  <p class="sub" style="margin:12px 0 0">
+    点「<span class="kbd">拆分选中镜 ▾</span>」（卡片上是「<span class="kbd">拆分 ▾</span>」）就弹这个，
+    <b>切点全列出来让你自己点</b> —— 每条都是句末，所以怎么点都拆不坏。
+    最接近中点的那条标了"推荐"，懒得想就点它。
+  </p>
+
+  <h2>请你验这三下 <span>包已打好，重启即可</span></h2>
+  <ol>
+    <li>双击 <code>D:\视频创作\工作台\LiteCut.exe</code>（16:35 的新包）→ 开「思辨与立场」→ ③ 分镜页</li>
+    <li>点 <b>第 4 镜</b>（现在挂着橙「待复核」）→ 点 <span class="kbd">拆分选中镜 ▾</span> → 应弹出切点菜单
+      → 点那条"推荐"<br>
+      <em>验收：左边那句留在第 4 镜、右边那句落到新第 5 镜；<b>没有空镜</b>；第 4 镜仍是橙「待复核」，新的第 5 镜挂灰「待补设计」。</em></li>
+    <li>再随便挑一镜（没有设计的）拆一次
+      <br><em>验收：切点菜单照常弹出；拆完<b>两半都是灰「待补设计」</b>。</em></li>
+  </ol>
+
+  <div class="note" style="margin-top:20px">
+    <b>纠正我上一条说错的地方：</b>「前半橙」<b>只在原来那一镜有设计时</b>才成立。
+    拆一镜<b>没有设计</b>的，前后两半都该是灰「待补设计」。上次我说"拆第 4 镜前半会变橙"是写错了 ——
+    第 4 镜当时有设计（是我写进去的测试数据），所以对；但换个没设计的镜就不成立。
+    <br><br>
+    <b>关于"是不是拆分的逻辑被动了"：</b>这个工程<b>没有 git 仓库</b>，我没法跟历史版本对账，不能给你打包票。
+    但能确认：上一版我改的 3 处全是「徽章标记怎么算」，<b>一行都没碰切点计算</b>。
+    这个算式属于"撞上跨中点的长句就必错"，跟哪次改动无关。
+    <br><br>
+    <b>两个提醒：</b>别点「应用到下游」（那是 T-17）；我写的 <code>[测试]</code> 设计还在草稿里（第 4、7 镜），
+    验完我清掉。已交接的 55 镜和产物一个字节没动。
+  </div>
+
+</div>
+</body>
+</html>

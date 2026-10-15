@@ -1,0 +1,41 @@
+<!-- ============================================================
+     ReviewHostView.xaml - ★ V1.15.0 复盘的"两层容器"
+     ============================================================
+     【为什么要一个容器，而不是给作品页单独开一个菜单项】
+       复盘是"一层套一层"的：
+         第一层 账号页（所有片的汇总 + 更新节奏）
+         第二层 作品页（某一支片的详细数据）← 从账号页点一行钻进来
+       第二层**不该出现在左边菜单里** —— 菜单里出现"作品复盘"会让人
+       以为它是独立的一页，而不是"从某个作品点进去"的。
+
+       所以：菜单项「复盘」指向这个容器，容器负责在两层之间切换，
+       并画那条「← 返回账号」（返回条属于"导航"，不属于任何一个页面）。
+
+     【它自己什么都不知道】
+       不认识热度、不认识数据 —— 只是"装两个页面 + 一个返回按钮"。
+       换掉任一层（比如主图换成涨粉曲线）都不用动这个文件。
+     ============================================================ -->
+<UserControl x:Class="LiteCut.Workbench.Views.ReviewHostView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{StaticResource BgDeep}"
+             Foreground="{StaticResource TextMain}">
+
+    <DockPanel>
+
+        <!-- ============ 第二层才显示的返回条 ============ -->
+        <Border x:Name="BackBar" DockPanel.Dock="Top" Visibility="Collapsed"
+                Padding="20,10,20,10" Background="#FF12151A"
+                BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1">
+            <StackPanel Orientation="Horizontal">
+                <Button x:Name="BtnBack" Content="← 返回账号" Click="BtnBack_Click"
+                        Style="{StaticResource Btn}" FontSize="12.5" Padding="14,5"/>
+                <TextBlock x:Name="TxtCrumb" FontSize="12.5" VerticalAlignment="Center"
+                           Margin="12,0,0,0" TextTrimming="CharacterEllipsis"
+                           Foreground="{StaticResource TextDim}"/>
+            </StackPanel>
+        </Border>
+
+        <ContentControl x:Name="Body"/>
+    </DockPanel>
+</UserControl>

@@ -1,0 +1,30 @@
+<!-- ============================================================
+     CadenceHeatmap.xaml - ★ V1.15.0 日打卡热力图（通用控件）
+     ============================================================
+     【这个控件"只知道日期"，不知道复盘】
+       给它一串日期 + 一个时间窗，它画一张热力图：
+         一行 = 星期几、一列 = 一周、一格 = 一天
+       它不知道"这些日期是什么"—— 将来任何东西都能用它打卡
+       （写稿、健身、记账…），所以它放在 Controls\ 而不是复盘模块里。
+
+     【为什么格子用 Canvas 手工摆，不用 Grid/ItemsControl】
+       格子的边长要随窗口宽度**连续**变化（拖窗口时不能一格一格跳），
+       而且要按"列 = 周"精确对齐。Canvas + 自己算坐标是最直接的，
+       也避免了几百个控件参与布局计算。
+
+     【配色（深色工作台实测值）】
+       空格   #131820（比卡片底 #1A1E24 更暗 → 空格子看得见）
+       1 支   #8A6A1E      2 支  #C99A2E      3 支以上 #E8B54A
+       今天那格描一圈虚线 #9A9890
+       ★ 只有金/灰两个色系，**刻意不用红** —— 红是"评判"，
+         跟"只陈述不评判"的口气冲突。断更就是几个暗格子静静地在那儿。
+       ★ 深色底上"越亮 = 越多"，跟浅色稿子是反的，别直接照搬浅色三档。
+     ============================================================ -->
+<UserControl x:Class="LiteCut.Workbench.Controls.CadenceHeatmap"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="Transparent"
+             SnapsToDevicePixels="True">
+    <Canvas x:Name="Board" ClipToBounds="True"
+            HorizontalAlignment="Left" VerticalAlignment="Top"/>
+</UserControl>

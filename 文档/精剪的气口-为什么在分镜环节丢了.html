@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>精剪留的那些「气口」，丢在分镜这一环</title>
+<style>
+  :root{
+    --bg:#0b1020; --card:#141b2e; --line:#25314d;
+    --txt:#f3ecdc; --dim:#9aa8bf; --gold:#f0d68a; --blue:#8fb8d8;
+    --red:#e08a7a; --green:#7fc79b;
+  }
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);
+    font-family:'Noto Serif SC','Songti SC','Microsoft YaHei',system-ui,serif;}
+  body{
+    background-image:
+      linear-gradient(rgba(120,160,220,.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(120,160,220,.07) 1px, transparent 1px);
+    background-size:46px 46px, 46px 46px;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:44px 28px 60px;}
+  h1{font-size:29px;margin:0 0 6px;letter-spacing:1px;line-height:1.4;}
+  .sub{color:var(--dim);font-size:15px;margin-bottom:26px;}
+  .lead{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gold);
+    border-radius:14px;padding:18px 22px;font-size:17.5px;line-height:1.8;margin-bottom:28px;}
+  .lead b{color:var(--gold);}
+  .lead .dim{color:var(--dim);font-size:15px;}
+  h2{font-size:19px;margin:36px 0 14px;color:var(--gold);letter-spacing:1px;}
+  table{width:100%;border-collapse:collapse;background:var(--card);border-radius:14px;overflow:hidden;
+    font-size:14.5px;}
+  th,td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top;}
+  th{background:#182238;color:var(--gold);font-weight:600;font-size:13.5px;letter-spacing:.5px;}
+  tr:last-child td{border-bottom:none;}
+  td.yes{color:var(--green);font-weight:700;}
+  td.no{color:var(--red);font-weight:700;}
+  td.num{font-family:Consolas,monospace;color:var(--blue);text-align:right;}
+  code{background:#0a0f1c;border:1px solid var(--line);border-radius:5px;padding:1px 6px;
+    font-family:Consolas,monospace;font-size:13px;color:var(--blue);}
+  .box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 20px;
+    font-size:15px;line-height:1.8;}
+  .box.warn{border-left:4px solid var(--red);}
+  .box.ok{border-left:4px solid var(--green);}
+  .box.hl{border-left:4px solid var(--gold);}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media(max-width:760px){.two{grid-template-columns:1fr;}}
+  .pick{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 20px;font-size:15px;line-height:1.8;}
+  .pick.hl{border-color:var(--gold);box-shadow:0 0 0 1px rgba(240,214,138,.25) inset;}
+  .pick h3{margin:0 0 8px;font-size:16.5px;}
+  .pick .k{color:var(--gold);font-weight:700;}
+  .foot{margin-top:34px;color:var(--dim);font-size:13px;line-height:1.9;border-top:1px solid var(--line);
+    padding-top:16px;}
+  svg text{font-family:'Microsoft YaHei',system-ui,sans-serif;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>精剪留的那些「气口」，是丢在<b>分镜</b>这一环的</h1>
+  <div class="sub">结论 + 证据 + 已修 · 2026-10-03 · V1.10.13</div>
+
+  <div class="lead">
+    不是「没读精剪」—— <b>精剪读了</b>：每一句的成片时间，都是从精剪之后的时间轴反推出来的。<br>
+    漏掉的是另一样东西：<b>话与话之间那口气</b>。每句话都有归属，但句子和句子之间的留白，
+    <b>不属于任何一句话</b> —— 于是没有任何镜头认领它，落在镜头边界上的就直接丢了。<br>
+    <span class="dim">26 块画面加起来 187.512 秒，精剪轴 188.852 秒，差 <b>1.340 秒</b>。</span>
+  </div>
+
+  <h2>① 你的判断，对在哪一条</h2>
+  <table>
+    <tr><th style="width:46%">你说的</th><th>实际</th></tr>
+    <tr>
+      <td>分镜该「重新读取新的逐句时间」</td>
+      <td class="yes">✅ 已经做了 —— 每句的时间取自精剪轴，不是转写稿原始时间</td>
+    </tr>
+    <tr>
+      <td>精剪的删减 / 挪块要生效</td>
+      <td class="yes">✅ 也做了 —— 剪掉的句子不进成片稿，挪过的块按成片先后排</td>
+    </tr>
+    <tr>
+      <td>停顿、气口要算进镜头</td>
+      <td class="no">❌ 漏了 —— 这是唯一没传下去的东西，也正是卡住出片的那 1.34 秒</td>
+    </tr>
+  </table>
+  <div class="box hl" style="margin-top:14px;">
+    所以「精剪白做了」这个说法要收回一半：<b>删减、挪块都生效了</b>；
+    真正白做的是你<b>特意留出来的那几口气</b> —— 它们没能传过分镜这道门。
+  </div>
+
+  <h2>② 那 1.34 秒，精确是哪来的</h2>
+  <table>
+    <tr><th>来源</th><th style="width:130px">秒</th></tr>
+    <tr><td>片头前导 —— 第一句开口之前那口气</td><td class="num">0.560</td></tr>
+    <tr><td>落在<b>镜头边界</b>上的句间留白</td><td class="num">0.780</td></tr>
+    <tr><td><b>合计（= 画面比音轨短的部分）</b></td><td class="num"><b>1.340</b></td></tr>
+  </table>
+  <div class="box" style="margin-top:14px;">
+    全片句间留白一共 <b>7.034 秒</b>（54 处）。落在镜头<b>内部</b>的那 6.254 秒被块长盖住了，没事；
+    只有恰好落在<b>镜头边界</b>上的 0.780 秒，整段没了主人。
+  </div>
+
+  <h2>③ 气口是怎么在边界上漏掉的</h2>
+  <svg viewBox="0 0 1000 316" width="100%" style="display:block;background:var(--card);
+       border:1px solid var(--line);border-radius:14px;">
+    <!-- 轨道标签 -->
+    <text x="16" y="46"  fill="#9aa8bf" font-size="13">精剪轴</text>
+    <text x="16" y="112" fill="#9aa8bf" font-size="13">每一句</text>
+    <text x="16" y="180" fill="#9aa8bf" font-size="13">现在的切法</text>
+    <text x="16" y="250" fill="#9aa8bf" font-size="13">铺满之后</text>
+
+    <!-- 1. 精剪轴：整条连续 -->
+    <rect x="120" y="28" width="850" height="26" rx="6" fill="#1d2942" stroke="#8fb8d8" stroke-width="1.2"/>
+    <text x="470" y="46" fill="#8fb8d8" font-size="12.5">一条连续的音轨：188.852 秒（你精剪留下的一整条）</text>
+
+    <!-- 2. 每一句 + 气口 -->
+    <rect x="120"  y="94" width="300" height="26" rx="5" fill="#2f4a3f" stroke="#7fc79b" stroke-width="1.2"/>
+    <text x="240" y="112" fill="#c9e8d5" font-size="12.5">第 1 句</text>
+    <rect x="420" y="94" width="40" height="26" rx="4" fill="#4a3f22" stroke="#f0d68a" stroke-width="1.2"/>
+    <text x="440" y="112" fill="#f0d68a" font-size="11.5" text-anchor="middle">气口</text>
+    <rect x="460" y="94" width="260" height="26" rx="5" fill="#2f4a3f" stroke="#7fc79b" stroke-width="1.2"/>
+    <text x="590" y="112" fill="#c9e8d5" font-size="12.5">第 2 句</text>
+    <rect x="720" y="94" width="40" height="26" rx="4" fill="#4a3f22" stroke="#f0d68a" stroke-width="1.2"/>
+    <text x="740" y="112" fill="#f0d68a" font-size="11.5" text-anchor="middle">气口</text>
+    <rect x="760" y="94" width="210" height="26" rx="5" fill="#2f4a3f" stroke="#7fc79b" stroke-width="1.2"/>
+    <text x="865" y="112" fill="#c9e8d5" font-size="12.5">第 3 句</text>
+
+    <!-- 3. 现在的切法：块尾 = 句子说完处 → 边界上的气口丢了 -->
+    <rect x="120" y="162" width="600" height="26" rx="5" fill="#22314f" stroke="#8fb8d8" stroke-width="1.2"/>
+    <text x="380" y="180" fill="#cfe0f2" font-size="12.5">镜头 1（含块内那口气，没事）</text>
+    <rect x="720" y="162" width="40" height="26" rx="4" fill="#3a2020" stroke="#e08a7a" stroke-width="1.6"
+          stroke-dasharray="4 3"/>
+    <text x="740" y="180" fill="#e08a7a" font-size="11.5" text-anchor="middle">丢</text>
+    <rect x="760" y="162" width="210" height="26" rx="5" fill="#22314f" stroke="#8fb8d8" stroke-width="1.2"/>
+    <text x="865" y="180" fill="#cfe0f2" font-size="12.5">镜头 2</text>
+    <text x="880" y="205" fill="#e08a7a" font-size="11.5" text-anchor="middle">↑ 边界正好压在气口上</text>
+
+    <!-- 4. 铺满之后 -->
+    <rect x="120" y="232" width="640" height="26" rx="5" fill="#22314f" stroke="#7fc79b" stroke-width="1.6"/>
+    <text x="400" y="250" fill="#c9e8d5" font-size="12.5">镜头 1 = 自己的话 + 后面那口气</text>
+    <rect x="760" y="232" width="210" height="26" rx="5" fill="#22314f" stroke="#7fc79b" stroke-width="1.6"/>
+    <text x="865" y="250" fill="#c9e8d5" font-size="12.5">镜头 2</text>
+    <text x="500" y="292" fill="#7fc79b" font-size="12.5">
+      铺满后：26 块严丝合缝盖住整条轴 —— 总和 188.852 秒，误差 0.000000</text>
+  </svg>
+
+  <h2>④ 为什么「去第③步重切」救不了</h2>
+  <div class="box warn">
+    重切走的还是同一套算法（<b>块长 = 这句话说到哪</b>），所以切完照样少 1.340 秒。
+    出片被拦时程序提示的那条路，点了也没用 —— <b>不是重切没执行，是重切本身不会补上这口气。</b>
+  </div>
+
+  <h2>⑤ 已经改好的（V1.10.13）</h2>
+  <div class="box ok">
+    一句话：<b>切完自动「铺满」整条精剪轴。</b><br>
+    块尾不再取「这句话说到哪」，改取「<b>下一块的第一句话从哪开始</b>」——
+    中间那口气就自动归给了前一块（一句话说完，画面多停一会儿，最自然）。<br><br>
+    位置：<code>LiteCut.Core\Engine\ShotSplitter.cs</code> · 新增 <code>FillToTimeline()</code>，只在 <code>Split()</code> 返回前调一次。<br>
+    <span style="color:var(--dim)">· 数学上保证：各块时长之和 <b>严格等于</b>决策轴长度（望远镜求和，与怎么切无关）<br>
+    · 实测复算本项目：187.512 → <b>188.852</b>，误差 <b>+0.000000</b><br>
+    · 只动<b>时间窗</b>，一个字不动<b>源区间</b> —— 镜头身份挂的是源区间，所以 ID 不丢</span>
+  </div>
+
+  <h2>⑥ 代价（说实话）</h2>
+  <table>
+    <tr><th>项目</th><th>数字</th></tr>
+    <tr><td>语音镜头总数</td><td class="num">25</td></tr>
+    <tr><td>重切后时长会变（要重渲）</td><td class="num" style="color:var(--red)">20</td></tr>
+    <tr><td>其中完全不变</td><td class="num" style="color:var(--green)">3 &nbsp;(#6 s04、#11 s09、#16 s15)</td></tr>
+    <tr><td>单块变化幅度</td><td class="num">-1.38 ~ +1.38 秒</td></tr>
+  </table>
+  <div class="box" style="margin-top:14px;">
+    变化大的那几块，都是因为「它后面的那口气」原来没算进去（<b>#25 s26 +1.38</b>、<b>#26 s37 -1.38</b>、
+    <b>#9 s32 -1.20</b>、<b>#17 s16 +1.02</b>）。
+    这也是为什么<b>不能只改一处、其他不动</b>：气口的位置本来就在每一块尾巴上。
+  </div>
+
+  <h2>⑦ 你挑一条</h2>
+  <div class="two">
+    <div class="pick hl">
+      <h3><span class="k">A</span> 重切 + 重渲（推荐）</h3>
+      重开工作台 → 第③步点「重新生成镜头切分」→ 核对时长 → 「应用到下游」→ 重渲变了的镜头 → 出片。<br><br>
+      <span class="k">收益</span>：画面由 Agent 按新时长重做，最干净；一次修好，往后每部片子音画天然对齐。<br>
+      <span class="k">代价</span>：约 20 个镜头重渲，可后台跑，约 1 小时。
+    </div>
+    <div class="pick">
+      <h3><span class="k">B</span> 要快 —— 不重渲</h3>
+      我改第⑤步的组接层：按正确边界取音频，画面尾部<b>补帧（定格）/ 裁帧</b>来对齐。<br><br>
+      <span class="k">收益</span>：约 10 分钟，不重渲，气口保留。<br>
+      <span class="k">代价</span>：部分镜头尾部会定格 0.02~0.7 秒（有一块要定格 1.4 秒，会看出来）。
+    </div>
+  </div>
+
+  <div class="foot">
+    ★ 补充一句要紧的：这个缺陷<b>一直都存在</b>，不是这次才坏 ——
+    以前的片子也存在「边界上的气口被丢」，只是那点差值在 0.5 秒的自检阈值以内，没被拦下来。
+    你这次精剪留的气口多（1.34 秒），才把它顶到了明面上。<br>
+    ★ 本次<b>只改了算法层</b>：没动你的项目数据、没重切、没重渲。上面 ⑥ 的数字是用你的
+    <code>project.json</code> 离线复算出来的。<br>
+    改动留痕：更新日志 V1.10.13 · 维护说明「分镜页」条目 · 风险登记 R-20。
+  </div>
+
+</div>
+</body>
+</html>

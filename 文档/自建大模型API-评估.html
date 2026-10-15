@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工作台要不要自己接大模型 · 评估</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 48px 24px 80px;
+    background-color: #0a1420;
+    background-image:
+      linear-gradient(rgba(90,150,220,.075) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(90,150,220,.075) 1px, transparent 1px);
+    background-size: 40px 40px;
+    color: #e8eef6;
+    font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    line-height: 1.75;
+    font-size: 15px;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 40px; }
+  .kicker {
+    display: inline-block; font-size: 13px; letter-spacing: .12em;
+    color: #7fb6ff; border: 1px solid rgba(127,182,255,.35);
+    border-radius: 999px; padding: 4px 16px; margin-bottom: 18px;
+  }
+  h1 { font-size: 32px; margin: 0 0 12px; font-weight: 600; letter-spacing: .01em; }
+  header p { color: #93a6bd; margin: 0; font-size: 16px; }
+
+  .card {
+    background: #111e2d;
+    border: 1px solid rgba(120,180,255,.14);
+    border-radius: 14px;
+    padding: 26px 28px;
+    margin-bottom: 22px;
+  }
+  .card h2 {
+    font-size: 18px; margin: 0 0 6px; font-weight: 600;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .card h2 .num {
+    width: 26px; height: 26px; flex: none; border-radius: 7px;
+    background: rgba(127,182,255,.14); color: #7fb6ff;
+    font-size: 13px; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .card .sub { color: #93a6bd; font-size: 13.5px; margin: 0 0 20px; }
+
+  .verdict {
+    border: 1px solid rgba(240,198,116,.35);
+    background: linear-gradient(180deg, rgba(240,198,116,.10), rgba(240,198,116,.02));
+    border-radius: 14px; padding: 26px 28px; margin-bottom: 22px;
+  }
+  .verdict .big { font-size: 21px; color: #f5d99a; font-weight: 600; line-height: 1.5; }
+  .verdict .small { color: #93a6bd; margin-top: 10px; font-size: 14px; }
+
+  .steps { display: flex; flex-wrap: wrap; gap: 10px; margin: 4px 0 16px; }
+  .chip {
+    border-radius: 10px; padding: 10px 14px; font-size: 13.5px; line-height: 1.35;
+    border: 1px solid; min-width: 130px;
+  }
+  .chip b { display: block; font-weight: 600; font-size: 14px; }
+  .chip span { font-size: 12px; opacity: .85; }
+  .ai { background: rgba(240,198,116,.10); border-color: rgba(240,198,116,.40); color: #f5d99a; }
+  .local { background: rgba(95,207,154,.08); border-color: rgba(95,207,154,.32); color: #8fe3bd; }
+  .legend { font-size: 13px; color: #93a6bd; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; }
+
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 720px) { .two { grid-template-columns: 1fr; } }
+  .panel { border: 1px solid rgba(120,180,255,.14); border-radius: 12px; padding: 18px 20px; background: rgba(255,255,255,.015); }
+  .panel h3 { margin: 0 0 12px; font-size: 15px; font-weight: 600; }
+  .panel.good h3 { color: #8fe3bd; }
+  .panel.bad h3 { color: #ff9f9f; }
+  .panel ul { margin: 0; padding-left: 0; list-style: none; }
+  .panel li { padding: 6px 0 6px 20px; position: relative; color: #cfdcea; font-size: 14px; }
+  .panel li::before {
+    position: absolute; left: 0; top: 6px; font-size: 13px;
+  }
+  .panel.good li::before { content: "●"; color: #5fcf9a; }
+  .panel.bad li::before { content: "×"; color: #e06a6a; font-weight: 700; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+  th, td { text-align: left; padding: 11px 12px; font-size: 14px; border-bottom: 1px solid rgba(120,180,255,.10); }
+  th { color: #93a6bd; font-weight: 500; font-size: 13px; letter-spacing: .04em; }
+  td.money { color: #f5d99a; font-weight: 600; white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  .note { color: #93a6bd; font-size: 13px; margin-top: 14px; }
+
+  .phase { display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px dashed rgba(120,180,255,.14); }
+  .phase:last-child { border-bottom: none; }
+  .phase .idx {
+    flex: none; width: 30px; height: 30px; border-radius: 50%;
+    border: 1px solid rgba(127,182,255,.45); color: #7fb6ff;
+    display: flex; align-items: center; justify-content: center; font-size: 13px;
+  }
+  .phase .txt b { color: #e8eef6; font-weight: 600; font-size: 14.5px; }
+  .phase .txt p { margin: 3px 0 0; color: #93a6bd; font-size: 13.5px; }
+  .tag { display:inline-block; font-size:12px; padding:1px 9px; border-radius:6px; margin-left:8px; vertical-align:1px;}
+  .tag.now { background: rgba(95,207,154,.16); color:#8fe3bd; border:1px solid rgba(95,207,154,.35); }
+  .tag.later { background: rgba(127,182,255,.12); color:#9cc7ff; border:1px solid rgba(127,182,255,.3); }
+
+  .badge { display:inline-block; font-size:12px; padding:3px 10px; border-radius:6px; white-space:nowrap; }
+  .badge.no { background: rgba(224,106,106,.18); color:#ff9f9f; border:1px solid rgba(224,106,106,.45); }
+  .badge.ok { background: rgba(240,198,116,.16); color:#f5d99a; border:1px solid rgba(240,198,116,.42); }
+  .badge.best { background: rgba(95,207,154,.16); color:#8fe3bd; border:1px solid rgba(95,207,154,.45); }
+  .cellsub { color: #93a6bd; font-size: 12.5px; display: block; margin-top: 3px; }
+  td .hi { color: #ff9f9f; }
+  td .mid { color: #f5d99a; }
+  td .low { color: #8fe3bd; }
+  code {
+    font-family: "Cascadia Mono", Consolas, "Courier New", monospace;
+    font-size: 12.5px; background: rgba(127,182,255,.10);
+    color: #9cc7ff; padding: 1px 6px; border-radius: 4px;
+    word-break: break-all;
+  }
+
+  .fork { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 720px) { .fork { grid-template-columns: 1fr; } }
+  .fork .opt { border: 1px solid rgba(120,180,255,.16); border-radius: 12px; padding: 18px 20px; }
+  .fork .opt h4 { margin: 0 0 8px; font-size: 15px; color: #e8eef6; }
+  .fork .opt p { margin: 0; font-size: 13.5px; color: #93a6bd; }
+  .fork .opt .cost { margin-top: 10px; font-size: 13px; color: #f5d99a; }
+
+  footer { text-align: center; color: #6f8299; font-size: 13px; margin-top: 34px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">架构评估 · 未动手，仅判断</div>
+    <h1>工作台要不要自己接大模型 API？</h1>
+    <p>结论先说：值得做，但真正的收获不是"变成私人 agent"，而是把那条又长又脆的叫醒链路换掉。</p>
+  </header>
+
+  <div class="verdict">
+    <div class="big">六步流水线里，只有 3 处真的需要大模型。<br>自建 API 不是重写工作台，是给这 3 个点接一条线。</div>
+    <div class="small">而且这条线的成本，一部片子只有几毛到几块钱 —— 钱从来不是障碍。</div>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">1</span>先看清：谁真的需要模型</h2>
+    <p class="sub">整条链的主体是本地 ffmpeg 和 HyperFrames 在干活，模型只出现在三个点上。</p>
+    <div class="steps">
+      <div class="chip local"><b>写稿</b><span>你写 Markdown</span></div>
+      <div class="chip ai"><b>转写</b><span>语音 → 文字（ASR）</span></div>
+      <div class="chip local"><b>精剪</b><span>你定切点</span></div>
+      <div class="chip ai"><b>分镜设计</b><span>创意活，最吃模型</span></div>
+      <div class="chip local"><b>渲染</b><span>HyperFrames 本地</span></div>
+      <div class="chip local"><b>出片组接</b><span>ffmpeg 本地</span></div>
+    </div>
+    <p class="legend"><i style="background:#f0c674"></i>要调用大模型（含"单镜重渲"这类改 HTML 的活，也要代码模型）　　<i style="background:#5fcf9a"></i>纯本地，和模型无关</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">2</span>自建 API 能治什么病、治不了什么</h2>
+    <p class="sub">现在的链路是：工作台 → 桥接进程 → 网关 → 你的会话，绕四道弯，三道弯上都有已知故障。</p>
+    <div class="two">
+      <div class="panel good">
+        <h3>能治（都是真痛）</h3>
+        <ul>
+          <li>桥接进程死了不会自己重启，得重开工作台</li>
+          <li>会话正忙时，唤醒消息会被"悄悄丢掉"（界面还显示成功）</li>
+          <li>网关端口和密码每个会话都变，凭据容易过期</li>
+          <li>干活的时候 WorkBuddy 必须开着</li>
+        </ul>
+      </div>
+      <div class="panel bad">
+        <h3>治不了（别抱期望）</h3>
+        <ul>
+          <li>它不会让工作台"变聪明"。调 API 只是让工作台变成"客户端"；真正的 agent 能力（自己看文件、多步推理、试错重来）还得另写一层编排代码，那才是活</li>
+          <li>你只是换了个依赖：从依赖 WorkBuddy，变成依赖某家模型厂商</li>
+          <li>新增一堆要长期维护的东西：Key、计费、限流、重试、模型版本升级</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">3</span>成本：先算笔账</h2>
+    <p class="sub">按一部片子 219 个镜头算，每镜约 3K 输入 + 1K 输出 → 约 66 万输入 / 22 万输出 token。</p>
+    <table>
+      <tr><th>用哪一档模型</th><th>一整部片子的花销</th></tr>
+      <tr><td>便宜档（qwen3.7-flash 一类）</td><td class="money">约 0.3 元</td></tr>
+      <tr><td>主力档（DeepSeek Flash 一类）</td><td class="money">约 1.5 ~ 3 元</td></tr>
+      <tr><td>旗舰档（DeepSeek V4 Pro 一类）</td><td class="money">约 6 ~ 15 元</td></tr>
+    </table>
+    <p class="note">转写那一步更便宜，按音频小时计费，不走 token。<br>价格是 2026 年 9 月的行情，会变；真要动手前重新核一次价即可。<br><b style="color:#8fe3bd">结论：成本从来不是理由。</b>真正该决定的是下面这个岔路。</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">4</span>我的建议：分四期，别一次做完</h2>
+    <p class="sub">每一期都能单独用上，而且每期都不破坏现有功能。</p>
+    <div class="phase">
+      <div class="idx">1</div>
+      <div class="txt"><b>启用已有的「直连大模型」通道<span class="tag now">几乎是零成本</span></b>
+        <p>代码和设置界面<b>都已经写好了</b>（见 §10）—— 只要在分镜页的 Agent 设置里填上 接口地址 / Key / 模型名，点一下「检测连接」。原来的"任务包 + 桥接"通道原样保留当备胎，随时切回来。</p></div>
+    </div>
+    <div class="phase">
+      <div class="idx">2</div>
+      <div class="txt"><b>转写改接专用语音服务</b>
+        <p>这一环最独立、最干净，也最容易被当成"顺便"做的事。注意：它该用语音识别服务，不是聊天模型。</p></div>
+    </div>
+    <div class="phase">
+      <div class="idx">3</div>
+      <div class="txt"><b>分镜设计 + 单镜重渲接代码模型</b>
+        <p>这才是"创意活"，也是最挑模型质量的一步 —— 想清楚用哪家，比想清楚要不要做更重要。</p></div>
+    </div>
+    <div class="phase">
+      <div class="idx">4</div>
+      <div class="txt"><b>到这一步，才谈得上"私人 agent"<span class="tag later">远期</span></b>
+        <p>前面三期做完，"工作台自己就能干活"这件事才真正成立。</p></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">5</span>关键岔路：你要的是"隐私"还是"独立"？</h2>
+    <p class="sub">这两个目标听起来差不多，但通向完全不同的技术路线。这一步定不下来，后面都是白做。</p>
+    <div class="fork">
+      <div class="opt">
+        <h4>隐私优先</h4>
+        <p>素材、稿子、录音一个字都不出本机。</p>
+        <p class="cost">代价：得用本地开源模型，创意类工作质量会明显下降，还要求显卡</p>
+      </div>
+      <div class="opt">
+        <h4>独立优先</h4>
+        <p>不受订阅束缚、随时能干活，效果要够好。</p>
+        <p class="cost">代价：还是依赖模型厂商，只是从"依赖 WorkBuddy"换成"依赖它"</p>
+      </div>
+    </div>
+    <p class="note">也可以混合：简单的、敏感的活走本地，创意活走云 —— 这是最实际的第三条路，但要多写一层路由逻辑。</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">6</span>顺带说一句：还有反方向的路</h2>
+    <p class="sub">今天讨论的是「工作台 → 调 AI」。还有一个反方向：「AI → 遥控工作台」（MCP 那条，评估文档已经写好了：<code>MCP控制工作台-可行性评估.html</code>）。</p>
+    <p style="color:#cfdcea;margin:0">两个方向不冲突，是互补的 —— 前者解决"没人干活的时候它自己把活干了"，后者解决"我想验收的时候，AI 能自己点界面、自己看结果"。</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">7</span>一个必须先拆开的误会</h2>
+    <p class="sub">"工作台要能调用本地代码 / 服务，才算有 agent 能力" —— 这句话把两件完全不同的事混成了一件。</p>
+    <table>
+      <tr><th>听起来像同一件事</th><th>实际是什么</th><th>你的工作台</th></tr>
+      <tr>
+        <td><b>能调用本地代码 / 服务</b></td>
+        <td>普通程序就会做的事 —— 这是个"<b>接口</b>"问题</td>
+        <td class="low">早就会了：ffmpeg 的解码 / 量时长 / <b>出片组接</b> / 导出都是它自己跑的；node 只用来启动桥接</td>
+      </tr>
+      <tr>
+        <td><b>有 agent 能力</b></td>
+        <td>自己决定"下一步该干什么" —— 这是个"<b>判断力</b>"问题</td>
+        <td style="color:#93a6bd">没有，而且不需要它有</td>
+      </tr>
+    </table>
+    <p class="note"><b style="color:#f5d99a">你担心的是前者，真正难的是后者。</b>而后者你已经有了 —— 就在这场对话的另一端。<br>工作台是一双熟练的<strong>手</strong>：你告诉它切哪、渲哪个、怎么拼，它都又快又准。它缺的不是手的能力，是"没人指挥时自己拿主意"。那个拿主意的人，不用你造，已经有了。</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">8</span>你的三个担心，逐条回答</h2>
+    <p class="sub">"难度大不大 / 工程多不多 / 维护难不难" —— 完全取决于选哪条路，而这三条的差距是<b>数量级</b>的。</p>
+    <table>
+      <tr>
+        <th>路线</th><th>工程量</th><th>维护难度</th><th>以后谁来修</th><th>结论</th>
+      </tr>
+      <tr>
+        <td><b>工作台自带推理</b><span class="cellsub">工作台里塞一个会自己试错的大脑</span></td>
+        <td class="hi"><b>极大</b><span class="cellsub">而且是无底洞</span></td>
+        <td class="hi"><b>极高</b></td>
+        <td class="hi">全是你自己<span class="cellsub">还得追着模型升级跑</span></td>
+        <td><span class="badge no">不该做</span></td>
+      </tr>
+      <tr>
+        <td><b>只接模型、出文字</b><span class="cellsub">一次问答：发请求 → 收 JSON → 写盘</span></td>
+        <td class="mid"><b>小</b><span class="cellsub">百行级</span></td>
+        <td class="mid"><b>中低</b></td>
+        <td class="mid">代码我改<span class="cellsub">模型和提示词你改配置</span></td>
+        <td><span class="badge ok">可以做</span></td>
+      </tr>
+      <tr>
+        <td><b>手归手、脑归脑</b><span class="cellsub">工作台干活，Agent 拿主意</span></td>
+        <td class="low"><b>中</b><span class="cellsub">重点是把接线做稳</span></td>
+        <td class="low"><b>最低</b></td>
+        <td class="low">最难的那半<span class="cellsub">WorkBuddy 那边在维护</span></td>
+        <td><span class="badge best">最推荐</span></td>
+      </tr>
+    </table>
+    <p class="note"><b style="color:#8fe3bd">你怕得对：第一行那个"工作台自带推理"，确实是个无底洞</b> —— 因为它不是一个功能，是<b>一整个产品</b>。<br>想想我干活时要处理多少事：先看哪个文件、命令失败了要不要换招、跑太久要不要停、上下文太长怎么删、模型今天抽风了怎么办……<b>这些没有一行是"写完就不用管"的</b>，得跟着模型一起演进。这就是为什么做 Agent 的公司是几百人的团队。<br><b style="color:#f5d99a">好消息是：你根本不需要走那条路。</b></p>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">9</span>让"以后好维护"变成真的：三个抽屉</h2>
+    <p class="sub">规则只有一条 —— <b>会变的放抽屉 1，不太变的放抽屉 2，最难的放抽屉 3（别自己造）。</b></p>
+    <table>
+      <tr><th>抽屉</th><th>放什么</th><th>谁来改</th><th>怎么改</th></tr>
+      <tr>
+        <td><b style="color:#8fe3bd">1 · 配置</b></td>
+        <td>模型名字、API 地址、提示词、价格档位</td>
+        <td class="low"><b>你自己</b></td>
+        <td>改一个文本文件，不用碰代码</td>
+      </tr>
+      <tr>
+        <td><b style="color:#9cc7ff">2 · 代码</b></td>
+        <td>界面、ffmpeg 参数、状态机、产物管理</td>
+        <td style="color:#9cc7ff">我</td>
+        <td>改完重新打包</td>
+      </tr>
+      <tr>
+        <td><b style="color:#c9b8ff">3 · 别人的</b></td>
+        <td>模型推理循环、工具调度、上下文管理</td>
+        <td style="color:#c9b8ff">WorkBuddy</td>
+        <td>你什么都不用管</td>
+      </tr>
+    </table>
+    <p class="note">这个分法的目的很具体：<b style="color:#f5d99a">让你以后需要动手的，只剩下"改一个文本文件"。</b><br>你不是工程师没关系 —— 剩下两种活，都不用你干。</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">10</span>更正 + 一个好消息（翻过源码之后）</h2>
+    <p class="sub">用户当场指出我上面说错了一处。翻完源码：<b style="color:#8fe3bd">他是对的</b>，而且顺着这条线挖出一个更好的消息。</p>
+
+    <h3 style="font-size:15px;margin:22px 0 10px;color:#ff9f9f">① 更正：HyperFrames 逐镜渲染，确实不是工作台干的</h3>
+    <table>
+      <tr><th>本地能力</th><th>到底谁在干</th><th>代码证据</th></tr>
+      <tr>
+        <td>ffmpeg 解码音频 / 量时长</td>
+        <td class="low"><b>工作台自己</b></td>
+        <td><code>FFmpegDecoder.cs</code> 用 <code>Process.Start</code> 起 ffmpeg</td>
+      </tr>
+      <tr>
+        <td><b>出片组接（拼片 + 混音 + 编码）</b></td>
+        <td class="low"><b>工作台自己</b></td>
+        <td><code>FFmpegAssembler.cs</code> 调 <code>FFmpegExporter.RunProcess(ffmpeg, …)</code></td>
+      </tr>
+      <tr>
+        <td>启动桥接</td>
+        <td class="low"><b>工作台自己</b></td>
+        <td><code>AgentBridge.cs</code> 起 <code>node.exe</code> 跑 <code>bridge.js</code></td>
+      </tr>
+      <tr>
+        <td><b>HyperFrames 逐镜渲染（HTML → MP4）</b></td>
+        <td class="hi"><b>Agent（我）</b></td>
+        <td>所有 <code>.cs</code> 里 "HyperFrames" 都只是路径 / 枚举名 / 提示词文本，<b>没有一处 Process.Start</b>；<code>维护说明.md</code> 第八节把它明确列为"外部引擎"</td>
+      </tr>
+    </table>
+    <p class="note">准确的说法是：<b>工作台自己会调 ffmpeg（而且是最难的组接环节），但不会自己跑渲染。</b>上一版把 HyperFrames 也算进"工作台在调"，是我说错了。</p>
+
+    <h3 style="font-size:15px;margin:28px 0 10px;color:#8fe3bd">② 好消息：「工作台直连大模型」这条路，代码里早就写好了</h3>
+    <p style="color:#cfdcea;margin:0 0 14px"><code>AgentBridge.cs</code> 开头就白纸黑字写着两条通道，而且<b>界面上是一套用法</b>：</p>
+    <table>
+      <tr><th>通道</th><th>什么时候走这条</th><th>现状</th></tr>
+      <tr>
+        <td><b>① 直连大模型</b><span class="cellsub">OpenAI 兼容的 /chat/completions，支持流式</span></td>
+        <td>配置里填了 <code>接口地址 + Key + 模型名</code></td>
+        <td class="mid">代码已就绪，<b>但从来没填过 Key</b></td>
+      </tr>
+      <tr>
+        <td><b>② 任务包文件</b><span class="cellsub">写 agent-request.json，等外部 Agent 回包</span></td>
+        <td>没填 Key 时自动走这条</td>
+        <td class="low">一直在走这条（也就是"桥接"）</td>
+      </tr>
+    </table>
+    <p class="note">更好的是：<b>设置界面也是现成的</b> —— <code>AgentSettingsDialog</code>（从分镜页能打开），有「接口地址 / API Key / 模型名 / 流式开关」四个输入，外加一个 <b>「检测连接」按钮</b>。里面模型名给的例子就是 <code>deepseek-chat / gpt-4o-mini / 本地模型名</code>。<br>配置落在 <code>%APPDATA%\翊瑄的工作台\config.json</code>。</p>
+
+    <div class="verdict" style="margin-top:24px">
+      <div class="big">所以"工程量"比上一版估的还小：<br>不是"要开发"，是"填三个值 + 按一下检测连接"。</div>
+      <div class="small">它管的是"出文字"那类活（分镜设计、单镜重渲）。渲染那一段不在其中 —— 而渲染恰恰是最不该塞进工作台的那一段。</div>
+    </div>
+
+    <p class="note" style="margin-top:20px"><b style="color:#f5d99a">为什么渲染不该塞进去：</b>它要跑脚本、要排查"零报错的静默失败"、要改 HTML 反复试 —— 全是判断力活。工作台擅长的是"有确定答案的事"（切点、拼片、混音、算指纹），判断力活交给 Agent。<br><b>这条分工线，代码里其实早就划好了。</b></p>
+  </div>
+
+  <footer>一句话决策建议：先去分镜页打开 Agent 设置，填 接口地址 / Key / 模型名，点「检测连接」—— 你立刻就能感到差别。<br>再送一句定心的：你怕的那个"无底洞"，恰恰是唯一一条你不需要走的路。</footer>
+
+</div>
+</body>
+</html>

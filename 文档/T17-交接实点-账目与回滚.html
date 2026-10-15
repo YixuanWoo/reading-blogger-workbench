@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>T-17 交接实点 · 账目核对与回滚</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 34px 26px 46px;
+    font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+    background-color: #0b1118;
+    background-image:
+      linear-gradient(rgba(90,132,180,.10) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(90,132,180,.10) 1px, transparent 1px);
+    background-size: 44px 44px;
+    color: #dfe7f0; line-height: 1.65;
+  }
+  .wrap { max-width: 1000px; margin: 0 auto; }
+  h1 { font-size: 26px; margin: 0 0 6px; color: #f2f6fb; letter-spacing: .5px; }
+  .sub { color: #8fa0b4; font-size: 13.5px; margin-bottom: 26px; }
+  .card {
+    background: rgba(20,29,41,.82);
+    border: 1px solid rgba(120,160,205,.20);
+    border-radius: 12px; padding: 18px 20px; margin-bottom: 16px;
+  }
+  h2 { font-size: 16px; margin: 0 0 12px; color: #cfe0f2; font-weight: 600;
+       display: flex; align-items: center; gap: 9px; }
+  .n { display: inline-flex; width: 22px; height: 22px; border-radius: 6px;
+       align-items: center; justify-content: center; font-size: 12.5px;
+       background: #1d3a5c; color: #7fc4ff; font-weight: 700; }
+  .n.ok { background: #123a2b; color: #4ade80; }
+  .n.wa { background: #3f2f10; color: #fbbf24; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid rgba(120,160,205,.13); }
+  th { color: #8fa0b4; font-weight: 500; font-size: 12.5px; }
+  td.k { color: #a9bacd; }
+  .yes { color: #4ade80; }
+  .no { color: #f87171; }
+  .amber { color: #fbbf24; }
+  .cyan { color: #67e8f9; }
+  .code { font-family: Consolas, "Courier New", monospace; font-size: 12.5px;
+          background: rgba(8,13,20,.75); padding: 2px 6px; border-radius: 5px; color: #9fd2ff; }
+  .flow { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 2px; }
+  .step { flex: 1 1 150px; background: rgba(12,19,28,.7); border: 1px solid rgba(120,160,205,.18);
+          border-radius: 9px; padding: 10px 12px; font-size: 13px; }
+  .step b { display: block; color: #9fd2ff; font-size: 12px; letter-spacing: .4px; margin-bottom: 4px; }
+  .step.done { border-color: rgba(74,222,128,.35); }
+  .step.dead { border-color: rgba(248,113,113,.35); }
+  .step.done b { color: #4ade80; } .step.dead b { color: #f87171; }
+  .note { font-size: 12.8px; color: #8fa0b4; margin-top: 10px; padding-left: 11px;
+          border-left: 2px solid rgba(120,160,205,.3); }
+  .big { font-size: 15px; color: #eaf2fb; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 720px) { .two { grid-template-columns: 1fr; } }
+  .kpi { font-size: 22px; font-weight: 700; color: #7fc4ff; }
+  .kpi.g { color: #4ade80; }
+  .lbl { font-size: 12px; color: #8fa0b4; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>T-17 交接实点 · 账目核对与回滚</h1>
+  <div class="sub">2026-10-01 16:45 ｜ 项目「思辨与立场」｜ 你点了前 3 步，第 4 步没做成 —— 现在项目已退回交接前</div>
+
+  <div class="card">
+    <h2><span class="n ok">1</span>你点下去之后，磁盘上真的发生了什么</h2>
+    <table>
+      <tr><th>项</th><th>我离线预判的</th><th>实际发生的</th><th></th></tr>
+      <tr><td class="k">镜头表</td><td>55 → 59 镜</td><td>55 → 59 镜</td><td class="yes">✔</td></tr>
+      <tr><td class="k">产物改名</td><td>49 个</td><td>49 个（mp4 / html / bodyHtml / 缩略图 各 49）</td><td class="yes">✔</td></tr>
+      <tr><td class="k">产物停放</td><td>2 个</td><td>2 个 → <span class="code">渲染产物\_已废弃\</span></td><td class="yes">✔</td></tr>
+      <tr><td class="k">产物序号</td><td>连续</td><td><span class="code">shot_008 ~ shot_056</span> 连续无缺</td><td class="yes">✔</td></tr>
+      <tr><td class="k">交接日志</td><td>—</td><td><span class="code">reindex-log-20261001-164507.json</span>，204 个文件、<b>Status: done</b></td><td class="yes">✔</td></tr>
+    </table>
+    <div class="note">
+      一句话：<b>「应用到下游」这一下是真好使的</b> —— 弹框、重排、改名、停放、水位提示，一条不差。
+      日志里还留了一句"成片需要到第⑤步重新组接"，也正是水位 L3 该说的话。
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="n wa">2</span>第 4 步「撤销」为什么点不到</h2>
+    <div class="flow">
+      <div class="step done"><b>你点了交接</b>快照存进内存<br>（撤销就靠它）</div>
+      <div class="step done"><b>你切到别页</b>分镜页被<b>整个销毁</b></div>
+      <div class="step done"><b>你切回来</b>是<b>重新造的一个新页</b></div>
+      <div class="step dead"><b>快照没了</b>按钮自然不出现</div>
+    </div>
+    <div class="note">
+      这不是故障，是<b>设计如此</b>：全系统只有「精剪页」会被留着不销毁（因为它压着撤销历史），
+      <b>分镜页每次切换都重建</b>。而撤销快照就挂在分镜页身上 —— 页一死，快照跟着死。
+      按钮的悬浮提示其实也写了「只保留最近一次」。<br>
+      <b>但你嫌它反直觉是对的</b>：交接是个重动作（改了 49 个文件名），
+      后悔的机会却只有"待在这一页的那几分钟"。已记进风险登记 <b>R-15</b>，你选择了暂不改。
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="n ok">3</span>已经退回交接前 —— 逐项对照</h2>
+    <div class="two">
+      <div>
+        <div class="lbl">退回后</div>
+        <div class="kpi g">55 镜</div>
+        <div class="lbl">已交接镜头（= 你测试之前的那版）</div>
+      </div>
+      <div>
+        <div class="lbl">产物</div>
+        <div class="kpi g">51 个</div>
+        <div class="lbl"><span class="code">shot_001 ~ shot_051</span> 连续，一个不缺</div>
+      </div>
+      <div>
+        <div class="lbl">回滚动作</div>
+        <div class="kpi g">204 / 204</div>
+        <div class="lbl">两遍搬回，零失败、零残留临时文件</div>
+      </div>
+      <div>
+        <div class="lbl">我写的测试假数据</div>
+        <div class="kpi g">0 处</div>
+        <div class="lbl"><span class="code">[测试]</span> 字样全库已清</div>
+      </div>
+    </div>
+    <div class="note">
+      连"账本"也一起退回去了：镜头表、下游读的 <span class="code">shotlist.json</span>、
+      产物清单 <span class="code">render-manifest.json</span>（51 条）、渲染任务包（55 条，两处）。
+      顺手补了一件工程本身漏掉的事 —— 见下面第 4 条。
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="n wa">4</span>顺手查出一个真 bug（R-16）</h2>
+    <div class="big">
+      工作台自己的「撤销」<b class="amber">没有还原产物清单</b>。
+    </div>
+    <div class="note">
+      交接时它会更新 <span class="code">render-manifest.json</span> 里的文件名，撤销时却忘了改回来。
+      于是撤销之后，磁盘上的文件已经搬回旧名字，清单里还写着新名字 ——
+      渲染页一看对不上，会把<b>整页产物标成「产物过期」</b>，诱导你去白重渲一遍。
+      不丢数据，但会骗人。这次是我离线回滚时自己补上的。<br>
+      待办：给工作台的撤销补这一步（要改程序、要重新打包）。
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">5</span>留了一条后路</h2>
+    <div class="big">
+      以后撤销窗口过期了，也能退 —— <span class="code">工具\交接回滚\revert-reindex.js</span>
+    </div>
+    <div class="note">
+      它按交接日志 + 一份"交接前的 project.json 快照"离线把整件事退回去。
+      <b>★ 自检办法很硬</b>：用快照的镜头重算指纹，跟清单里已存的指纹逐条对 ——
+      这次 <b class="yes">51/51 全对</b>，才敢动手。<br>
+      <b>一个要养成的习惯</b>：以后每次交接前，先复制一份 <span class="code">project.json</span> 存着。
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">6</span>所以现在轮到你了</h2>
+    <div class="big">双击 <span class="code">D:\视频创作\工作台\LiteCut.exe</span> → 打开「思辨与立场」→ 进 ③ 分镜页</div>
+    <div class="note">
+      应该看到：<b>55 镜</b>、交接条写着「草稿与已交接版一致 —— 下游现在就用这一份」、
+      按钮是灰的「✓ 已在生效」。<b>没有任何「待复核 / 待补设计」徽章</b>（因为一个设计都还没写）。<br>
+      如果打开后数字对不上，告诉我，我用回滚前的全量备份把它彻底还原回去。
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

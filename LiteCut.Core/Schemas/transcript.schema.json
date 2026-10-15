@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://litecut.local/schemas/transcript.schema.json",
+  "title": "Transcript",
+  "description": "转写稿。一份完整的'谁在第几秒说了什么'，细到每个词的时间码。词级时间码是粗剪下刀和字幕切行的依据。",
+
+  "type": "object",
+  "required": ["schemaVersion", "segments"],
+  "additionalProperties": true,
+
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "1.0" },
+    "language": { "type": "string", "default": "zh" },
+    "engine": { "type": "string", "description": "转写引擎名，如 whisper" },
+    "model": { "type": "string", "description": "模型规格，如 large-v3" },
+    "audioPath": { "type": "string" },
+    "audioDurationSec": { "type": "number", "minimum": 0 },
+    "fullText": { "type": "string", "description": "全文（所有句子拼接），供整体阅读" },
+    "segments": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/segment" }
+    }
+  },
+
+  "$defs": {
+    "segment": {
+      "type": "object",
+      "required": ["index", "startSec", "endSec", "text"],
+      "properties": {
+        "index": { "type": "integer", "minimum": 0 },
+        "startSec": { "type": "number", "minimum": 0 },
+        "endSec": { "type": "number", "minimum": 0 },
+        "text": { "type": "string" },
+        "words": {
+          "type": "array",
+          "description": "词级时间码。引擎不支持时可省略。",
+          "items": { "$ref": "#/$defs/word" }
+        }
+      }
+    },
+
+    "word": {
+      "type": "object",
+      "required": ["text", "startSec", "endSec"],
+      "properties": {
+        "text": { "type": "string" },
+        "startSec": { "type": "number", "minimum": 0 },
+        "endSec": { "type": "number", "minimum": 0 },
+        "confidence": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 1,
+          "description": "识别把握。低于 0.5 的位置可以提示用户重点核对"
+        }
+      }
+    }
+  }
+}

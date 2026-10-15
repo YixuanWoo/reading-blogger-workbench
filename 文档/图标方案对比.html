@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>工作台图标 · 6 个候选</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family:"Microsoft YaHei UI","Microsoft YaHei",sans-serif;
+    background:#0A1626; color:#F5F1E8; padding:48px 40px 80px;
+  }
+  body::before { content:""; position:fixed; inset:0; z-index:-1;
+    background-image:linear-gradient(#1B3A5F 0,#0000 0),linear-gradient(90deg,#1B3A5F 0,#0000 0);
+    background-size:36px 36px; opacity:.35; }
+  .wrap { max-width:1080px; margin:0 auto; }
+  h1 { font-size:34px; letter-spacing:1px; }
+  h1 em { color:#F5C86B; font-style:normal; }
+  .sub { margin:10px 0 36px; color:#9FB6CE; font-size:15px; line-height:1.8; }
+  .sub b { color:#F5F1E8; }
+
+  .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+  .card { position:relative; background:linear-gradient(160deg,#10233C,#0B1A2C);
+    border:1px solid #24405F; border-radius:16px; overflow:hidden; }
+  .badge { position:absolute; top:12px; right:12px; z-index:2;
+    background:linear-gradient(135deg,#FFE3AC,#E09B2E); color:#3A2606;
+    font-size:12px; font-weight:700; padding:4px 10px; border-radius:99px;
+    box-shadow:0 2px 10px rgba(224,155,46,.45); }
+  .stage { display:flex; align-items:center; justify-content:center;
+    padding:26px 0 12px; }
+  .stage svg { width:148px; height:148px; filter:drop-shadow(0 10px 24px rgba(0,0,0,.45)); }
+  .meta { padding:6px 18px 18px; }
+  h2 { font-size:19px; margin-bottom:8px; }
+  .stars { font-size:13px; color:#F5C86B; letter-spacing:2px; }
+  .desc { font-size:13px; line-height:1.75; color:#C4D3E2; min-height:66px; }
+  .tags { margin:10px 0 12px; display:flex; gap:8px; flex-wrap:wrap; }
+  .tags span { font-size:11.5px; color:#8FCBF3; background:rgba(79,155,224,.14);
+    border:1px solid rgba(79,155,224,.35); padding:2.5px 9px; border-radius:99px; }
+  .sizes { display:flex; gap:16px; align-items:flex-end;
+    background:rgba(7,18,30,.55); border:1px solid #1D3550; border-radius:10px; padding:12px 14px 8px; }
+  .sizes figure { text-align:center; }
+  .sizes figcaption { margin-top:6px; font-size:10.5px; color:#7E93AA; line-height:1.5; }
+  .files { margin-top:10px; font-size:11px; color:#6E86A0; }
+  .files code { color:#9FB6CE; font-size:10.5px; }
+
+  .how { margin-top:44px; background:linear-gradient(160deg,#10233C,#0B1A2C);
+    border:1px solid #24405F; border-radius:16px; padding:24px 28px; }
+  .how h3 { font-size:17px; margin-bottom:14px; color:#F5C86B; }
+  .how ol { list-style:none; counter-reset:s; }
+  .how li { counter-increment:s; position:relative; padding:0 0 12px 42px;
+    font-size:13.5px; line-height:1.8; color:#C4D3E2; }
+  .how li::before { content:counter(s); position:absolute; left:0; top:2px;
+    width:26px; height:26px; border-radius:8px; background:rgba(79,155,224,.16);
+    border:1px solid rgba(79,155,224,.4); color:#8FCBF3; font-weight:700;
+    display:flex; align-items:center; justify-content:center; font-size:13px; }
+  .how code { background:rgba(0,0,0,.35); border:1px solid #1D3550;
+    padding:1px 7px; border-radius:6px; color:#F5C86B; font-size:12.5px; }
+  .note { margin-top:16px; font-size:12px; color:#7E93AA; line-height:1.7; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>工作台图标 · <em>6 个候选</em></h1>
+  <p class="sub">
+    统一用了成片的视觉语言：<b>深蓝网格底 + 亮金/浅蓝</b>，圆角方底板（Windows 11 风格）。<br>
+    每张卡片右下是<b>真实小尺寸实测</b>——图标好不好用，要看缩到 16px 还认不认得。
+  </p>
+  <div class="grid">
+
+<section class="card">
+  <div class="badge">我的首选推荐</div>
+  <div class="stage"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+<defs>
+  <clipPath id="clipA"><rect width="256" height="256" rx="56"/></clipPath>
+  <linearGradient id="bgA" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#142C4E"/><stop offset="1" stop-color="#07121E"/>
+  </linearGradient>
+  <pattern id="gridA" width="32" height="32" patternUnits="userSpaceOnUse">
+    <path d="M32 0 H0 V32" fill="none" stroke="#27496F" stroke-width="1.4" opacity=".5"/>
+  </pattern>
+  <linearGradient id="blueA" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#9BD8FF"/><stop offset="1" stop-color="#4E9BE0"/>
+  </linearGradient>
+  <linearGradient id="goldA" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#FFE6B4"/><stop offset="1" stop-color="#E09B2E"/>
+  </linearGradient>
+</defs>
+<g clip-path="url(#clipA)">
+  <rect width="256" height="256" fill="url(#bgA)"/>
+  <rect width="256" height="256" fill="url(#gridA)"/>
+
+  <!-- 切割痕迹（斜向微光） -->
+  <path d="M92 86 L172 182" stroke="#F5F1E8" stroke-width="3" opacity=".22" stroke-linecap="round"/>
+
+  <!-- 被切断的时间线：左段 / 右段 -->
+  <rect x="34" y="130" width="76" height="22" rx="11" fill="url(#blueA)"/>
+  <rect x="146" y="130" width="78" height="22" rx="11" fill="url(#blueA)"/>
+
+  <!-- 刚被切飞、仍带着旋转惯性的一小块 -->
+  <g opacity=".38" transform="rotate(-20 129 141)">
+    <rect x="118" y="130" width="22" height="22" rx="7" fill="url(#blueA)"/>
+  </g>
+
+  <!-- 刀锋 -->
+  <path d="M124 44 h16 l-8 78 z" fill="url(#goldA)"/>
+  <path d="M124 44 h5.5 l-1.5 78 z" fill="#FFF6E4" opacity=".6"/>
+</g>
+</svg>
+</div>
+  <div class="meta">
+    <h2>刀锋切线 <span class="stars">★★★</span></h2>
+    <p class="desc">一条时间线被一刀切断 —— 就是「LiteCut」名字本身，也是剪辑软件最本分的表达。</p>
+    <div class="tags"><span>最贴名字</span><span>小尺寸最清晰</span></div>
+    <div class="sizes">
+      <figure><img src="data:image/png;base64,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" width="48" height="48"><figcaption>48px<br>资源管理器</figcaption></figure>
+      <figure><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAADsOAAA7DgHMtqGDAAAEwElEQVRYw72Xa2iTVxjH32+zSdo0Sa82l+ZNmrZvWrVN0pq09hbTS9J1m9Q6t1Kq89Lp2LoLY4qzuK2COgrDVTbEMnFfxhjsApONFUU7dmFKHfuwL/syNiYIQpvKBoP+9zwneaONdbmpgYf39NCX3////M85yZGkOz4ldV2lJXX9x0xK5JqpNrJkUsIocodhqu2j6oWppgcmpQfG6m6qENVmmgvB4ArCUNVF1Qmji57ODhQ626naaK4desemJYPcOq93Bo5qlPYyabWPUYlsNSp9i0XufgE0EtDIQB7XxIAGAjJcAF0xII8LVaCjTcAJCL3cStVCczS2B1Bg96OgciM9A1G9tWnwLji5XRaOlUgCHhPQm4AbXJtj4zi8kAWQcxUuisYqXG9nAa234VRCjK1pWWf1DCbazs4ZLlpNTxXOzrntKpzdcttVODsX4zicnXPbVTjD9CwgDi+wNdOcH/k2H3QW74KubEOxxJlz29n5/cqc287OGS6eclwMwfVyIC6IxFT6JiVacD9nm/nI7v1489Dz6Az13TNznmPn1HbhnOfyrV7kWzzQmRuuSrTao9lmfurdE/j7l2nsHR1IlbmA51t9wrmAWxqhtTQsSrlkfnjiddyan8JjAz0pM2c4O2cxDBdlboCUS+a7nxtH9Kej8LcF08qc4QX25rggisHqgZTLPu/fugOL3x+GXN+aXubkWuwAcq4zb4CuYj0LSD/zMndoxT73dg3i+uwrKEy4/P/MhQASo8K1FetIQAaZl7qDsHvCiQWn+B/F7OldGWXObVfhMQEZ7nNrQy/M67pF1k5fGFMHhzLKvMDGcTTEijohZXO2y429KK5uQ4W7Czu2hzPKnMHC/dp6qjoWkN3ZXuXtQ2lNGzz+jowyFwLicG25EJDd2c7tdvloATtaMsqc267CNeVuXoQrM68PP4v9Zy5jbOY7PPP+HEamL2Fo6gIeP/4NwpNfIXjoc5gDwzDSme/u3QPftgP0fgeU0Cj2nb6IsTPfYud7lzB88gK2Tc1iy/GvEZk8j9DEF3BFXiRBJIoE6UiMjjohJWc+/sEc3pn/F8d+/AdHLi/hwOwCxr+8ibFPb2D0o7/w5Lk/0PrqJ7B6BxAYmUDT8ARqgqN4Yebi7ffmbon3Xjp/E/s+u4GdH1/HUx/+iYFTvwo4O9eUKVS1JCAp885db+HtH6L3FDA08xtc/S/T//rhf/ogGodeg735CXTvfQMn1PdWEbD97O/w7ZkWzlW4pqyGBWT3fc6Z6+3890aRt219J0xyU8rMue0qXFNKAnL5Pk/e585GWtAs4o59npy5zkzjtSSExGjLFepAit9wmZztDKzyBAVE3WrJmTOcneeVViOvxAUpzd9wae9zQ6UXZqUl0fbkzNm5Cs8rqWIB6WeezT5PzpzbrsKFgFwyX+1sT5W5EEdiRFEnJL28KZpt5qud7akyZ7BwX+zEmmJ5QTLILddyyTz5bE+VuRAg4A48YrJflfi69DAz57YzfE2RzAKOSHxXE9elh5S5ppzEkSAqupg4i8XtiO9qfF168Jk7BJzcL+cZ5S0r7od8V+Pr0oPMnNvOzu+CJ0TQXY2vS+T4itbSGL1vmRfJUcr7CmeeaHv88x+yec3ZnbZVaQAAAABJRU5ErkJggg==" width="32" height="32"><figcaption>32px<br>任务栏</figcaption></figure>
+      <figure><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAADsOAAA7DgHMtqGDAAAB5UlEQVQ4y5WTTUsbURSG70ppkjGJk/rRJMZEM/mwmmowajTiMBoTk7Gl0IWaTUurECkEiqil/QsF0XbRCkKhXbhSwR9hazfd6EL/h1m9nnvr7cJMIg68q+E5z73nnsMYfepA0fTEi6dqLFdVY3mo0SxaIzwG3BolrMPdOwVXzyRcoUzVGRz77QqOmkzCanwOajyP1uisgN3atIBdHKQIkOIMjsMZGkdL9yicFIcv9Yyp8cIfDluZY2Pz0HNPbwpkBCxCMC+iBJK/GD92PfPzpTfY3ynXmJWuYbRQHL6hK9boziPTL7D1sVRj5rASoPiHwKzMHu1fAoksKq+LtWYCOWz3DoDV67a3P4vOPgOGoVuaFf8gHN4EL1C/2/5+Ax1a2tLMYXvnYzBpfrV1jLXDS6z8PMfCt79IV74jopcQmVnGy0+HWDu4wMqPMyzSP/3DEZT/BW7M6cX3mN/cw8y7XUysfkFv7i28T3LwJ01kSuswN77CqHzGRHkbEbMiYFtHlArICbN4Z3lnNTSChz0pcWxpdjzqowIxMKsJs7qzO5AUoDRz+EFbmArw2W7wzrLbt812XqRNu2K0GKeNzLLbt822dg3NntAJ41t1bzPBZEdTe7ggNlLpShX4YtBsV+82h6vcLOFrkjp0NGbKkLgAAAAASUVORK5CYII=" width="16" height="16"><figcaption>16px<br>标题栏</figcaption></figure>
+    </div>
+    <div class="files">源码 <code>资源\图标\svg\A-刀锋切线.svg</code> · 成品 <code>资源\图标\ico\A-刀锋切线.ico</code></div>
+  </div>
+</section>
+
+<section class="card">
+  
+  <div class="stage"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+<defs>
+  <clipPath id="clipB"><rect width="256" height="256" rx="56"/></clipPath>
+  <linearGradient id="bgB" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#142C4E"/><stop offset="1" stop-color="#07121E"/>
+  </linearGradient>
+  <pattern id="gridB" width="32" height="32" patternUnits="userSpaceOnUse">
+    <path d="M32 0 H0 V32" fill="none" stroke="#27496F" stroke-width="1.4" opacity=".5"/>
+  </pattern>
+  <linearGradient id="steelB" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#E8F3FF"/><stop offset=".55" stop-color="#A9CDF0"/><stop offset="1" stop-color="#6E9FCB"/>
+  </linearGradient>
+  <linearGradient id="goldB" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#FFE6B4"/><stop offset="1" stop-color="#E09B2E"/>
+  </linearGradient>
+</defs>
+<g clip-path="url(#clipB)">
+  <rect width="256" height="256" fill="url(#bgB)"/>
+  <rect width="256" height="256" fill="url(#gridB)"/>
+
+  <!-- 交叉刀刃：左上对角 ↔ 右手指环 -->
+  <g fill="none" stroke="url(#steelB)" stroke-width="15" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M102 52 L128 110 L176 180"/>
+    <path d="M154 52 L128 110 L80 180"/>
+  </g>
+
+  <!-- 指环 -->
+  <g fill="none" stroke="url(#goldB)" stroke-width="13">
+    <circle cx="80" cy="182" r="20"/>
+    <circle cx="176" cy="182" r="20"/>
+  </g>
+
+  <!-- 铆钉 -->
+  <circle cx="128" cy="110" r="9" fill="url(#goldB)"/>
+  <circle cx="125" cy="107" r="3" fill="#FFF6E4" opacity=".7"/>
+</g>
+</svg>
+</div>
+  <div class="meta">
+    <h2>剪刀 <span class="stars">★★☆</span></h2>
+    <p class="desc">最经典的剪辑符号，一眼就懂。代价是：同类剪辑工具几乎都在用，容易撞脸。</p>
+    <div class="tags"><span>最直白</span><span>容易同质化</span></div>
+    <div class="sizes">
+      <figure><img src="data:image/png;base64,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" width="48" height="48"><figcaption>48px<br>资源管理器</figcaption></figure>
+      <figure><img src="data:image/png;base64,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" width="32" height="32"><figcaption>32px<br>任务栏</figcaption></figure>
+      <figure><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAADsOAAA7DgHMtqGDAAACMUlEQVQ4y4WTy08TURjF70oj7dCWIUWgBTvaoR1ISSGUNqUtr1RKgQgaqLIEsWpb0hg3uDOYaILUBBODwUdi1LgQFoYYH5GkVhOxLty4UWNc+w/Q1fHeqzOBPnSSszznd88330cI/UTXyGitMpIXnUMF0RmB6AijpoVpACaZyt4H05FeGA8HYZQCBYPN99Fo844S1SwqwxCVCGocR7nZJA9ys5EZqbiRymDzwyD5UX3ICwOV3uI5RkQl+omZi8mOQEwjS54JGhDgZi5qZiFCc+c2Yc8uJptbw/j8/Rcs7RE0uIZwd+sHRDmkkYWmLlRT6S0dO6RS56ur6zizsILpCzcwt/hgD5mZhWYqawdIpc5KzySebf/E6suvkLrH95KpkZl1jS6QitOmnV9kc3i0sV6WLFjd0De2s4Dy07a6h/HkdR6Pn2dR3zZYQmZmXX0bSDky63vp1iYmEtdwIrWE1PJGCVnQAorInv4xxC9expWH7+jTu7nSNzcRO78Aty+kkZmqDjpowC7yzNwssk8X8e3tCuIzk1rnxHwSX97fx6t7CZwa7+VmfUMrDXCC7N6wteU0Zs8lEU+lkEkHtc63l5KYPn0Wx2NTuD7v52RmPmC20wC22383LNgfRu7OSWxlBuD1dWqde4Ih5Nam8CbTB2/XH7KOhZjlHUIPI1+yYWWmrXZWyVV1MvbXSh8Iu6p//Wd12mpnTqZmSse+OnuUX6TQ5Imyw6C7Xfg/2V5gZNX8G9mWjiKtVk51AAAAAElFTkSuQmCC" width="16" height="16"><figcaption>16px<br>标题栏</figcaption></figure>
+    </div>
+    <div class="files">源码 <code>资源\图标\svg\B-剪刀.svg</code> · 成品 <code>资源\图标\ico\B-剪刀.ico</code></div>
+  </div>
+</section>
+
+<section class="card">
+  <div class="badge">次选</div>
+  <div class="stage"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+<defs>
+  <clipPath id="clipC"><rect width="256" height="256" rx="40"/></clipPath>
+  <linearGradient id="bgC" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#142C4E"/><stop offset="1" stop-color="#07121E"/>
+  </linearGradient>
+  <pattern id="gridC" width="32" height="32" patternUnits="userSpaceOnUse">
+    <path d="M32 0 H0 V32" fill="none" stroke="#27496F" stroke-width="1.4" opacity=".5"/>
+  </pattern>
+  <linearGradient id="blueC" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#9BD8FF"/><stop offset="1" stop-color="#4E9BE0"/>
+  </linearGradient>
+  <linearGradient id="goldC" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#FFE6B4"/><stop offset="1" stop-color="#E09B2E"/>
+  </linearGradient>
+</defs>
+<g clip-path="url(#clipC)">
+  <rect width="256" height="256" fill="url(#bgC)"/>
+  <rect width="256" height="256" fill="url(#gridC)"/>
+
+  <!-- ============================================================
+       三条素材轨（V1.9.10 补丁：内容贴边）
+       ★ 任务栏按钮只给 24px 左右。图标"显小"从来不是尺寸不够，
+         是图形在画布里占的比例太小：以前底板圆角吃掉四个角，
+         内容又往里缩了 30px，两重浪费叠加，缩到 24px 只剩几条细线。
+         这版底板圆角 56→40，内容边距 30→18，轨高 34→40，
+         有效图形面积从约六成提到八成半。
+       ============================================================ -->
+  <rect x="18" y="46"  width="184" height="40" rx="20" fill="url(#blueC)"/>
+  <rect x="18" y="100" width="126" height="40" rx="20" fill="#F5F1E8" opacity=".38"/>
+  <rect x="18" y="154" width="220" height="40" rx="20" fill="url(#blueC)"/>
+
+  <!-- 播放头：正在扫过第三条（画在轨之上，所以"穿"过它） -->
+  <rect x="212" y="26" width="14" height="206" rx="7" fill="url(#goldC)"/>
+  <circle cx="219" cy="24" r="15" fill="url(#goldC)"/>
+</g>
+</svg>
+</div>
+  <div class="meta">
+    <h2>时间轴 <span class="stars">★★☆</span></h2>
+    <p class="desc">三条素材轨 + 一根亮金播放头 —— 就是工作台精剪页本页的样子。</p>
+    <div class="tags"><span>最像软件本身</span><span>辨识度高</span></div>
+    <div class="sizes">
+      <figure><img src="data:image/png;base64,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" width="48" height="48"><figcaption>48px<br>资源管理器</figcaption></figure>
+      <figure><img src="data:image/png;base64,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" width="32" height="32"><figcaption>32px<br>任务栏</figcaption></figure>
+      <figure><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAADsOAAA7DgHMtqGDAAAC40lEQVQ4y5WT20vTYRzGf5emm9vUPK2dNHdwc7rNuel0us3KZrQhnlJnHppaqU0Nm3jMc0ldKBEERXUhWRpIZOVSEjGI6kL/hKKQCkmiwzJ4et9hQd5UFx/eq+f5Hp7vy3BkDnGEMn+B4A9PPIhwBUG+H2Eyig08KSHBAt7eHHDjzeQ1w1Vds6VKty9zxRoRQ8XhiXZQcZj8QEDMk+YGxFwqJFAhhSMxQZNhw8elFpz3loAl1M9TA3+Eyo64rErEmysRl1kJSWYZRBllEBpLITAUg68vQmxqISLVdmJkwoupJphychEq0PsZWrnhsg/jq1sYe+7H4NMv6Fn6hDO+TXjmNnBi9j1qp9dRMfkWxddfQeb0YnF6CEq9FSyBFgyd2Tuz9m8GN14jueoCFm91IzHNAnbAgMws0BfCWj9KGEO2+xwya4aRUTWENFc/dOVnkVLaC3VRD6R2D7iSdPhutiNRZ0YIXw2GbjvFUgrn0RY4Kz1wuk7BWdFMaIKjohGpthJwxEaEUoR6sEV6PLrWDIXWBBY/mRrYUOpuR0NbH+pbewLUebpR10LwdKL2pBdsIqRiOjNt++EVN+QaI0JiVGBozmpzManc/EflAGXHobUU/q7MDhhocP+SC4oUw7YByVmgc8DiHoa1bgTZx4bJDgZhqhqA0dWHtPJeaI90QVPSBXVhB5QFXviuupFkyEFwtJwYkAvrmF7FxNoPXHz5HaPPvqJ/5TO6n5AkHm+i9cEGGu99QP3dd6i+vY7yyTdYmelE0cAUMVCAoRdWPzH3XwbLU204dHocuyITqEEWua5MCA0FEBPoK0h1YI/+MPjafMRq7IhOzkOMOg9RSfsQmZSL2RErZEoVgqOkYMh9+2lENKqd26Y506josih0Ztr2nV4dEuRyBIVLvjGhYtPCzpx/bZuK2dsGrFhlQBxCTOxmBbgxUuzaHe9jOCKDmP4q+jH+VpnOTNsOipD4iXg+iBcn/AlXA+uYgaYzfgAAAABJRU5ErkJggg==" width="16" height="16"><figcaption>16px<br>标题栏</figcaption></figure>
+    </div>
+    <div class="files">源码 <code>资源\图标\svg\C-时间轴.svg</code> · 成品 <code>资源\图标\ico\C-时间轴.ico</code></div>
+  </div>
+</section>
+
+<section class="card">
+  
+  <div class="stage"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+<defs>
+  <clipPath id="clipD"><rect width="256" height="256" rx="56"/></clipPath>
+  <linearGradient id="bgD" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#142C4E"/><stop offset="1" stop-color="#07121E"/>
+  </linearGradient>
+  <pattern id="gridD" width="32" height="32" patternUnits="userSpaceOnUse">
+    <path d="M32 0 H0 V32" fill="none" stroke="#27496F" stroke-width="1.4" opacity=".5"/>
+  </pattern>
+  <!-- 一条描边，从"起点蓝"走到"终点金" -->
+  <linearGradient id="stepD" x1="0" y1="1" x2="1" y2="0">
+    <stop offset="0"  stop-color="#6FB6EE"/>
+    <stop offset=".55" stop-color="#8FCBF3"/>
+    <stop offset="1"  stop-color="#F5C86B"/>
+  </linearGradient>
+  <linearGradient id="goldD" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#FFE6B4"/><stop offset="1" stop-color="#E09B2E"/>
+  </linearGradient>
+</defs>
+<g clip-path="url(#clipD)">
+  <rect width="256" height="256" fill="url(#bgD)"/>
+  <rect width="256" height="256" fill="url(#gridD)"/>
+
+  <!-- 流水线：五级台阶逐级抬升，颜色随进度变金 -->
+  <path d="M46 186 h28 v-26 h28 v-26 h28 v-26 h28 v-26 h36"
+        fill="none" stroke="url(#stepD)" stroke-width="18"
+        stroke-linejoin="round" stroke-linecap="round"/>
+
+  <!-- 终点：点亮 -->
+  <circle cx="204" cy="108" r="15" fill="url(#goldD)"/>
+  <circle cx="199" cy="103" r="5" fill="#FFF6E4" opacity=".65"/>
+</g>
+</svg>
+</div>
+  <div class="meta">
+    <h2>流水线阶梯 <span class="stars">★☆☆</span></h2>
+    <p class="desc">五级台阶逐级点亮，暗合 ①转写→粗剪→精剪→分镜→⑤成片的流水线。寓意最深，但要慢半拍才看懂。</p>
+    <div class="tags"><span>寓意最深</span><span>第一眼不够直给</span></div>
+    <div class="sizes">
+      <figure><img src="data:image/png;base64,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" width="48" height="48"><figcaption>48px<br>资源管理器</figcaption></figure>
+      <figure><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAADsOAAA7DgHMtqGDAAAE6ElEQVRYw72XbUyTZxSG338TKJS2fEoBKaVA6RxfRfkG0amUAFZmBkFRwGVzGiFgnOjcUMHhRLMtM/5ZdNkHM9mi6ASzEcc2jBQHUbeR6UyW7c+WbAFKyX5y75ynfbvJx0AovMnJ8+T5c933ud+nfY8k/ecJMq0LDjIVtWmMlnuaeMuExliIgIRCaOI3U22CJm4jNMaNUMc+S7WBaj2dbYDKUABVzDqqfKgNtOrz4K/Ppcqhs1woo7MnVLqsu0p9Rqu3MTdEmulRGy3PqY2bxwMSigRQTUA1A3kf5wSqCMhwATQ4gbz3l4HROQJOQCh1WVSZdEb7qAz4RaXDb9VaWjMcyoi0smlwcjspHBstbrhTwCY3XGVY79y74P4sgJzLcFG0l+HKKBaQ9S+cSoiJTJtURKSUudvOzhkuWk2rDGfn3HYZzm657TKcnYu9C87Oue0ynGFKFuCC+0WuobN0+EaaoQhPtStCEgMlzpzbzs49lTm3nZ0zXKw6lxiCK3UZLkEkZpW5RaIX7v5SZs5n7JzaLpzzmW9EKnzDU6DQJg1J9LY7liFzAfeNMAvnAh6eDJ/wpHFpuTJnODtnMQwXpU2CtJyZM9wvao1LEMUQkQLJU5nHmAtw7eND6L/6CoY66/B950sY7qzFrY92IS450912cQPIuUKbCEXYMyzAM5lv27Edw7Z38cjWjt9sJ/BH/xGM9Ddion8vSksK3G1n5zLcJ2w1CfBQ5mU7azBou4i+nrdQVVOBXdXbUFttRfXOrSh/3oro1RnCObddhjsFLCLzLOtu1J88g8aTbXj7wjn02T7Ftc/PuTM3JOdj5IcO/H3/HfxyfR90Jn4P+AomOYs6IS3mnrd39uLSwF1cHujH9YFe9AzcQEfne+57Xl5uFXD77SP4s7sK1sJ0ARbuVz5NZWIBC7/nbV1DuDjwCM0XPsO+lrOoazmFnNJK9wvHbWfnDB9+34LI2ESnABfcJ1QImH/m/rSmljUgr+Y48muP442bv+L8nd9RUHVg1nvObWfnDGfn3HYZ7h2awC/h/DNP2VqPttvjONU/jtM2B9oHHDh7x4G8qqZZ7/nUzH0jaKWXUEFiFNQJ6Ukyz9xxFK23xtH67SiarjxA09UHaOj4Dtpky6z3fGrmDGfn3iFGqngSMEfmqpgcaM2lCE/bgvV72nGiz46DV36e8bd9pns+NXN2LsO9Q+JYwP/f84r2brz61Rhe6x3D61/bcewbOw5cfjhr5lPv+dTMue0y3DuYBMz127730kMcvjkmRBx1iag807XgzBVa2q8kISTGJ9RIHZjj/3zPJz/hUM8Y8l58E9rUYqoSOk9bcOYMZ+dewbHwCjJAmpp5WOoWVJ63YfcHP+KFD4fRcOMvHPxyFOaKwx7JnJ3LcK+gGBbweOYJxXXY3zWCOqr67hESMIrGL0ZhKnrZI5lz22W4EDDt/1yfDVNJPczbj1E1I41WU/F+imStRzIX4kiMKOqEpNRlO+b9DeeBzBks3AfqsSJQZ5dUusx78/2G80TmQoCAR+MpTdSQxOPSk3zDLTZzbjvDVwToWECzxLOaGJfm+Q232My9Q0kcCaKiwUQfKKYjntV4XFr6zKMFnNxPeql11sfmQ57VeFxaysy57ex8GtwtgmY1HpfI8aBPeLLDY5kH6ByU9yBn7m676/kHenPymiwY+AoAAAAASUVORK5CYII=" width="32" height="32"><figcaption>32px<br>任务栏</figcaption></figure>
+      <figure><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAADsOAAA7DgHMtqGDAAAB1klEQVQ4y5WTS0sbURiGz6pFk8nFkXitYxKTJuOlqFTibaJE1JgEvCCDiC6NIihYdFGwxSIUFyJil1Vwp1lYqLhQQXeCN/ofCmYpuDOrt985MooXzPTAu3ze55yZ72OMjlwTT+Sr8Qs52J2Rg1HIgU7kveeJwOmn+NrhrGiDw6vB4WnN2N2N5w53KMEMWFZ7IKtR5AW6BOz0dwjYwUGKACl2dzPsnmbYykOwU6ylDb1MVmOXHM5q9rYKWIRgXiIp9WeMX/t/zVLZR9go1tK6W2bGHO5OYG5ax+epXkQ6IwKWFMq7OjAz5tUfX7G3/QUbK2P4NNEPm1IvYEtJDdhr5sa+JFa3U/h9/Auj40m4qzXc/FnD8mycCmphLfnAC142V4SHoc//xMLWIdr1cRSrmjBzWGu5gy1FVWAvmb0tQ/h+coPFozT0hc1HbzbM0n3BE3M4uYTBxRTmD9IPX1uAd282zDy5hQEqePKfZ3avMPAthfDY0qtma3ElFQTBDHPHzDomd/5idv8aSmggq5nDOS4fFfDZJrOrOgqPNgKlSTdltvASl/+W0WJcPJswE+bcAj/e5ntOGd8qY7ZNmwkmO94U+GJiI6WyhhhfDJrtTHazL8PNBvwPzHh804EVGLQAAAAASUVORK5CYII=" width="16" height="16"><figcaption>16px<br>标题栏</figcaption></figure>
+    </div>
+    <div class="files">源码 <code>资源\图标\svg\D-流水线阶梯.svg</code> · 成品 <code>资源\图标\ico\D-流水线阶梯.ico</code></div>
+  </div>
+</section>
+
+<section class="card">
+  
+  <div class="stage"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+<defs>
+  <clipPath id="clipE"><rect width="256" height="256" rx="56"/></clipPath>
+  <linearGradient id="bgE" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#142C4E"/><stop offset="1" stop-color="#07121E"/>
+  </linearGradient>
+  <pattern id="gridE" width="32" height="32" patternUnits="userSpaceOnUse">
+    <path d="M32 0 H0 V32" fill="none" stroke="#27496F" stroke-width="1.4" opacity=".5"/>
+  </pattern>
+  <linearGradient id="goldE" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#FFE6B4"/><stop offset="1" stop-color="#E09B2E"/>
+  </linearGradient>
+</defs>
+<g clip-path="url(#clipE)">
+  <rect width="256" height="256" fill="url(#bgE)"/>
+  <rect width="256" height="256" fill="url(#gridE)"/>
+
+  <!-- 胶片条 -->
+  <rect x="30" y="74" width="196" height="108" rx="12" fill="#0B2036"/>
+  <rect x="30" y="74" width="196" height="108" rx="12" fill="none" stroke="#3C6A9C" stroke-width="2"/>
+
+  <!-- 齿孔 -->
+  <g fill="#4E9BE0" opacity=".75">
+    <rect x="40"  y="80"  width="22" height="14" rx="4"/>
+    <rect x="70"  y="80"  width="22" height="14" rx="4"/>
+    <rect x="100" y="80"  width="22" height="14" rx="4"/>
+    <rect x="130" y="80"  width="22" height="14" rx="4"/>
+    <rect x="160" y="80"  width="22" height="14" rx="4"/>
+    <rect x="190" y="80"  width="26" height="14" rx="4"/>
+    <rect x="40"  y="162" width="22" height="14" rx="4"/>
+    <rect x="70"  y="162" width="22" height="14" rx="4"/>
+    <rect x="100" y="162" width="22" height="14" rx="4"/>
+    <rect x="130" y="162" width="22" height="14" rx="4"/>
+    <rect x="160" y="162" width="22" height="14" rx="4"/>
+    <rect x="190" y="162" width="26" height="14" rx="4"/>
+  </g>
+
+  <!-- 播放三角 -->
+  <path d="M108 104 L164 128 L108 152 Z" fill="url(#goldE)"/>
+</g>
+</svg>
+</div>
+  <div class="meta">
+    <h2>胶片 <span class="stars">★☆☆</span></h2>
+    <p class="desc">胶片齿孔 + 播放键，最传统的视频符号。也正因太通用，容易和一个普通播放器混淆。</p>
+    <div class="tags"><span>最通用</span><span>辨识度最低</span></div>
+    <div class="sizes">
+      <figure><img src="data:image/png;base64,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" width="48" height="48"><figcaption>48px<br>资源管理器</figcaption></figure>
+      <figure><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAADsOAAA7DgHMtqGDAAAEmklEQVRYw71XS28bVRSeHY09tuNHkhm/Eo9dNxk7jd+u0ziBkNZNbVqS2K2FKAgqUQlRAaVBKUEqUBUJFYGAHSzoilU3SKgbJASLsqGNCBt+BY/EERKbHM459oyvG2gd0nikT/fOncf3nfPNPXeuJAnHYHx2aDBe+cCtl9fdY+Utt34SPLGT4B6bR5wA92gJ3HoJXIeOI44h5nDsGDijT4Lz4CziCXBFsY08Dv2RGcQ0js2AI1zccmpTPzsik+9b9BlF+rfDpZdrLn1+0xOrMKELCV1ESP3RJqETCYmcCaNNQur3G4ThaSZHQnBoU4ijOIb90CTYQwWwjxzBdrLhCOaqO8gx2m2OWC+b5E0BJ0xyZ3Su2W+R95MAjNwgZ2DfIHeESMBUmxzBYoZz23IwXTXTTpETOacaW4OcIqe0G+QULaXdIKfIud8ip8gp7QY5kTlIQIvcPpzHsQLYhrMgBzIbspIYkMhzSjtF/qg8p7RT5ETOrdYSg+QObbIlCMWMZK9L+MH9sp+e0xhFjmnnyGnMFsyALZAG2Z9ck/Brb/TAcya3BbMcOZMHUmANJDelXnlO5BQ5iSFyhj8JUi89J3J7KN8ShDYE0yCJnlPrLzwD3kwVUTNbFVtGuspjanrpPiwKaJ8rQqukF8CbXWQhFLnsT4DsmyABbc99uTrIqLDw5i0ovn0bxp//EDzJp6C4+g2fj5QuMqhPY3SN7qHzwvItsI7k/vNZuk7vVnHMILf6DqMAwXNf7iy/JP7cDUic/wzClcvgjB3nPsE7dY5hnNM1uof64+duPPBZ47qaPGWSNwUInvvydb5pP6GmTuMsSDaBmZDEee7LnenqJVdWXoEvPr0CqZnS7gWgBRy9dxwRJwHtee7tUsC1qxfh718/h7/WP4bbX74O9bOnwK7tQkCL3KqygPY892ZrXb3kvdULTL519zps/rgKf/5wCda+egEuvzQPXv3IQwRUTHKLGqOPsD3Pu7XgnZUXYeuna7B55y344/vX4LdvL8Ddm3V44/wcqGP5h2bAhh+hjDbImAlJrO00x7sRcHX5Wdi4swK/f/cqfP1JHWoLs91bkKhw5BZFR4yhAKG2dyvg0stL8NFqDeL54q4/QiVRNsktyigJaNd2tUsBe4EyUTbJLUMoQKzt3mx1ZzGJl/5/IRKeNa4r+BHK3hjIaINV1TEDwnruzSw1S/HyHkrx8oNLsXJ4niPvGzoEfYNRkMT1vF+bxmp4Bq1YvG+BMRaUzsWlCeynFlp4ujlGrYjkaYaawSroGzfJ+wYPkoC9ree0pIq1ncqrOM9pqomeU9oNchaw1/XcPpzpqO22YLJjnsv+iQ7PWRyKYWAmJIdWbHT9D4dR8x+tsJ4TsVjbiVyc50Quek7EHP1ABA4MaBuSUzu63u0/HAtAMeJ6zgKE2k6Ri/OcIhc9ZwFMHobH3KE1ibZLvfSc0k7kBzwaCXhXor0ab5d65LlFRXEoCIEbk8gA745or0bbpf33PMzkGP12n0tb7Ngf0l6Ntkv76TmlnSLfQW6KwL0abZcw4nvWQKrxyDz3aA30+x55bqa9dfwDORTJrobG+aMAAAAASUVORK5CYII=" width="32" height="32"><figcaption>32px<br>任务栏</figcaption></figure>
+      <figure><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAADsOAAA7DgHMtqGDAAAB7ElEQVQ4y5WTvW4TQRSFpwLF3o1/Zm0DTpz4Zzfr9Q+Kg61Ei41jW3bsXQcoEKKwoCFNpNDQ0PICeQBEg8R7UEABhIJHoSKuDvfOsgU2EHmlT1qN5pwzc+8dIeiTdX9qOP6FLB/NZXkMaQ+R3GH6SFiEeYhEqYt4sYN4oT2P5Q++xvP7UxGKpTOBdMZI2iMlTlgDJY6zkFBCIpZ3ESu4WN/eR4zQNloPhHS8byy+MrnYVmIFidlE39r7IvjYqybruSbWCW2jcSnC5HR9ilTNg8FUJ8QYRuVIISvDAIdOR0i7T+lN6JsNCBanaj62+ieoPTtH0X8J+/FrBf/zWq73HHunb5G9O0PzxTu1V1odRLN1CL5zpn6M6HbrD6zmAK3eZGk9JGl1oWVvs0Efqaq/tGF0/yF+fj/Hx/dnePpkTDVYMDDpBDerEFzt9F8Mhr6HH59e4cObGWaPDv9jQNVOUcEWDUq7bdxxO/++QslF5IZNBtRnrvSqRUwWD8igDBH22aiMghZxq8qDALsXsNMNsO4pEqarxGtpkwx4thcmjIck7LO+uauqrRN8Z+1WRYmjdPxI2roU9DAuliZMCRuqz9pvIcN3DpMjGQvXjcJnwa9q5WQSUzquZUxPvUg91/L4YdBsz69ONuecHIp/AbUsckMGLYPFAAAAAElFTkSuQmCC" width="16" height="16"><figcaption>16px<br>标题栏</figcaption></figure>
+    </div>
+    <div class="files">源码 <code>资源\图标\svg\E-胶片.svg</code> · 成品 <code>资源\图标\ico\E-胶片.ico</code></div>
+  </div>
+</section>
+
+<section class="card">
+  
+  <div class="stage"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+<defs>
+  <clipPath id="clipF"><rect width="256" height="256" rx="56"/></clipPath>
+  <linearGradient id="bgF" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#142C4E"/><stop offset="1" stop-color="#07121E"/>
+  </linearGradient>
+  <pattern id="gridF" width="32" height="32" patternUnits="userSpaceOnUse">
+    <path d="M32 0 H0 V32" fill="none" stroke="#27496F" stroke-width="1.4" opacity=".5"/>
+  </pattern>
+  <linearGradient id="blueF" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#9BD8FF"/><stop offset="1" stop-color="#4E9BE0"/>
+  </linearGradient>
+  <linearGradient id="goldF" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#FFE6B4"/><stop offset="1" stop-color="#E09B2E"/>
+  </linearGradient>
+</defs>
+<g clip-path="url(#clipF)">
+  <rect width="256" height="256" fill="url(#bgF)"/>
+  <rect width="256" height="256" fill="url(#gridF)"/>
+
+  <!-- L -->
+  <path d="M56 62 V158 H112" fill="none" stroke="url(#blueF)"
+        stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- C（右侧开口的粗弧） -->
+  <path d="M198 84 A 48 48 0 1 0 198 172" fill="none" stroke="url(#goldF)"
+        stroke-width="24" stroke-linecap="round"/>
+
+  <!-- 一刀斜切：贯穿字标的切痕 -->
+  <path d="M74 44 L206 200" stroke="#F5F1E8" stroke-width="4"
+        opacity=".2" stroke-linecap="round"/>
+</g>
+</svg>
+</div>
+  <div class="meta">
+    <h2>LC 字标 <span class="stars">★★☆</span></h2>
+    <p class="desc">LiteCut 的首字母，C 的弧口留了一道切痕，一刀斜线贯穿。品牌感最强，最不像工具图标。</p>
+    <div class="tags"><span>最有品牌感</span><span>气质更"产品"</span></div>
+    <div class="sizes">
+      <figure><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAADsOAAA7DgHMtqGDAAALFElEQVRo3s2ad1SU1xbF55/3LIB0FKWDtBmRoSrIUKSDSOyoeRoVW+zdWEIsiSVRiV0EaSbYSxJNTGKiqIhgDaa+5KlBsVNURCHud8/9hskUZwYSyHLWOmvWDDNr/faZffd37ncRibQ8Onm/5m8lSVppIU4stZAkVliK4xssxAmwlCTCwjOeVZxQHrFCieNg7hEDc/fGiuZlwd4zc49iFQkzN6revMzptWsEq3CY8gqDadcw9rcI9ixrMHUJqTBxkZWaOIessHCRSUVNfVi4x7maecYdtJT0gbknQVHFwoyKgRG8GQPj5RbFy5SBEbypa295EQRVOIc3YWAmLlSh8pJxeAYHY169YOxEFcy+EwpjxyBeHRx7CuXQA6ZOQYeNnAK76oQ39YyPNfeMr2LFO60OLwiI04DnAtxjNOBNuIBIDXgTZxnvvDo8F8D+rg5PZcI+Z2QfUGNkG5ikpfPxCazjDQRPnbcUJ2rAEzgXoAZP4IIAVXgTbolIDXjqvCkXoApP4CRAHV4QEIwO9oGs/BuM7P3iNGzDwKsb4anzlszv6vBcAL2nBi8IiNaAp86T39XhjbmAMA14KhOXEA34Dg6BMHEiAQH0K8DQ1r+qg62vs0KAmUfcIWV4c74oEzTgCZwEqMNT5wUBqvAELghQhafO04JVhydwLkAJnBeDNnEKYvD+MLKTl63vPg7fsXtyAC1Y8jzZhjr/z6VNKLcMFYFT0Xvkd7IMLwbOy4X9WkygUr0wtveTiigqm5s2BNVaaUPwiu7bBypsQ9BC9/2EsvWlWiKinG9u2jj4JkEsG9hKaROssI0AL1hGEKACDwNbaRETkHBHX9qEpS7H6HWfIGzMMkXaePYaiK4BfVsxbYTON3peIUAOb2jrA0Mbn5siusLqSpvYyWuR8SN4bfvhBWLY68bOdw8fAjtpfAulTaA8bYJUOt9oGy5AGZ4L8G4Q6Uub2R+XKARsufoC0/KK/7SNWzh8e6egkyTqb6bNn54X0iZABZ4LYJ9RhZfyEulLm/l7L3P4raz7G8v+wIyPL6ikTUdxDPyjX+fPzU2bzp5hCI5MgCw6AUERsex1yMvShsPz64BSrArlD5G+2Wbe3ktcwOarf2D9lQZM31mqkTbW3aLgFzkMZpQsetLGWRqBtLcm4uKRlai9sgG1l9fiyYVVeFyyHI/Ovo1zBVOwaOoAOEqCVDxP4MqdZ/aBYRdvEqB7tiEBW79n3f/uD6RfqsfU/NKXpo2jbyK6yQZoTRtTlyCkLZiMyivb8ezHDNRd3YSnV9JRe3E1Hpe+i0fF76DmzEJUF85B5bfTUbZnLDq7BihswwWowRt26S4XoGO2mbv7EjYx66y/3IC1F59jcl6p1rRxDUxk1Ucjbey8wnF832rU/zcXz3/KRN33W/D0uw9Re+kDPDm/Ao/PLUFN0SJUn5qHqhMzUHl8Mh58OR6Dk3srPE+WUYc34AL0zDZzdl3Ahu8aePc/OP8Mk3JKdKaNpNdrsJfGKmxjLYnAmc/Wof7XfDz/eQee/bAVdWWN1lnJrLOMW6f69HxUnZyFym+m4uFXE/DgizEIDumlsI0gQBXeoIuXIEDXbDOr4AI+vFyPNReeY3VJHSZmn9OZNnQl9Zb1h7U4nHs+b+s7aPjtIzz/JVvJOutQXrgc65eOwfCUvkhIiMXQQfFY89YgXN2bimuHRmN2aoyK52nBqsMbdCYBemabWSx11l2sx/ulz7CyuA4TdhTrTRtLtzD4Rg7GgGEjUM/gBetsZ9bZzK2TsXoSbLqFNSttjB1Z1DZeie185YvbByJ9OylKHer+Ktb9d88+xbis4ibNNlbuMhQfy5BbJ4tb52nZeqxYlKprttGaNgSv3HmDzt14ifTtpKbml/Duryh+imVnajF2e1GTZhufkDjU/68Az37bxayzjVlnI07uWsA+E6B1ttGVNkZcgCq8QWdJowDtO6kpeSVYdY51v6gWS049weiMoibNNlOnpDLr5KDul1zU/ZzDrJOOPslJumcbHWlDtlGHN7DmAnTvpCh13jsrdD+t8DHe2HamSbNNZvo85ntmHYrMHzJxr+RDmDoG6JlttKcNnz7V4A2sxY0CtO+k3mSps1ze/cUnHmHE5tNNmm0OZi9mvmfWKdvII/Pi0VXowkYHfbONtrShBasO354E6NtJTcwuxtLTT/D2ycdY+E0NE3CmSTupA1kLVa62Jfvnwye8Pzp6hP6ltDF2oG2kFEY2VN7Cr2TDLmT6dlLjM4vwTuETLPr2Ed46XoPhG081aSeV8f50lavt3ROLYdW1J6SyvjB1CGh22hC8cufbW3uifSdPEqB7JzWWCaDuL2Ddn/dVNYZtKGzSTmrS+OEaV9vExBhYuQahe0gS+wV6NittqPPq8O07eTABenZSYzLO8O7P/7oas49VYcKuXxE7fyei5+Yjck4uwmflIHRGDkJm5CJ4yg70mJQF6ah0+Ef2UxrU0tigtgDHM8cxcb7oIpZBEpzUrLQh26jDywXo3kmN2nYaC5h15n5ZhZlfVGLakYeY9Ml9jD94D6n77uCN3bfx+se3MDT/Jgbl/I5+WTfQN+Maolefw7GcmXikGNTm8kFt2cx+HLyrbwwfrZuaNoZcgCp8+47ujQK0zzYjNxdinrz7048+xORPH2DioXsYu/8uRu25jREFFRi28yYG55ZjQPYNJGdeRxITQDVgxGgGv1hpUJvCB7WNC5Nh494DHgExsGGbmKakDS1YdXguQN99m7g5WZhD3f+8ElM/e4A3D7PuH7iLMXvvYOSuCt79lPxyDOTd/xM+cdNPbIcXhYz3RqGqcDab8afh4dcT8eBYKu4fHYlfdqdg7exYTBs3CMmJ4RjSpydWvhmEkg1B+H6LP6YNUU2bDsxahkwkLybQsPFKrO++De17ExbsxKicMozcUYbXs8owNOMyBm+5hP6bLiJ5/Xn0WXce8WtKuW2iVxUjLO0r2IWO4nawcgvClxmj8fD4JDbjj8P9z9/Avc+G487hwbh9oB8q9iXh9qcjcasgGr/n9cKN7EBcz/TBtQwvBPpJFLYhcOXOt+voxkvUmvdtGmebzq7+OJSegvtfjMa9I//B3U+G4M7B/hz+1u5YXhUHU3AjNxjXs3w5PNVrkWKFbbgANfh2Vq4Qtep9G6XZxtjOG7PHROO3PQz+0EDc3t8Xt/bE42ZBFMp3huL3jyJQvicJ17Z7c/iz73vBykGs8DxZRh1eLqA179tozja27j6YOVKG4+mxKCf4j8Ll1gnA9bxQfLsuCjOGSGDjrLpgSYA6fDurrkxAK9+30TXbmNt3g9SnOwL8vCCVSmBuJ4arXyTsPIM00oYWrDo8F9ACd4lbdLahtBH3YPeI3HqqpI2RrTd7FqsWW+AiOlBrgbvELTbbCDEphodvuIrnCVi58+0sXdDW0qVBRKeBLZU2LTHbaEsbQYAKPNpYOpWL6CizJdPm78422tJGIUAO39bSGW0snIpEps693muNtPmrs422tOEClODbWjAB5o5pIgvnCJ/WTpvmzDba0oYWrDJ8WwunF/+ycvQSzofZIbIicZzkicOSqLXT5mWzjba0MezCrGUtF9uJibV02684paQTcCP7wCrlBftPpM3LZhstacPh5Z0n71e2sbJzUjkrZgLihUPkVy9tyDb0HYJn1dDG0j72paf1HRz8Y9ghcuWrljbUebJNWwvHmn+bO/bR+f8SdAJOh8h0DvuqpA0tWOb5Axq20fWgQ2S2CJfSUSadBtKB2j+YNswmTjcp51lULlGkzUse/wdwAEbHlzj4pwAAAABJRU5ErkJggg==" width="48" height="48"><figcaption>48px<br>资源管理器</figcaption></figure>
+      <figure><img src="data:image/png;base64,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" width="32" height="32"><figcaption>32px<br>任务栏</figcaption></figure>
+      <figure><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAADsOAAA7DgHMtqGDAAACX0lEQVQ4y42T30uTURjHz1XR3Oumr22zTW3Td+6XLl+34Y8mxoZucytlKZjdFESx2lxhG0hSoNAPKCwJ10UYsejSqyDwJrowSoNBRKD9CV0kRWxEfDvn6DuolvXCl/fq83zO85zzEEI/sT0aq3NE10V7qCTawxBtA6htZQmgxkojHUFNSz+0zX3QWvwljbl7TWvuihEFFh0RiI4wam2DHK6xBjmsZSANB2k05l5oLL2oPtgFDY3a5BsmomPoLYMVs94ZqWxu9nOYh8KsiNDU+YawYzNzi/8krj3bgET/Rnd4V7PQ6EU1jdokF4li9sSnsPj+Bw4dS0PvCMLoGiybxyYm8OT+ZSznUphKHIe2yUftXggNMojSsyd+CXcL3+E+OslBgzMIXWs/5m9mUPrwAJsrV/HqaRIfl8/AIHk4XGVsB1GmLY9cxK21ItqiybI5Ej+B0sYS7s2do9Pv5sdWzEJDB9RGNyuwPe2O4TTmVr/BEU6Ue56dSeLruxwMrT3bPXNw28zgqnoXiDJtdyyFmRdfYA8lytOenT6LrbXrkOTAH2ahXGBn2q7IBWRXPuN0fhNjiwXE5tcxnr2DrdUZ3J4ehcnu/8XMojLYaIGde9bRqQ9mHyOQyeNwegne8w/RHErhRmYUn56fQuHRCF4uDKCwIENnboP6gJMWsIPses87PcdCPchl+5C/0oXJ8U6o620c3qeTaAH2tn97YZWmrfS83yJzuIoeX6WzFgldjPW/mSv1rJhVeiv21lleE7ZV/2NWeuZmClM79uilIb6RQqNviC0Gfdulf5ulEjMr8E9RZpZRQJBi/QAAAABJRU5ErkJggg==" width="16" height="16"><figcaption>16px<br>标题栏</figcaption></figure>
+    </div>
+    <div class="files">源码 <code>资源\图标\svg\F-LC字标.svg</code> · 成品 <code>资源\图标\ico\F-LC字标.ico</code></div>
+  </div>
+</section>
+  </div>
+
+  <div class="how">
+    <h3>挑好了之后，三步挂上 exe</h3>
+    <ol>
+      <li>把你选中的方案复制一份：<code>资源\图标\ico\某方案.ico</code> → <code>资源\图标\app.ico</code></li>
+      <li>在 <code>工作台\工作台.csproj</code> 的 PropertyGroup 里加一行：<br>
+        <code>&lt;ApplicationIcon&gt;..\资源\图标\app.ico&lt;/ApplicationIcon&gt;</code></li>
+      <li>重跑 <code>build.ps1</code>。打包后资源管理器里的 exe、任务栏、标题栏就都是新图标了。</li>
+    </ol>
+    <p class="note">注：Windows 有图标缓存，换了图标没变是老缓存作祟 —— 换个文件名或重启资源管理器即可。
+    若还想让<b>软件窗口左上角</b>也显示，另需在主窗口 XAML 设 <code>Icon="app.ico"</code>（或运行时设 this.Icon），要弄喊我。</p>
+  </div>
+</div>
+</body>
+</html>

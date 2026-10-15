@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>结案体检报告 · T-17 + BOM 收口</title>
+<style>
+  :root{
+    --bg:#0A1119; --grid:rgba(96,165,250,.10); --card:rgba(255,255,255,.035);
+    --line:rgba(255,255,255,.10); --tx:#E8EDF5; --dim:#93A1B5; --faint:#66748A;
+    --ok:#4ADE80; --warn:#F5B841; --info:#7CC4F5; --gold:#F0C674;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:
+      linear-gradient(var(--grid) 1px,transparent 1px) 0 0/44px 44px,
+      linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/44px 44px,
+      radial-gradient(1100px 620px at 12% -8%,rgba(96,165,250,.10),transparent 62%),
+      var(--bg);
+    color:var(--tx);
+    font:15px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
+    padding:38px 26px 54px;
+  }
+  .wrap{max-width:1120px;margin:0 auto}
+  .kicker{font-size:12px;letter-spacing:.22em;color:var(--faint);text-transform:uppercase}
+  h1{font-size:31px;line-height:1.25;margin:10px 0 8px;font-weight:700}
+  h1 .hl{color:var(--ok)}
+  .sub{color:var(--dim);font-size:15px;margin-bottom:26px}
+  .grid{display:grid;gap:14px}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g2{grid-template-columns:1.15fr .85fr}
+  @media(max-width:900px){.g3,.g2{grid-template-columns:1fr}}
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:18px 20px;backdrop-filter:blur(3px);
+  }
+  .card h2{font-size:15px;font-weight:700;color:var(--info);margin-bottom:12px;letter-spacing:.02em}
+  .card h2 .tag{font-size:11px;color:var(--faint);font-weight:500;margin-left:6px;letter-spacing:0}
+  .big{font-size:38px;font-weight:700;line-height:1.1;letter-spacing:-.01em}
+  .big.ok{color:var(--ok)} .big.warn{color:var(--warn)} .big.info{color:var(--info)}
+  .unit{font-size:14px;color:var(--faint);margin-left:6px;font-weight:400}
+  .lbl{color:var(--dim);font-size:13px;margin-top:6px}
+  ul{list-style:none}
+  li{position:relative;padding-left:20px;margin:9px 0;color:var(--dim);font-size:14px}
+  li:before{content:"";position:absolute;left:2px;top:9px;width:7px;height:7px;border-radius:2px;background:var(--faint)}
+  li.ok:before{background:var(--ok)} li.warn:before{background:var(--warn)} li.info:before{background:var(--info)}
+  li b{color:var(--tx);font-weight:600}
+  .row{display:flex;align-items:baseline;gap:10px;padding:7px 0;border-bottom:1px dashed rgba(255,255,255,.07);font-size:14px}
+  .row:last-child{border-bottom:0}
+  .row .k{color:var(--dim);min-width:118px}
+  .row .v{color:var(--tx);font-weight:600}
+  .row .v.g{color:var(--ok)} .row .v.y{color:var(--warn)}
+  .pipe{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px}
+  .pill{background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:999px;
+        padding:5px 12px;font-size:13px;color:var(--dim)}
+  .pill.on{background:rgba(74,222,128,.13);border-color:rgba(74,222,128,.35);color:var(--ok)}
+  .pill.half{background:rgba(245,184,65,.13);border-color:rgba(245,184,65,.32);color:var(--warn)}
+  .arrow{color:var(--faint);font-size:13px}
+  .note{margin-top:24px;padding:16px 20px;border-radius:14px;
+        background:linear-gradient(90deg,rgba(240,198,116,.10),rgba(240,198,116,.02));
+        border:1px solid rgba(240,198,116,.28)}
+  .note b{color:var(--gold)}
+  .foot{margin-top:22px;color:var(--faint);font-size:12px;text-align:center}
+  code{font-family:Consolas,"SF Mono",Menlo,monospace;font-size:12.5px;
+       background:rgba(255,255,255,.06);padding:2px 6px;border-radius:5px;color:var(--gold)}
+  .sec{margin-top:22px;font-size:12px;letter-spacing:.2em;color:var(--faint);text-transform:uppercase}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="kicker">翊瑄的工作台 · 结案体检 · 2026-10-01 17:05</div>
+  <h1>三项实点验证 <span class="hl">全部通过</span>，顺手把踩了 5 次的编码坑焊死</h1>
+  <p class="sub">下面是你那次「拆第一镜 → 重新应用到下游」的机器对账，以及本轮改了什么、还剩什么。</p>
+
+  <div class="pipe">
+    <span class="pill on">T-04 唤醒 Agent ✓</span><span class="arrow">·</span>
+    <span class="pill on">T-05 拆合镜头 ✓</span><span class="arrow">·</span>
+    <span class="pill on">T-17 应用到下游 ✓</span><span class="arrow">·</span>
+    <span class="pill half">T-18 BOM 已修 · 待你实点盖章</span>
+  </div>
+
+  <div class="sec">一 · 你刚才那一下，机器怎么看的</div>
+  <div class="grid g2" style="margin-top:12px">
+    <div class="card">
+      <h2>盘上对账 <span class="tag">读 reindex-log-20261001-165740.json</span></h2>
+      <div class="row"><span class="k">镜数</span><span class="v g">55 → 56（+1，就是拆出来的那半镜）</span></div>
+      <div class="row"><span class="k">新镜坐在哪</span><span class="v g">第 2 位（ID <code>s69</code>），后面整体往后挪一格</span></div>
+      <div class="row"><span class="k">跟着搬家的文件</span><span class="v g">200 个，一个没丢</span></div>
+      <div class="row"><span class="k">有没有拆坏</span><span class="v g">空镜头 0 个 · 测试假数据 0 个</span></div>
+    </div>
+    <div class="card">
+      <h2>结论</h2>
+      <div class="big ok">对得上</div>
+      <p class="lbl">镜号会变、ID 不变 —— 所以拆完之后，产物还能认得回自己是谁。</p>
+    </div>
+  </div>
+
+  <div class="sec">二 · 下游那 56 个标记，机器逐镜复算过一遍</div>
+  <div class="grid g3" style="margin-top:12px">
+    <div class="card"><div class="big ok">50<span class="unit">镜</span></div><div class="lbl"><b style="color:var(--tx)">已就绪</b> —— 内容没动过，搬了家照样算对</div></div>
+    <div class="card"><div class="big warn">1<span class="unit">镜</span></div><div class="lbl"><b style="color:var(--tx)">待重渲</b> —— 正是你拆的那一镜，内容变了当然要重渲</div></div>
+    <div class="card"><div class="big info">5<span class="unit">镜</span></div><div class="lbl"><b style="color:var(--tx)">无产物</b> —— 新拆出来的半镜 + 原本就没渲的 4 个</div></div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <h2>外加一道独立验证 <span class="tag">怕"搬家搬坏了"没被发现</span></h2>
+    <ul>
+      <li class="ok">挑一镜<b>没动过</b>的（现在排第 3 位），用代码口径重新算它的<b>内容指纹</b>，
+          和清单里存的那串对比 —— <b>一模一样</b>（<code>2474dc0e5cb638b5</code>）。</li>
+      <li class="ok">这说明两件事：搬家没搬坏任何一条记录，且我们对"指纹怎么算"的理解是准的。</li>
+    </ul>
+  </div>
+
+  <div class="sec">三 · 这轮改的：把「隐形 BOM」一次焊死</div>
+  <div class="grid g2" style="margin-top:12px">
+    <div class="card">
+      <h2>毛病是什么（大白话）</h2>
+      <ul>
+        <li class="warn">工作台写出来的某些 JSON，<b>开头悄悄多了 3 个看不见的字节</b>（叫 BOM）。</li>
+        <li class="warn">工作台自己读没事 —— 它会自动跳过这 3 个字节。<b>所以你从来没觉得有问题。</b></li>
+        <li class="warn">但<b>别的工具（Python / node / 达芬奇）一读就直接报错</b>：文件读不进去。</li>
+        <li class="warn">这就是"看着好好的，其实别的程序根本打不开"。</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>为什么反复犯 · 这次怎么治的</h2>
+      <ul>
+        <li class="info">以前每次都只在<b>「出事的那一行」</b>打补丁 → 过两天换个地方又犯，一天内犯了 5 次。</li>
+        <li class="ok">这次在<b>契约层立了一个统一出口</b>：<code>ContractJson.Utf8NoBom</code>，
+            以后写文件给外部工具读，只用它。</li>
+        <li class="ok"><b>5 处</b>写盘点全改成用它：产物清单 / 单镜修改意见（两个写入点）/ 卡片底稿 / 达芬奇 XML。</li>
+        <li class="ok">磁盘上已经写坏的 <b>3 个文件也顺手修好了</b>（只删那 3 个字节，内容一字没动）。</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>★ 你要做的只有一件事：重开一次工作台。</b><br>
+    源码改完已重新打包，软件夹里的 <code>LiteCut.exe</code> 已经换成 <b>17:01 的新版</b>（顺手确认没吐 pdb/xml 垃圾文件）。<br>
+    下次你点一次「应用到下游」，新写出来的文件开头就该是 <code>{</code> 而不是那 3 个隐形字节了。
+  </div>
+
+  <div class="sec">四 · 还剩什么</div>
+  <div class="grid g2" style="margin-top:12px">
+    <div class="card">
+      <h2>等你一句话的</h2>
+      <ul>
+        <li class="warn"><b>T-03</b> — 块内 184 个精剪切点，要不要加几毫秒 crossfade？（建议先不做）</li>
+        <li class="warn"><b>T-14</b> — C 盘 WorkBuddy 自己的缓存（要先完全退出 WorkBuddy 才能清）</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>记着但不用现在管的 <span class="tag">都不影响你用</span></h2>
+      <ul>
+        <li><b>R-16</b> — 撤销之后清单没跟着还原（撤销按钮已经切页就没了，碰不到）</li>
+        <li><b>R-06</b> — 音频探针那个小工具的工程文件引用了旧名字（只影响整体编译，不影响主程序）</li>
+        <li><b>R-14 / R-12</b> — 桥接的两处小脾气（排队队列在内存、死了要重开工作台）</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="foot">留痕已同步：更新日志 V1.1.7 ｜ 待办清单 T-17 ✅ / T-18 ✅ ｜ 风险登记 R-13 结案 ｜ 维护说明加了「写盘编码铁律」</div>
+
+</div>
+</body>
+</html>

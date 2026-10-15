@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<defs>
+  <clipPath id="clipB"><rect width="256" height="256" rx="56"/></clipPath>
+  <linearGradient id="bgB" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#142C4E"/><stop offset="1" stop-color="#07121E"/>
+  </linearGradient>
+  <pattern id="gridB" width="32" height="32" patternUnits="userSpaceOnUse">
+    <path d="M32 0 H0 V32" fill="none" stroke="#27496F" stroke-width="1.4" opacity=".5"/>
+  </pattern>
+  <linearGradient id="steelB" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#E8F3FF"/><stop offset=".55" stop-color="#A9CDF0"/><stop offset="1" stop-color="#6E9FCB"/>
+  </linearGradient>
+  <linearGradient id="goldB" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#FFE6B4"/><stop offset="1" stop-color="#E09B2E"/>
+  </linearGradient>
+</defs>
+<g clip-path="url(#clipB)">
+  <rect width="256" height="256" fill="url(#bgB)"/>
+  <rect width="256" height="256" fill="url(#gridB)"/>
+
+  <!-- 交叉刀刃：左上对角 ↔ 右手指环 -->
+  <g fill="none" stroke="url(#steelB)" stroke-width="15" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M102 52 L128 110 L176 180"/>
+    <path d="M154 52 L128 110 L80 180"/>
+  </g>
+
+  <!-- 指环 -->
+  <g fill="none" stroke="url(#goldB)" stroke-width="13">
+    <circle cx="80" cy="182" r="20"/>
+    <circle cx="176" cy="182" r="20"/>
+  </g>
+
+  <!-- 铆钉 -->
+  <circle cx="128" cy="110" r="9" fill="url(#goldB)"/>
+  <circle cx="125" cy="107" r="3" fill="#FFF6E4" opacity=".7"/>
+</g>
+</svg>

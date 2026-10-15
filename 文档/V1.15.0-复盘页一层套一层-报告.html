@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V1.15.0 · 复盘页 B1 · 报告</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 44px 24px 72px;
+    background-color: #0a1420;
+    background-image:
+      linear-gradient(rgba(90,150,220,.075) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(90,150,220,.075) 1px, transparent 1px);
+    background-size: 40px 40px;
+    color: #e8eef6;
+    font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    line-height: 1.7; font-size: 15px;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 32px; }
+  .kicker {
+    display: inline-block; font-size: 13px; letter-spacing: .12em;
+    color: #7fb6ff; border: 1px solid rgba(127,182,255,.35);
+    border-radius: 999px; padding: 4px 16px; margin-bottom: 16px;
+  }
+  h1 { font-size: 28px; margin: 0 0 10px; font-weight: 600; }
+  header p { color: #93a6bd; margin: 0; font-size: 15px; }
+
+  .card {
+    background: #111e2d; border: 1px solid rgba(120,180,255,.14);
+    border-radius: 14px; padding: 24px 26px; margin-bottom: 20px;
+  }
+  .card h2 {
+    font-size: 17px; margin: 0 0 4px; font-weight: 600;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .card h2 .num {
+    width: 25px; height: 25px; flex: none; border-radius: 7px;
+    background: rgba(127,182,255,.14); color: #7fb6ff;
+    font-size: 13px; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .card .sub { color: #93a6bd; font-size: 13px; margin: 0 0 16px; }
+
+  .verdict {
+    border: 1px solid rgba(240,198,116,.35);
+    background: linear-gradient(180deg, rgba(240,198,116,.10), rgba(240,198,116,.02));
+    border-radius: 14px; padding: 22px 26px; margin-bottom: 20px;
+  }
+  .verdict .big { font-size: 19px; color: #f5d99a; font-weight: 600; line-height: 1.55; }
+  .verdict .small { color: #93a6bd; margin-top: 8px; font-size: 13.5px; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+  th, td { text-align: left; padding: 9px 11px; font-size: 13.5px; border-bottom: 1px solid rgba(120,180,255,.10); vertical-align: top; }
+  th { color: #93a6bd; font-weight: 500; font-size: 12.5px; letter-spacing: .04em; }
+  td b { color: #cfe2ff; }
+  tr:last-child td { border-bottom: none; }
+
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 6px; }
+  .side { border-radius: 12px; padding: 15px 16px; font-size: 13.5px; }
+  .side h3 { margin: 0 0 9px; font-size: 14px; font-weight: 600; }
+  .side.old { background: rgba(240,140,140,.07); border: 1px solid rgba(240,140,140,.22); }
+  .side.old h3 { color: #f0a0a0; }
+  .side.new { background: rgba(120,220,160,.08); border: 1px solid rgba(120,220,160,.28); }
+  .side.new h3 { color: #86e0a8; }
+  .side ul { margin: 0; padding-left: 18px; }
+  .side li { margin-bottom: 5px; }
+
+  .mock {
+    background: #0c1726; border: 1px solid rgba(120,180,255,.18);
+    border-radius: 11px; padding: 14px 16px; font-size: 13px; line-height: 2;
+  }
+  .btn {
+    display: inline-block; background: rgba(127,182,255,.14);
+    border: 1px solid rgba(127,182,255,.34); border-radius: 8px;
+    padding: 2px 12px; font-size: 12.5px; color: #cfe2ff; margin-right: 7px;
+  }
+
+  ul { margin: 6px 0 0; padding-left: 20px; }
+  li { margin-bottom: 5px; }
+
+  /* —— 两层结构图 —— */
+  .layer {
+    border-radius: 12px; padding: 14px 16px; margin: 0 0 8px;
+  }
+  .layer .lt { font-size: 13px; font-weight: 600; margin-bottom: 10px; display:flex; align-items:center; gap:8px; }
+  .layer .lt .tag { font-size: 11.5px; padding: 1px 9px; border-radius: 999px; font-weight: 500; }
+  .layer.top { background: rgba(127,182,255,.07); border: 1px solid rgba(127,182,255,.25); }
+  .layer.top .lt { color: #9fc6ff; }
+  .layer.top .tag { background: rgba(127,182,255,.18); color: #9fc6ff; }
+  .layer.bot { background: rgba(120,220,160,.06); border: 1px solid rgba(120,220,160,.22); }
+  .layer.bot .lt { color: #86e0a8; }
+  .layer.bot .tag { background: rgba(120,220,160,.16); color: #86e0a8; }
+  .blk {
+    background: #0c1726; border: 1px solid rgba(120,180,255,.16);
+    border-radius: 9px; padding: 9px 13px; font-size: 13px; margin-bottom: 7px;
+  }
+  .blk:last-child { margin-bottom: 0; }
+  .blk .k { color: #cfe2ff; font-weight: 600; }
+  .arrow { text-align: center; color: #93a6bd; font-size: 12.5px; margin: 2px 0 8px; }
+
+  /* 热力图小样 */
+  .heat { display: inline-grid; grid-auto-flow: column; gap: 3px; }
+  .heat .col { display: grid; grid-auto-flow: row; gap: 3px; }
+  .cell { width: 11px; height: 11px; border-radius: 2.5px; }
+  .c0 { background: #131820; border: 1px solid #232a33; }
+  .c1 { background: #8a6a1e; border: 1px solid #6b5316; }
+  .c2 { background: #c99a2e; border: 1px solid #a87f22; }
+  .c3 { background: #e8b54a; border: 1px solid #c99a2e; }
+  .heat-note { color: #93a6bd; font-size: 12.5px; margin-top: 10px; }
+
+  .code {
+    background: #0c1726; border: 1px solid rgba(120,180,255,.16);
+    border-radius: 9px; padding: 12px 14px; font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+    font-size: 12.5px; color: #bfe0ff; line-height: 1.75; white-space: pre; overflow-x: auto;
+  }
+  .code .dim { color: #6f8aa8; }
+  .code .hl { color: #f5d99a; }
+
+  .pill { display:inline-block; font-size:12px; padding:1px 9px; border-radius:999px; margin-right:6px; }
+  .pill.ok { background: rgba(120,220,160,.14); color:#86e0a8; border:1px solid rgba(120,220,160,.3); }
+  .pill.warn { background: rgba(240,198,116,.13); color:#f5d99a; border:1px solid rgba(240,198,116,.3); }
+  .pill.blue { background: rgba(127,182,255,.13); color:#9fc6ff; border:1px solid rgba(127,182,255,.3); }
+  footer { text-align:center; color:#5f7387; font-size:12.5px; margin-top:34px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">工 作 台 · 版 本 报 告</div>
+    <h1>V1.15.0 · 复盘页「一层套一层」</h1>
+    <p>账号页在上、作品页在下 · 主图＝更新节奏热力图 · 2026-10-15</p>
+  </header>
+
+  <div class="verdict">
+    <div class="big">一句话：复盘页从"一个页面"变成了"两层" —— 先看账号，点某个作品就钻进它的详情。</div>
+    <div class="small">上层放"我这个号在不在发"（一张打卡热力图），下层放"这一支片的数据"（原来那页照旧）。
+      已经打包好：<b>D:\工作台\工作台.exe</b>（版本 1.15.0），编译 0 警告 0 错误。</div>
+  </div>
+
+  <!-- 1 -->
+  <div class="card">
+    <h2><span class="num">1</span>你要的是什么（你的原话）</h2>
+    <p class="sub">这一版完全照这几句话做的</p>
+    <table>
+      <tr><td style="width:52%">「最上面是账号数据，然后下面是作品列表。点进去可以看作品数据。」</td><td>→ 做成了<b>两层</b>：账号页在上，点作品钻进作品页</td></tr>
+      <tr><td>「把最重要的那个数据，弄成可视化，放在复盘页首页最显眼的位置」</td><td>→ 首页最上面就是<b>一张大图</b>（更新节奏热力图）</td></tr>
+      <tr><td>「我未来打算坚持一周多更甚至冲一周一更，所以按照热力图来做」</td><td>→ 主图＝<b>日打卡热力图</b>（一天一格）</td></tr>
+      <tr><td>「代码模块化……界面调整无非就是把模块的位置、大小调一调。别过度耦合。」</td><td>→ 拆成三层，<b>以后换主图只改一行</b></td></tr>
+    </table>
+  </div>
+
+  <!-- 2 -->
+  <div class="card">
+    <h2><span class="num">2</span>做成了什么样（打开复盘，看到的是这个）</h2>
+    <p class="sub">像抖音创作者中心那样，一层套一层</p>
+
+    <div class="layer top">
+      <div class="lt">第一层 · 账号页 <span class="tag">一进来就看它</span></div>
+      <div class="blk"><span class="k">① 大图：更新节奏热力图</span> —— 最近 26 周，哪天出了片、哪天断了、连了多久，一眼看尽</div>
+      <div class="blk"><span class="k">② 账号数据卡</span> —— 你手填 4 个数：粉丝总量 / 总播放 / 总点赞 / 近 30 天涨粉</div>
+      <div class="blk"><span class="k">③ 作品列表</span> —— 自动汇总每个项目的播放/点赞/涨粉；可以直接在行里改发布日、点「记今天」、「打开 ›」</div>
+    </div>
+    <div class="arrow">点作品列表里某一行的「打开 ›」↓ &nbsp;&nbsp;（左上角随时「← 返回账号」）</div>
+    <div class="layer bot">
+      <div class="lt">第二层 · 作品页 <span class="tag">＝原来那页，照旧用</span></div>
+      <div class="blk"><span class="k">这一支片的复盘</span> —— 录 8 个数 + 三段结论 + 快照列表 + 「生成复盘报告.md」</div>
+    </div>
+    <p class="sub" style="margin:14px 0 0">★ 左边菜单里只有「复盘」一个入口（点它进账号页）；作品页是"钻进去"的，故意不放进菜单 —— 免得菜单里两个复盘分不清。</p>
+  </div>
+
+  <!-- 3 -->
+  <div class="card">
+    <h2><span class="num">3</span>主图为什么是「更新节奏」，不是「涨粉」</h2>
+    <p class="sub">这是整件事里最要紧的一个判断</p>
+    <div class="two">
+      <div class="side old">
+        <h3>❌ 涨粉 / 播放</h3>
+        <ul>
+          <li>它是<b>结果</b>，不是抓手</li>
+          <li>今天涨得好不好，你<b>当天改不了</b></li>
+          <li>初创期样本少，看它容易焦虑，还看不出规律</li>
+        </ul>
+      </div>
+      <div class="side new">
+        <h3>✅ 更新节奏（今天发没发）</h3>
+        <ul>
+          <li>它是<b>你能控制的</b></li>
+          <li>今天发没发，<b>你今天就能改</b></li>
+          <li>高频更新的阶段，靠的就是"不断更"</li>
+        </ul>
+      </div>
+    </div>
+    <p style="margin:16px 0 6px;color:#93a6bd;font-size:13.5px">热力图长这样（示意）：</p>
+    <div class="heat">
+      <div class="col"><div class="cell c0"></div><div class="cell c1"></div><div class="cell c0"></div><div class="cell c0"></div><div class="cell c2"></div><div class="cell c0"></div><div class="cell c0"></div></div>
+      <div class="col"><div class="cell c0"></div><div class="cell c0"></div><div class="cell c3"></div><div class="cell c1"></div><div class="cell c2"></div><div class="cell c0"></div><div class="cell c0"></div></div>
+      <div class="col"><div class="cell c1"></div><div class="cell c0"></div><div class="cell c0"></div><div class="cell c2"></div><div class="cell c3"></div><div class="cell c1"></div><div class="cell c0"></div></div>
+      <div class="col"><div class="cell c0"></div><div class="cell c2"></div><div class="cell c1"></div><div class="cell c0"></div><div class="cell c0"></div><div class="cell c3"></div><div class="cell c0"></div></div>
+      <div class="col"><div class="cell c2"></div><div class="cell c1"></div><div class="cell c0"></div><div class="cell c0"></div><div class="cell c1"></div><div class="cell c2"></div><div class="cell c0"></div></div>
+      <div class="col"><div class="cell c0"></div><div class="cell c3"></div><div class="cell c2"></div><div class="cell c1"></div><div class="cell c0"></div><div class="cell c0"></div><div class="cell c0"></div></div>
+      <div class="col"><div class="cell c1"></div><div class="cell c0"></div><div class="cell c1"></div><div class="cell c2"></div><div class="cell c1"></div><div class="cell c0"></div><div class="cell c0"></div></div>
+      <div class="col"><div class="cell c0"></div><div class="cell c2"></div><div class="cell c3"></div><div class="cell c2"></div><div class="cell c1"></div><div class="cell c0"></div><div class="cell c0"></div></div>
+      <div class="col"><div class="cell c1"></div><div class="cell c2"></div><div class="cell c1"></div><div class="cell c3"></div><div class="cell c2"></div><div class="cell c1"></div><div class="cell c0"></div></div>
+      <div class="col"><div class="cell c0"></div><div class="cell c1"></div><div class="cell c2"></div><div class="cell c1"></div><div class="cell c3"></div><div class="cell c2"></div><div class="cell c0"></div></div>
+      <div class="col"><div class="cell c2"></div><div class="cell c3"></div><div class="cell c1"></div><div class="cell c2"></div><div class="cell c3"></div><div class="cell c2"></div><div class="cell c1"></div></div>
+      <div class="col"><div class="cell c1"></div><div class="cell c2"></div><div class="cell c3"></div><div class="cell c1"></div><div class="cell c2"></div><div class="cell c3"></div><div class="cell c2"></div></div>
+    </div>
+    <div class="heat-note">
+      空格＝那天没发 · 越亮＝那天发得越多 &nbsp;|&nbsp; 图下面是三个读数：<b>发了 N 支</b> / <b>落在 M 天里</b> / <b>最长连发 K 天</b> / <b>当前空档 J 天</b><br>
+      ★ <b>只有金色和灰色，一点红都没有</b> —— 红＝评判。这张图是"给自己看的诚实记录"，规矩是<b>只陈述、不评判：不变红、不弹窗、不催你</b>（这句话就写在卡片上）。
+    </div>
+  </div>
+
+  <!-- 4 -->
+  <div class="card">
+    <h2><span class="num">4</span>四块内容，各自管什么</h2>
+    <table>
+      <tr><th style="width:24%">块</th><th>管什么</th><th style="width:32%">关键点</th></tr>
+      <tr><td><b>更新节奏热力图</b></td><td>哪天发了、连了多久、空了几天</td><td>数据只来自"每个项目的发布日"；窗口可切近 13 周 / 26 周 / 一年</td></tr>
+      <tr><td><b>账号数据卡</b></td><td>粉丝 / 总播放 / 总点赞 / 近30天涨粉</td><td><b>只让手填</b>。平台口径的账号数是"拼"出来的，与其猜接口不如手填、自己负责，永远准</td></tr>
+      <tr><td><b>作品列表</b></td><td>每支片的播放/点赞/涨粉</td><td>自动从各项目 `review.json` <b>把多平台最新一次的数据相加</b>；<b>没数据就留空，不显示 0</b></td></tr>
+      <tr><td><b>发布日</b></td><td>热力图的唯一原料</td><td>放在项目自己的 `review.json` 里（<b>不动 project.json</b>）；没填就自动退回"最早那次快照的日期"，老项目一条数据都不用补</td></tr>
+    </table>
+    <p class="sub" style="margin:14px 0 0">★ 一条小规矩：<b>"手填的数"和"自动算的数"不许挨着放</b> —— 你得一眼看出哪个是自己填的、哪个是别人替你算的。</p>
+  </div>
+
+  <!-- 5 -->
+  <div class="card">
+    <h2><span class="num">5</span>代码怎么拆的（回应"别过度耦合"）</h2>
+    <p class="sub">拆成三层，各干各的，谁都不越界</p>
+    <div class="code"><span class="dim">Workbench\</span>
+  <span class="hl">Review\</span>      <span class="dim">← 纯数据 / 纯算法，不知道界面长什么样</span>
+    AccountReviewStore.cs   账号快照（手填数）读写
+    CadenceStats.cs         热力图背后的数学（连发 / 空档 / 每天几支）
+    WorksBoard.cs           项目列表 → 作品行（自动汇总）
+    CadenceCard.xaml(.cs)   主图卡片
+  <span class="hl">Controls\</span>    <span class="dim">← ★ 通用控件，完全不知道"复盘"是什么</span>
+    CadenceHeatmap.xaml(.cs) 日打卡热力图（喂数据就画，换"跑步打卡"也能用）
+    NumberField.xaml(.cs)    一个能改的数（标题 + 大数字 + 脚注）
+  <span class="hl">Views\</span>       <span class="dim">← 只负责"把东西摆在哪儿"</span>
+    ReviewHostView.xaml(.cs)   容器：管"显示哪一层" + 返回条
+    AccountReviewView.xaml(.cs) 第一层：账号页
+    ReviewView.xaml(.cs)        第二层：作品页（原有）</div>
+    <p style="margin:16px 0 6px;color:#93a6bd;font-size:13.5px">所以你说的"以后调界面就是挪位置、改大小"，落到代码上就是：</p>
+    <ul>
+      <li>想挪哪一块 → 在 <b>AccountReviewView.xaml</b> 里挪那个方块（三块都是独立 Border）；</li>
+      <li>想换主图 → <b>只改一行</b>：<code style="color:#f5d99a">_chart = new CadenceCard(); MainChartHost.Content = _chart;</code>（换成别的图，其它文件一个字不用动）；</li>
+      <li>想把热力图放到别的页面 → 那个控件<b>不认识"复盘"</b>，直接拿去用。</li>
+    </ul>
+  </div>
+
+  <!-- 6 -->
+  <div class="card">
+    <h2><span class="num">6</span>顺手揪出并修掉的 3 个真问题</h2>
+    <p class="sub">都不是"测试脚本写错了"，是软件真的有问题 —— 我点出来的</p>
+    <table>
+      <tr><th style="width:30%">毛病</th><th>为什么会这样</th><th style="width:30%">怎么修的</th></tr>
+      <tr>
+        <td><b>点了 A 作品，进去看到的却是 B</b></td>
+        <td>页面顶上那个"选项目"的下拉，每次重建都会把自己选中的东西清空，然后又默认选了第一个 —— 把你刚才点的那个覆盖掉了</td>
+        <td>重建之前<b>先记住"现在选的是谁"</b>，填完再按它选回去</td>
+      </tr>
+      <tr>
+        <td><b>在行里改了发布日，界面看着成功了，盘上什么没写</b></td>
+        <td>这个格子有<b>两个人在同时写</b>（绑定写一次、我那段代码又写一次）。绑定先写了，我的代码再一看"值没变"就不写了</td>
+        <td>把绑定改成"只管显示"，<b>写盘只留一个写手</b>。教训：同一件事只能有一个写手</td>
+      </tr>
+      <tr>
+        <td><b>调试口（我点软件用的那个口）两处"不像真人"</b></td>
+        <td>① 读界面文字时<b>读不到输入框里的字</b> → "我填的数存进去没"没法回答；② 往框里填字时<b>不触发"离开输入框"</b> → 那些"离开才保存"的框，字变了但根本没保存 → 会得出相反的结论</td>
+        <td>两个都补上：读字收输入框；填字时<b>补一个"离开输入框"的动作</b>，忠实模仿真人</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- 7 -->
+  <div class="card">
+    <h2><span class="num">7</span>实测与收尾</h2>
+    <table>
+      <tr><th style="width:34%">项目</th><th>结果</th></tr>
+      <tr><td>我怎么做测试的</td><td>全程走调试遥控口点它、读它，<b>一张截图都没截</b></td></tr>
+      <tr><td>改发布日 → 图立刻变</td><td><span class="pill ok">通过</span>三个项目记成今天/昨天/前天 → 读数立刻变成 3 支 / 落在 2 天里 / 最长连发 2 天</td></tr>
+      <tr><td>「记今天」按钮</td><td><span class="pill ok">通过</span>一键把该作品的发布日记成今天</td></tr>
+      <tr><td>账号 4 个数</td><td><span class="pill ok">通过</span>填了 → 存进 account-review.json → 重新进来能回显</td></tr>
+      <tr><td>钻进第二层 / 返回</td><td><span class="pill ok">通过</span>进的是正确那个作品，返回也对</td></tr>
+      <tr><td>换时间窗 / 平台筛选</td><td><span class="pill ok">通过</span>13 周、26 周、一年都正常；切"抖音"只剩在该平台有记录的那一行</td></tr>
+      <tr><td>编译</td><td><span class="pill ok">0 警告 0 错误</span></td></tr>
+      <tr><td>打包</td><td><span class="pill ok">已完成</span> D:\工作台\工作台.exe，版本戳 1.15.0</td></tr>
+      <tr><td>你的原始数据</td><td><span class="pill ok">没动</span>测试造的数据（临时发布日、测试文件夹、假的账号数）已清干净；「粥糊了」那条原始记录原封不动</td></tr>
+      <tr><td>调试开关</td><td><span class="pill ok">已还原</span>测试时我临时打开过，现在恢复成默认的"关"</td></tr>
+    </table>
+  </div>
+
+  <!-- 8 -->
+  <div class="card">
+    <h2><span class="num">8</span>接下来 / 该你出手了</h2>
+    <p class="sub"><span class="pill warn">等你</span>你说"完成后等我打开 debug 模式，然后交给你测试" —— 我这边已经就绪</p>
+    <ul>
+      <li><b>你做什么</b>：双击打开 <b>D:\工作台\工作台.exe</b> → 顶栏「设置」→「调试」→ 打开调试开关 → 告诉我一声；</li>
+      <li><b>我做什么</b>：像真人一样把你这个复盘页从头到尾点一遍（含改发布日、记今天、存账号数、钻进作品页、返回、切平台），
+          顺便验收这个调试口好不好用 —— <b>这次是"用你的手点"，不是我造的测试环境</b>；</li>
+      <li>用完提醒你：<b>调试开关记得关回去</b>（默认关是设计，免得平时白记账）。</li>
+    </ul>
+    <p style="margin:16px 0 0;color:#93a6bd;font-size:13.5px">
+      <b>这一版没做的</b>（留给后面）：
+      <span class="pill blue">B2</span>账号数据的趋势折线（"在涨还是在平"）·
+      <span class="pill blue">C</span>作品页排序 / 按平台分组 ·
+      <span class="pill blue">D</span>热力图上框选一段时间看明细。
+      建议顺序：<b>D → B2 → C</b>。
+    </p>
+  </div>
+
+  <footer>
+    翊瑄的工作台（LiteCut）· V1.15.0 · 2026-10-15<br>
+    完整留痕在 <b>文档/更新日志.md</b> V1.15.0；逐文件说明在 <b>文档/维护说明.md</b> §5.5–5.7
+  </footer>
+
+</div>
+</body>
+</html>

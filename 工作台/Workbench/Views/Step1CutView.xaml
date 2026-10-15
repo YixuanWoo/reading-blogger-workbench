@@ -1,0 +1,390 @@
+<UserControl x:Class="LiteCut.Workbench.Views.Step1CutView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:LiteCut.Workbench.Views"
+             xmlns:wb="clr-namespace:LiteCut.Workbench"
+             FontFamily="Microsoft YaHei"
+             AllowDrop="True"
+             DragOver="Grid_DragOver" Drop="Grid_Drop">
+
+    <Grid Margin="16,14,16,12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ============================================================
+             ① 工具条：加载 / 参数 / 开始
+             ============================================================ -->
+        <Border Grid.Row="0" Style="{StaticResource Card}" Padding="12,10,12,10" Margin="0,0,0,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- 左：加载源文件 -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <Button x:Name="BtnLoad" Content="加载音频/视频" Style="{StaticResource Btn}"
+                            Click="BtnLoad_Click" Padding="16,7,16,7"/>
+                    <!--
+                        转写这一环工作台不自己干（要模型/算力），是交给外部 Agent 的。
+                        所以这只按钮干的事是：把"要什么、写到哪、什么格式"一次性写全，
+                        复制走直接粘给 Agent —— 省掉每次手敲路径、还敲错的那一步。
+                        放在「导入」左边，因为流程上它在前：先让 Agent 去转，再拿回来导入。
+                    -->
+                    <Button x:Name="BtnCopyTranscriptPrompt" Content="复制转写提示词"
+                            Style="{StaticResource Btn}" Click="BtnCopyTranscriptPrompt_Click"
+                            Margin="8,0,0,0"
+                            ToolTip="把「请把这段音频转写成逐句稿」的提示词复制到剪贴板。&#10;里面已经写好：这次的音频路径、稿子该写到哪、JSON 格式要求。&#10;直接粘给 Agent（WorkBuddy 的 Agent、豆包、本机 whisper 都行）。&#10;★ 核心要求是「原始 ASR」，不是「整理后的成稿」—— 整理稿会让粗剪失效。"/>
+                    <Button x:Name="BtnTranscript" Content="导入转写稿（可选）" Style="{StaticResource Btn}"
+                            Click="BtnTranscript_Click" Margin="8,0,0,0"
+                            ToolTip="把 Agent 转写好的 transcript.json 读进来。&#10;有转写稿才能识别口误、半截话、重复；没有也照样能剪，只是只处理静音。"/>
+                    <Button x:Name="BtnClearTranscript" Content="✕" Style="{StaticResource Btn}"
+                            Click="BtnClearTranscript_Click" Margin="4,0,0,0"
+                            Width="30" Visibility="Collapsed"
+                            ToolTip="移除转写稿，回到纯波形模式"/>
+                </StackPanel>
+
+                <!-- 中：当前文件 + 参数 -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="16,0,0,0"
+                            VerticalAlignment="Center">
+                    <TextBlock Text="节奏：" Foreground="{StaticResource TextDim}"
+                               FontSize="13" VerticalAlignment="Center"/>
+                    <ComboBox x:Name="CmbPreset" Width="128" Margin="6,0,0,0"
+                              SelectionChanged="CmbPreset_SelectionChanged">
+                        <ComboBoxItem Content="激进（几乎不留气口）" Tag="0"/>
+                        <ComboBoxItem Content="适中" Tag="1"/>
+                        <ComboBoxItem Content="保守（贴近人工）" Tag="2"/>
+                    </ComboBox>
+
+                    <CheckBox x:Name="ChkFiller" Content="填充词" Margin="14,0,0,0"
+                              IsChecked="True" VerticalAlignment="Center"
+                              ToolTip="嗯、呃、啊 这类纯口气词"/>
+                    <CheckBox x:Name="ChkFalseStart" Content="半截重说" Margin="10,0,0,0"
+                              IsChecked="True" VerticalAlignment="Center"
+                              ToolTip="说到一半卡住又重来，需要有转写稿"/>
+                    <CheckBox x:Name="ChkRepeat" Content="重复(波形)" Margin="10,0,0,0"
+                              IsChecked="True" VerticalAlignment="Center"
+                              ToolTip="不需要转写稿，靠声波比对"/>
+
+                    <!--
+                        对稿状态（T-28）。只读提示，不需要用户操作：
+                        · 项目里有 script.md → 显示"稿子 N 句"
+                        · 没有 → 灰着提示"未找到稿子"
+                        这一格的存在意义是"让用户知道这次有没有用上对稿"。
+                    -->
+                    <TextBlock x:Name="TxtScriptStatus" Text="" Margin="14,0,0,0"
+                               FontSize="11.5" Foreground="{StaticResource TextFaint}"
+                               VerticalAlignment="Center"
+                               ToolTip="对稿：拿写作台里的 script.md 当标准答案，对一遍录音。&#10;能更准地认出「说错了重录」的前几遍，并列出对不上的地方。"/>
+                </StackPanel>
+
+                <!-- 右：开跑 -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <ProgressBar x:Name="ProgBar" Width="120" Height="8"
+                                 IsIndeterminate="False" Visibility="Collapsed"
+                                 VerticalAlignment="Center" Margin="0,0,10,0"
+                                 Foreground="{StaticResource Accent}"/>
+                    <Button x:Name="BtnAnalyze" Content="开始粗剪" Style="{StaticResource BtnPrimary}"
+                            Click="BtnAnalyze_Click" IsEnabled="False" Padding="18,7,18,7"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ============================================================
+             ①·五 决策条 —— 下游现在到底按哪份在剪 + 交棒按钮
+             ============================================================
+             【为什么要明说这一行】
+               以前"下游用的是谁"是个隐式推论，用户重跑粗剪、或精剪没应用成功，
+               界面上完全看不出来。现在把它摆在最显眼的地方，并且只允许
+               通过这个按钮切换 —— 调粗剪不会自动抢走下游控制权。
+             ============================================================ -->
+        <Border Grid.Row="1" Style="{StaticResource Card}" Padding="12,8,12,8" Margin="0,0,0,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="下游当前使用：" FontSize="12.5"
+                               Foreground="{StaticResource TextDim}" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="TxtDecision" Text="尚未应用" FontSize="12.5"
+                               FontWeight="SemiBold" Foreground="{StaticResource Ok}"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <TextBlock Grid.Column="1" x:Name="TxtDecisionHint" Text="" Margin="16,0,12,0"
+                           FontSize="11.5" Foreground="{StaticResource TextFaint}"
+                           VerticalAlignment="Center" TextWrapping="Wrap"/>
+
+                <Button Grid.Column="2" x:Name="BtnApplyDownstream" Content="应用到下游"
+                        Style="{StaticResource BtnPrimary}" FontSize="12.5"
+                        Padding="14,6,14,6" IsEnabled="False"
+                        Click="BtnApplyDownstream_Click"
+                        ToolTip="让分镜 / 渲染 / 组接导出都按这份粗剪结果走"/>
+            </Grid>
+        </Border>
+
+        <!-- ============================================================
+             ② 波形区
+             ============================================================ -->
+        <Border Grid.Row="2" Style="{StaticResource Card}" Padding="8,6,8,6" Margin="0,0,0,10">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="170"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" Margin="2,0,2,6">
+                    <TextBlock x:Name="TxtFileInfo" Text="尚未加载文件 —— 可以直接把音频拖到这里"
+                               FontSize="12" Foreground="{StaticResource TextDim}"
+                               VerticalAlignment="Center"/>
+                    <TextBlock x:Name="TxtPlayhead" HorizontalAlignment="Right"
+                               FontSize="12" Foreground="{StaticResource TextFaint}"
+                               VerticalAlignment="Center"/>
+                </Grid>
+
+                <Border Grid.Row="1" Background="#FF181B20" CornerRadius="5">
+                    <wb:WaveformView x:Name="Wave"/>
+                </Border>
+
+                <!-- 播放控制 -->
+                <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="2,8,2,0">
+                    <Button x:Name="BtnPlayRaw" Content="▶ 听原声" Style="{StaticResource Btn}"
+                            Click="BtnPlayRaw_Click" IsEnabled="False" Padding="12,5,12,5"/>
+                    <Button x:Name="BtnPlayCut" Content="▶ 听粗剪结果" Style="{StaticResource Btn}"
+                            Click="BtnPlayCut_Click" IsEnabled="False" Margin="8,0,0,0"
+                            Padding="12,5,12,5" ToolTip="把保留段拼起来听，这就是最终成片的音轨"/>
+                    <Button x:Name="BtnStop" Content="■ 停止" Style="{StaticResource Btn}"
+                            Click="BtnStop_Click" IsEnabled="False" Margin="8,0,0,0"
+                            Padding="12,5,12,5"/>
+                    <TextBlock x:Name="TxtPlayState" Text="" FontSize="11.5"
+                               Foreground="{StaticResource TextFaint}"
+                               VerticalAlignment="Center" Margin="12,0,0,0"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ============================================================
+             ③ 下：左边段列表 / 右边统计与建议
+             ============================================================ -->
+        <Grid Grid.Row="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="268"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- 段列表 -->
+            <Border Grid.Column="0" Style="{StaticResource Card}" Margin="0,0,10,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0" Margin="0,0,0,8">
+                        <TextBlock Text="剪辑决策 —— 双击一行可切换保留/剪掉"
+                                   FontSize="13" Foreground="{StaticResource TextMain}"
+                                   FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button x:Name="BtnRestoreAll" Content="全部还原" Style="{StaticResource Btn}"
+                                    Click="BtnRestoreAll_Click" IsEnabled="False"
+                                    FontSize="11.5" Padding="10,4,10,4" Margin="0,0,6,0"/>
+                            <Button x:Name="BtnRestoreSilence" Content="只还原静音" Style="{StaticResource Btn}"
+                                    Click="BtnRestoreSilence_Click" IsEnabled="False"
+                                    FontSize="11.5" Padding="10,4,10,4"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <DataGrid Grid.Row="1" x:Name="GridSeg"
+                              MouseDoubleClick="GridSeg_DoubleClick"
+                              SelectionChanged="GridSeg_SelectionChanged">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="#" Binding="{Binding Id}" Width="42"/>
+                            <DataGridTextColumn Header="起" Binding="{Binding StartText}" Width="66"/>
+                            <DataGridTextColumn Header="止" Binding="{Binding EndText}" Width="66"/>
+                            <DataGridTextColumn Header="时长" Binding="{Binding DurText}" Width="56"/>
+                            <DataGridTextColumn Header="处置" Binding="{Binding ActionText}" Width="52">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{Binding ActionBrush}"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="原因" Binding="{Binding ReasonText}" Width="76"/>
+                            <DataGridTextColumn Header="把握" Binding="{Binding ConfText}" Width="48"/>
+                            <DataGridTextColumn Header="内容" Binding="{Binding Text}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <TextBlock Grid.Row="2" x:Name="TxtSegCount" Text="" FontSize="11.5"
+                               Foreground="{StaticResource TextFaint}" Margin="0,8,0,0"/>
+                </Grid>
+            </Border>
+
+            <!-- 右栏：统计 + 建议 + 对稿偏差 -->
+            <Grid Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- 统计卡 -->
+                <Border Grid.Row="0" Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="粗剪统计" FontSize="13" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextMain}" Margin="0,0,0,10"/>
+                        <Grid x:Name="StatsGrid">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="原始时长"
+                                       Foreground="{StaticResource TextDim}" FontSize="12.5"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1" x:Name="TxtOrig"
+                                       Text="—" Foreground="White" FontSize="12.5"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="粗剪后" Margin="0,7,0,0"
+                                       Foreground="{StaticResource TextDim}" FontSize="12.5"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1" x:Name="TxtFinal" Margin="0,7,0,0"
+                                       Text="—" Foreground="White" FontSize="12.5" FontWeight="SemiBold"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="剪掉" Margin="0,7,0,0"
+                                       Foreground="{StaticResource TextDim}" FontSize="12.5"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1" x:Name="TxtRemoved" Margin="0,7,0,0"
+                                       Text="—" Foreground="#FFEF4444" FontSize="12.5"/>
+
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="压缩比" Margin="0,7,0,0"
+                                       Foreground="{StaticResource TextDim}" FontSize="12.5"/>
+                            <TextBlock Grid.Row="3" Grid.Column="1" x:Name="TxtRatio" Margin="0,7,0,0"
+                                       Text="—" Foreground="#FF22C55E" FontSize="12.5"/>
+
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="分析模式" Margin="0,9,0,0"
+                                       Foreground="{StaticResource TextDim}" FontSize="12.5"/>
+                            <TextBlock Grid.Row="4" Grid.Column="1" x:Name="TxtMode" Margin="0,9,0,0"
+                                       Text="—" Foreground="#FF3B82F6" FontSize="11.5" TextWrapping="Wrap"
+                                       MaxWidth="150" TextAlignment="Right"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- 建议清单 -->
+                <Border Grid.Row="1" Style="{StaticResource Card}" Margin="0,10,0,0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" FontSize="13" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextMain}" Text="拿不准的（需你确认）"
+                                   Margin="0,0,0,4"/>
+                        <TextBlock Grid.Row="0" Text="按你的要求：不确定的一律保留，只在这里提示"
+                                   FontSize="10.5" Foreground="{StaticResource TextFaint}"
+                                   Margin="0,17,0,6"/>
+
+                        <ListBox Grid.Row="1" x:Name="ListSuggest" Background="Transparent"
+                                 BorderThickness="0" Foreground="{StaticResource TextDim}"
+                                 FontSize="11.5" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Margin="0,3,0,3">
+                                        <CheckBox IsChecked="{Binding IsAccepted, Mode=TwoWay}"
+                                                  Checked="Suggest_Toggled" Unchecked="Suggest_Toggled">
+                                            <TextBlock Text="{Binding Display}" TextWrapping="Wrap"
+                                                       MaxWidth="210" Foreground="{StaticResource TextDim}"/>
+                                        </CheckBox>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <Button Grid.Row="2" x:Name="BtnApplySuggest" Content="按勾选更新决策"
+                                Style="{StaticResource Btn}" Click="BtnApplySuggest_Click"
+                                IsEnabled="False" Margin="0,8,0,0" FontSize="11.5" Padding="10,5,10,5"/>
+                    </Grid>
+                </Border>
+
+                <!--
+                    对稿偏差（T-28）—— 纯报告，不是待办。
+                    这里列的是"稿子跟录音对不上的地方"：忘词的、临场加词的、同一句录多遍的。
+                    它不参与机器决策（改动都在左边的剪辑决策里），只是让你一眼扫到"哪里不对劲"。
+                    所以整块是只读的，没有勾选框。
+                -->
+                <Border Grid.Row="2" Style="{StaticResource Card}" Margin="0,10,0,0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" FontSize="13" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextMain}" Text="对稿偏差（需你看）"
+                                   Margin="0,0,0,4"/>
+                        <TextBlock Grid.Row="1" x:Name="TxtScriptHint"
+                                   Text="未启用 —— 写作台写好稿子后自动生效"
+                                   FontSize="10.5" Foreground="{StaticResource TextFaint}"
+                                   TextWrapping="Wrap" Margin="0,0,0,6"/>
+
+                        <ListBox Grid.Row="2" x:Name="ListScript" Background="Transparent"
+                                 BorderThickness="0" Foreground="{StaticResource TextDim}"
+                                 FontSize="11.5" MaxHeight="160"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Display}" TextWrapping="Wrap"
+                                               MaxWidth="212" Margin="0,3,0,3"
+                                               Foreground="{Binding Brush}"/>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+
+        <!-- ============================================================
+             ④ 导出条
+             ============================================================ -->
+        <Border Grid.Row="4" Style="{StaticResource Card}" Margin="0,10,0,0" Padding="12,10,12,10">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="导出：" FontSize="13" Foreground="{StaticResource TextDim}"
+                           VerticalAlignment="Center"/>
+                <Button x:Name="BtnExportAudio" Content="剪好的音频" Style="{StaticResource Btn}"
+                        Click="BtnExportAudio_Click" IsEnabled="False" Margin="10,0,0,0"
+                        Padding="14,6,14,6"/>
+                <Button x:Name="BtnExportVideo" Content="剪好的视频" Style="{StaticResource Btn}"
+                        Click="BtnExportVideo_Click" IsEnabled="False" Margin="8,0,0,0"
+                        Padding="14,6,14,6" ToolTip="源文件有画面时才可用"/>
+                <Button x:Name="BtnExportJson" Content="决策文件(JSON)" Style="{StaticResource Btn}"
+                        Click="BtnExportJson_Click" IsEnabled="False" Margin="8,0,0,0"
+                        Padding="14,6,14,6"
+                        ToolTip="给外部 Agent 看的实际剪法，也是下次复现的依据"/>
+                <TextBlock x:Name="TxtExportHint" FontSize="11.5" Margin="14,0,0,0"
+                           Foreground="{StaticResource TextFaint}" VerticalAlignment="Center"
+                           Text="粗剪之后才能导出"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>工作台 · 远景规划 · 写作台 / 录音台 / 产能看板</title>
+<style>
+  :root{
+    --bg:#0b1024; --card:rgba(20,28,52,.74); --line:rgba(240,214,138,.16);
+    --gold:#f0d68a; --cream:#f3ecdc; --dim:#8b93a1; --red:#e2554d; --green:#7fc8a0; --blue:#6aa8ff;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:48px 24px 72px; color:var(--cream);
+    font-family:"Microsoft YaHei","PingFang SC","Segoe UI",system-ui,sans-serif;
+    line-height:1.75; background-color:var(--bg);
+    background-image:
+      linear-gradient(rgba(110,140,200,.075) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(110,140,200,.075) 1px,transparent 1px);
+    background-size:44px 44px;
+  }
+  .wrap{max-width:1080px;margin:0 auto}
+  h1{font-size:34px;font-weight:500;margin:0 0 10px;letter-spacing:.5px}
+  h2{font-size:21px;font-weight:500;margin:0 0 8px;color:var(--cream)}
+  h2 .no{color:var(--gold);margin-right:10px;font-variant-numeric:tabular-nums}
+  .lead{font-size:15.5px;color:var(--dim);margin:0 0 22px}
+  .sub{font-size:14.5px;color:var(--dim);margin:0 0 18px}
+  section{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:26px 28px;margin:0 0 22px;
+  }
+  .hero{background:rgba(20,28,52,.5);border-color:rgba(240,214,138,.28)}
+  .hero .lead{color:var(--cream);opacity:.82}
+  .chips{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}
+  .chip{
+    flex:1 1 190px;padding:14px 16px;border:1px solid var(--line);border-radius:11px;
+    background:rgba(11,16,36,.6)
+  }
+  .chip b{display:block;font-size:22px;font-weight:500;color:var(--gold);letter-spacing:.3px}
+  .chip span{font-size:12.5px;color:var(--dim)}
+  .chip.warn b{color:var(--red)}
+  .chip.ok b{color:var(--green)}
+  code{
+    font-family:Consolas,"Courier New",monospace;font-size:13px;
+    background:rgba(11,16,36,.85);border:1px solid var(--line);border-radius:5px;
+    padding:1px 6px;color:var(--gold)
+  }
+  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13.5px}
+  th{text-align:left;color:var(--gold);font-weight:500;padding:9px 12px;border-bottom:1px solid var(--line)}
+  td{padding:9px 12px;border-bottom:1px solid rgba(240,214,138,.08);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:7px;vertical-align:1px}
+  .d-red{background:var(--red)} .d-green{background:var(--green)} .d-gold{background:var(--gold)}
+  .d-blue{background:var(--blue)}
+  .flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;margin:22px 0 6px}
+  .node{
+    flex:1 1 0;min-width:132px;padding:13px 14px;border-radius:11px;
+    border:1px solid var(--line);background:rgba(11,16,36,.62);font-size:13.5px
+  }
+  .node b{display:block;font-weight:500;margin-bottom:4px;color:var(--cream)}
+  .node span{font-size:12px;color:var(--dim)}
+  .node.gold{border-color:rgba(240,214,138,.5)} .node.gold b{color:var(--gold)}
+  .node.green{border-color:rgba(127,200,160,.45)} .node.green b{color:var(--green)}
+  .node.blue{border-color:rgba(106,168,255,.45)} .node.blue b{color:var(--blue)}
+  .node.ghost{opacity:.42;border-style:dashed}
+  .arw{display:flex;align-items:center;justify-content:center;width:40px;color:var(--dim);font-size:18px}
+  .lane{margin:14px 0 4px}
+  .lane .tag{font-size:12.5px;color:var(--dim);margin-bottom:7px;letter-spacing:.3px}
+  .lane .tag b{color:var(--cream);font-weight:500}
+  .wire{border:1px solid var(--line);border-radius:11px;overflow:hidden;font-size:12.5px;margin-top:8px}
+  .wire .top{padding:10px 14px;background:rgba(11,16,36,.8);border-bottom:1px solid var(--line);color:var(--gold)}
+  .wire .body{display:flex;min-height:150px}
+  .wire .lft{width:36%;padding:12px 14px;border-right:1px solid var(--line);background:rgba(11,16,36,.42)}
+  .wire .rgt{padding:12px 14px;flex:1}
+  .row{padding:7px 9px;border-radius:7px;background:rgba(240,214,138,.06);margin-bottom:6px}
+  .row.warn{background:rgba(226,85,77,.12)}
+  .row.ok{background:rgba(127,200,160,.10)}
+  .row input{background:transparent;border:none;color:var(--cream);width:100%;font:inherit}
+  .tri{display:flex;gap:12px;flex-wrap:wrap;margin:18px 0 4px}
+  .v{flex:1 1 210px;border:1px solid var(--line);border-radius:12px;background:rgba(11,16,36,.55);padding:16px 18px}
+  .v h4{margin:0 0 4px;font-size:16px;font-weight:500;color:var(--gold)}
+  .v .k{font-size:12px;color:var(--dim);margin-bottom:11px}
+  .v .box{border:1px dashed rgba(240,214,138,.32);border-radius:8px;padding:9px 11px;font-size:12.5px;background:rgba(240,214,138,.05)}
+  .v .box.mid{border-color:rgba(106,168,255,.4);background:rgba(106,168,255,.07)}
+  .v .box.last{border-color:rgba(127,200,160,.4);background:rgba(127,200,160,.07)}
+  .stages{counter-reset:s;margin:0;padding:0;list-style:none}
+  .stages li{
+    counter-increment:s;position:relative;padding:13px 16px 13px 54px;
+    border:1px solid var(--line);border-radius:11px;background:rgba(11,16,36,.5);margin-bottom:10px;font-size:14px
+  }
+  .stages li::before{
+    content:counter(s);position:absolute;left:16px;top:13px;width:24px;height:24px;border-radius:50%;
+    background:rgba(240,214,138,.14);color:var(--gold);font-size:12.5px;
+    display:flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums
+  }
+  .stages li b{color:var(--gold);font-weight:500}
+  .stages li .m{font-size:12.5px;color:var(--dim);margin-top:3px}
+  .alert{border:1px solid rgba(226,85,77,.45);border-radius:13px;background:rgba(226,85,77,.07);padding:24px 28px;margin:0 0 22px}
+  .alert h2 .no{color:var(--red)}
+  .alert .lead{color:var(--cream);opacity:.85}
+  ul.tight{margin:8px 0 0;padding-left:20px;font-size:13.5px}
+  ul.tight li{margin-bottom:6px}
+  .kv{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .kv .k{flex:1 1 240px;border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:rgba(11,16,36,.5);font-size:13px}
+  .kv .k b{display:block;color:var(--gold);font-weight:500;margin-bottom:3px}
+  .foot{font-size:12.5px;color:var(--dim);text-align:center;margin-top:34px}
+  .strike{text-decoration:line-through;opacity:.5}
+  .yes{color:var(--green)} .no{color:var(--red)} .mid{color:var(--blue)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============ 1 ============ -->
+  <section class="hero">
+    <h1>远景规划 · 从「剪音频」到「从写到片」</h1>
+    <p class="lead">
+      你提的三件事（md 写作 / 分段录音 / 数据与看板），<b>不是三个功能，是一条主线上的三段</b>——
+      它们合起来会把工作台从「处理已录好的音频」，变成「从一张空白稿子长出成片」。
+      本规划给出：这条线怎么走、先走哪段、以及哪一段我建议先别走。
+    </p>
+    <div class="chips">
+      <div class="chip"><b>写作台</b><span>建议最先做 · 零风险 · 即使录音不做也不白做</span></div>
+      <div class="chip ok"><b>录音台</b><span>收益最大 · 但听感有风险 → 先花半天验一次</span></div>
+      <div class="chip"><b>产能看板</b><span>有价值 · 但要等前两步数据稳定才有意义</span></div>
+      <div class="chip warn"><b>甘特图 / OKR</b><span>建议不做 · 一人团队用它是仪式感 &gt; 价值</span></div>
+    </div>
+  </section>
+
+  <!-- ============ 2 ============ -->
+  <section>
+    <h2><span class="no">01</span>最关键的一个判断：写的一段 = 录的一片 = 出的一个镜</h2>
+    <p class="sub">
+      如果做成「工作台里塞个 md 编辑器」+「再加个录音按钮」两个独立功能，
+      必然掉进经典同步地狱：<b>稿子改了、录音对不上、镜头跟着错位</b>。
+      正确的做法是——它们是<b>同一份数据的三种视图</b>，共用一套段落节点。
+    </p>
+    <div class="tri">
+      <div class="v">
+        <h4>文稿视图</h4>
+        <div class="k">你在这写</div>
+        <div class="box">
+          第 3 段 · 2 句<br>
+          <span style="color:var(--dim)">「所以问题不在于……」</span>
+        </div>
+      </div>
+      <div class="v">
+        <h4>录音视图</h4>
+        <div class="k">你在这录</div>
+        <div class="box mid">
+          seg_03.wav<br>
+          <span style="color:var(--dim)">18.4 秒 · 录了 2 遍</span>
+        </div>
+      </div>
+      <div class="v">
+        <h4>镜头视图</h4>
+        <div class="k">下游认这个</div>
+        <div class="box last">
+          shot_03.mp4<br>
+          <span style="color:var(--dim)">画面 18.5 秒（含安全尾）</span>
+        </div>
+      </div>
+    </div>
+    <p class="sub" style="margin-top:16px">
+      ★ 这条链最大的好处是<b>局部重做</b>：改第 3 段的稿子 → 只重录 seg_03 → 只重渲 shot_03，
+      <b>其余 50 镜一个字节都不动</b>。
+      而现在改一句台词，得重走「转写 → 粗剪 → 精剪 → 分镜 → 渲染」整整一圈。
+    </p>
+  </section>
+
+  <!-- ============ 3 ============ -->
+  <section>
+    <h2><span class="no">02</span>分段录音真正的价值：不是「省事」，是「删掉一整环」</h2>
+    <p class="sub">
+      你的说法是「录完就是很完整、且语义切割精确的音频」——对，但更大的收益在别处：
+      <b>台词不再经过 ASR 那条最脆弱的路</b>。
+    </p>
+
+    <div class="lane">
+      <div class="tag"><b>老路（录音驱动）</b> · 现在走的就是这条</div>
+      <div class="flow">
+        <div class="node"><b>整段录音</b><span>一口气念完</span></div><div class="arw">→</div>
+        <div class="node ghost"><b>ASR 转写</b><span>外包 · 要联网</span></div><div class="arw">→</div>
+        <div class="node ghost"><b>粗剪</b><span>按时间戳删废话</span></div><div class="arw">→</div>
+        <div class="node"><b>精剪</b><span>切成 184 段</span></div><div class="arw">→</div>
+        <div class="node"><b>分镜</b><span>51 镜</span></div><div class="arw">→</div>
+        <div class="node"><b>渲染 / 组接</b><span>出片</span></div>
+      </div>
+    </div>
+    <p class="sub" style="color:var(--red)">
+      ⚠ 脆弱点在「转写 → 粗剪」：时间戳靠 ASR 给，实测「原始 ASR」与「整理成稿」<b>差了 56 秒</b>——
+      整条下游的时间轴都押在这一步上。
+    </p>
+
+    <div class="lane">
+      <div class="tag"><b>新路（文稿驱动）</b> · 分段录音开启的这条</div>
+      <div class="flow">
+        <div class="node gold"><b>写稿 md</b><span>台词即原文</span></div><div class="arw">→</div>
+        <div class="node blue"><b>分段录音</b><span>一片 = 一段</span></div><div class="arw">→</div>
+        <div class="node"><b>分镜</b><span>天然对齐</span></div><div class="arw">→</div>
+        <div class="node"><b>渲染 / 组接</b><span>出片</span></div>
+      </div>
+    </div>
+    <div class="kv">
+      <div class="k"><b>① 转写整环消失</b>台词就是稿子原文，不需要 ASR、不需要外包、不需要联网</div>
+      <div class="k"><b>② 粗剪降级</b>废话根本没录进去，不用听一遍再删</div>
+      <div class="k"><b>③ 时间戳零误差</b>每段起止 = 片段边界，56 秒那个坑直接不存在</div>
+      <div class="k"><b>④ 精剪变拖顺序</b>片段本来就是切好的语义单元</div>
+    </div>
+  </section>
+
+  <!-- ============ 4 ============ -->
+  <section class="alert">
+    <h2><span class="no">03</span>动手之前，先花半天验一件事：分段录音的<b>听感</b>能不能接受</h2>
+    <p class="lead">
+      这是整份规划里我最想让你先做的一步，<b>不做这一步，后面两千行代码可能白写</b>。
+    </p>
+    <p class="sub" style="color:var(--cream);opacity:.8">
+      一段一段录，段与段之间的「气口」是断的——听上去容易变成<b>朗诵</b>，而不是<b>说话</b>。
+      而读书博主的观众买的恰恰是那种娓娓道来的语感。这是这套方案<b>唯一可能致命</b>的代价，
+      而且<b>只能实测，不能凭猜</b>。
+    </p>
+    <div class="wire">
+      <div class="top">怎么验（用手机或现有麦克风就够，半小时出结果）</div>
+      <div class="body">
+        <div class="lft">
+          <div class="row">① 从《思辨与立场》稿子里挑 <b>10 段</b>（连续的一小段）</div>
+          <div class="row">② 一段一段录，录不好就重来</div>
+          <div class="row">③ 原样拼起来，<b>不做任何后期</b></div>
+          <div class="row warn">④ 戴上耳机，从头听一遍</div>
+        </div>
+        <div class="rgt">
+          <div class="row ok"><b>听不出接缝</b> → 方案成立，按路线图开工</div>
+          <div class="row warn"><b>明显「一顿一顿」</b> → 先试三个补救，再判：<br>
+            · 段尾留 200ms 气口（录完别立刻停）<br>
+            · 段首给 1 秒预备音（找状态）<br>
+            · 接缝加 crossfade（<b>T-03 那个还开着的决策项，正好在这里派上用场</b>）</div>
+          <div class="row warn" style="margin-top:10px"><b>补救完还是别扭</b> →
+            那就不做「一句一片」，改做「<b>连录模式</b>」：一口气录 3~5 段再切，
+            只在段间打标记（不真停）。听感＝老路，精度＝新路。</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 5 ============ -->
+  <section>
+    <h2><span class="no">04</span>粒度是这个设计的开关：别一句一片，会录到崩溃</h2>
+    <p class="sub">
+      「一段话一录音」里的<b>「一段话」到底多大</b>，决定了这套东西是神器还是刑具。
+      这个数字必须在动手前定死。
+    </p>
+    <table>
+      <tr><th style="width:110px">粒度</th><th style="width:90px">10 分钟稿</th><th>录起来</th><th>重录代价</th><th>听感</th><th></th></tr>
+      <tr>
+        <td><b>一句一片</b></td><td>~90 片</td>
+        <td class="no">极累，每片都要起状态</td><td class="yes">最小（重录 1 句）</td>
+        <td class="no">最差</td><td></td>
+      </tr>
+      <tr style="background:rgba(240,214,138,.06)">
+        <td><b style="color:var(--gold)">句群一片 ★</b></td><td style="color:var(--gold)"><b>~30 片</b></td>
+        <td class="yes"><b>可接受</b></td><td>中（重录 2~4 句）</td>
+        <td class="yes"><b>较好</b></td>
+        <td style="color:var(--gold)"><b>推荐默认</b></td>
+      </tr>
+      <tr>
+        <td><b>自然段一片</b></td><td>~12 片</td>
+        <td class="yes">轻松</td><td class="no">大（错一字整段重来）</td>
+        <td class="yes">最好</td><td></td>
+      </tr>
+    </table>
+    <p class="sub" style="margin-top:14px">
+      ★ 建议：<b>默认 2~4 句 / 15~25 秒一片</b>，录音台里给一个滑块现场调，
+      允许同一篇稿子里<b>不同段落用不同粒度</b>（难念的段拆细，顺的段录长）。
+    </p>
+  </section>
+
+  <!-- ============ 6 ============ -->
+  <section>
+    <h2><span class="no">05</span>路线图：五期，按依赖排，不是按兴趣排</h2>
+    <ol class="stages">
+      <li>
+        <b>期零 · 听感验证（半天，不写代码）</b>
+        <div class="m">就是第 03 屏那件事。这一步决定后面四期怎么走，甚至走不走。</div>
+      </li>
+      <li>
+        <b>期一 · 写作台（md 编辑器）· 约 1500 行 / 2 天</b>
+        <div class="m">
+          ★ <b>独立于录音，先单独可用</b>：写完导出稿子，照着念，走老路——
+          这样即使录音那条路最后没走通，写作台也完全不白做（它已经解决了「台词经过 ASR 失真」的问题）。<br>
+          落点：<code>NavTree</code> 项目内加一页（注释里早就预留了「写作台」这个词）；
+          数据 <code>项目\script.md</code> + <code>script.json</code>（段落节点带永久 ID，复用现有 ID 血统机制）。
+        </div>
+      </li>
+      <li>
+        <b>期二 · 录音台（分段录音）· 约 1200 行 / 2 天</b>
+        <div class="m">
+          NAudio 采集 + 实时波形 + 一片一存 <code>seg_&lt;id&gt;.wav</code> + 重录即覆盖 + 粒度假滑块。<br>
+          ★ 与写作台<b>共用同一份段落节点</b>，不另起一套数据。
+        </div>
+      </li>
+      <li>
+        <b>期三 · 新流水线贯通（文稿驱动）· 约 900 行 / 1.5 天</b>
+        <div class="m">
+          让 ①②③ 走新路：<b>跳过转写与粗剪</b>，片段列表直接进分镜。<br>
+          ★ <b>老路必须保留</b>——立项时选「录音驱动 / 文稿驱动」，《思辨与立场》是按老路做的，不能变孤儿。
+        </div>
+      </li>
+      <li>
+        <b>期四 · 产能看板（不是甘特图）· 约 800 行 / 1.5 天</b>
+        <div class="m">见下屏。数据取自全链路留痕文件，<b>要等前三期稳定才有意义</b>。</div>
+      </li>
+      <li>
+        <b>期五 · 素材复用库 / 发布回流 / 目标追踪（按需，可拆开做）</b>
+        <div class="m">见第 07 屏。</div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ============ 7 ============ -->
+  <section>
+    <h2><span class="no">06</span>关于甘特图和 OKR：一盆冷水，和一个更好的东西</h2>
+    <p class="sub">
+      甘特图解决「谁在什么时候做什么、会不会撞车」，OKR 解决「团队目标对齐」——
+      <b>这两件事都以「有多个人」为前提</b>。你是一个人：不存在撞车，也不需要对齐仪式。
+      而且它们要维护的数据量很大（每条任务填开始 / 结束 / 依赖 / 进度），最后会变成新的负担。
+    </p>
+    <p class="sub" style="color:var(--gold)">
+      但「看板」这个直觉是对的，只是该看的板<b>不是抄来的框架，而是从你自己的数据里长出来的</b>：
+    </p>
+    <table>
+      <tr><th style="width:200px">指标</th><th>为什么别人算不出来</th></tr>
+      <tr>
+        <td><b>每支片的总耗时</b><br><span style="color:var(--dim);font-size:12.5px">立项 → 出片，拆到每一环</span></td>
+        <td>只有工作台握着<b>全链路</b>的时间戳；别的工具只看到其中一个环节</td>
+      </tr>
+      <tr>
+        <td><b>哪一环返工最多</b><br><span style="color:var(--dim);font-size:12.5px">重渲次数 / 拆合次数 / 重录次数</span></td>
+        <td>★ <b>这是独一份的</b>。市面上没有任何工具知道你「这一镜渲了三遍」——而这正是最该被看见的浪费</td>
+      </tr>
+      <tr>
+        <td><b>单镜渲染成本</b><br><span style="color:var(--dim);font-size:12.5px">耗时 + 失败率 + 电费</span></td>
+        <td>渲染留痕本来就落在 <code>stages\04-render\</code> 里，只是从没被汇总过</td>
+      </tr>
+      <tr>
+        <td><b>项目水位</b><br><span style="color:var(--dim);font-size:12.5px">卡在第几步、卡了几天</span></td>
+        <td>现有 <code>project.json</code> 里就有，缺的只是一个视图</td>
+      </tr>
+    </table>
+    <p class="sub" style="margin-top:14px">
+      ★ <b>OKR 如果真想要</b>，做成「年度目标的轻量追踪」就够：
+      <span style="color:var(--dim)">今年出 50 支片 → 现在 18 支 ▓▓▓░░ 36%</span>，一条进度条拉到底。
+      <b>不要做成任务依赖图</b>，那是给自己找活干。
+    </p>
+  </section>
+
+  <!-- ============ 8 ============ -->
+  <section>
+    <h2><span class="no">07</span>你没提、但完整工作台该有的（按性价比排序）</h2>
+    <table>
+      <tr><th style="width:150px">缺口</th><th>说明</th><th style="width:110px">性价比</th></tr>
+      <tr>
+        <td><b>镜头模板库</b></td>
+        <td>现在每支片全部从零渲染，但片头 / 片尾 / 转场 / 背景其实是<b>可以跨项目复用</b>的。
+          攒一个「片段银行」，渲染费能省下一大块</td>
+        <td style="color:var(--green)"><b>最高</b></td>
+      </tr>
+      <tr>
+        <td><b>发布物料</b></td>
+        <td>片子出了，还要标题 / 简介 / 封面 / 标签。这是<b>同一支片的另一半</b>，
+          现在完全在工作台外面做</td>
+        <td style="color:var(--green)"><b>高</b></td>
+      </tr>
+      <tr>
+        <td><b>项目快照</b></td>
+        <td>现在只有「交接前备份」一处。应该有项目级「回到三天前」的能力</td>
+        <td style="color:var(--gold)">中</td>
+      </tr>
+      <tr>
+        <td><b>数据回流</b></td>
+        <td>发出去之后的播放 / 完播率能不能回到工作台，反哺选题？
+          这是闭环最后一公里，但依赖平台接口，<b>不确定性强</b></td>
+        <td style="color:var(--dim)">中（但风险高）</td>
+      </tr>
+      <tr>
+        <td><b>多规格导出</b></td>
+        <td>竖屏你不做的（已定），但封面图、方版裁剪还是要的</td>
+        <td style="color:var(--dim)">低</td>
+      </tr>
+    </table>
+  </section>
+
+  <!-- ============ 9 ============ -->
+  <section>
+    <h2><span class="no">08</span>风险与代价（先说丑话）</h2>
+    <table>
+      <tr><th style="width:170px">风险</th><th style="width:70px">等级</th><th>缓解</th></tr>
+      <tr>
+        <td><b>分段录音听感变朗诵</b></td><td style="color:var(--red)"><b>致命</b></td>
+        <td>期零先验；补救三招（气口 / 预备音 / crossfade）；兜底是「连录模式」</td>
+      </tr>
+      <tr>
+        <td><b>录到崩溃</b>（心理负担）</td><td style="color:var(--gold)">高</td>
+        <td>粒度默认句群不默认单句；允许连录；允许同一篇用不同粒度</td>
+      </tr>
+      <tr>
+        <td><b>老项目变孤儿</b></td><td style="color:var(--gold)">高</td>
+        <td>两条路<b>并存</b>，立项时选模式，不做替换式升级</td>
+      </tr>
+      <tr>
+        <td><b>写作台做成孤岛</b></td><td style="color:var(--gold)">高</td>
+        <td>★ 必须与录音台<b>共用同一份段落节点</b>，否则必然出现「改了稿对不上音」</td>
+      </tr>
+      <tr>
+        <td><b>麦克风还没买</b></td><td style="color:var(--dim)">—</td>
+        <td>期一（写作台）<b>不依赖麦克风</b>，现在就能做；录音台等你买了设备再做，顺序正好</td>
+      </tr>
+      <tr>
+        <td><b>看板数据不准</b></td><td style="color:var(--dim)">低</td>
+        <td>等前三期稳定后再做；指标全部从既有留痕文件算，不另建数据源</td>
+      </tr>
+    </table>
+  </section>
+
+  <!-- ============ 10 ============ -->
+  <section>
+    <h2><span class="no">09</span>等你拍板的四件事</h2>
+    <ol class="stages">
+      <li><b>先做期零的听感验证吗？</b><span class="m">半天，不写代码。我建议做——它能省掉几千行可能白写的代码。</span></li>
+      <li><b>写作台放项目内还是全局？</b><span class="m">我倾向<b>项目内</b>（稿子属于某一支片，跟流水线在一起），但你想拿它当通用笔记的话就放全局。</span></li>
+      <li><b>录音的粒度默认值</b><span class="m">我推荐 2~4 句 / 15~25 秒。你录过自己的稿，体感更准。</span></li>
+      <li><b>甘特图 / OKR 还做吗？</b><span class="m">我的建议是：不做甘特图；OKR 降级成一条年度进度条。你坚持要的话我照做，但会把工作量如实报给你。</span></li>
+    </ol>
+  </section>
+
+  <p class="foot">工作台 · 远景规划 · 2026-10-02 · 状态：待你拍板，代码一行未动 · 基线 V1.9.11</p>
+</div>
+</body>
+</html>

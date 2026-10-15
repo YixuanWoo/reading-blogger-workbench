@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>成片审片台 · 工作流改造（T-27）</title>
+<style>
+  body{margin:0;background:#0b1420;color:#e8e2d5;font-family:"Microsoft YaHei",sans-serif;line-height:1.7;
+       background-image:repeating-linear-gradient(0deg,rgba(90,130,180,.07) 0 1px,transparent 1px 48px),
+                        repeating-linear-gradient(90deg,rgba(90,130,180,.07) 0 1px,transparent 1px 48px);}
+  .wrap{max-width:960px;margin:0 auto;padding:48px 32px 80px;}
+  h1{font-size:30px;margin:0 0 6px;color:#f3ecdc;}
+  h1 .em{color:#f0d68a;}
+  .sub{color:#9fb4cc;font-size:15px;margin-bottom:36px;}
+  h2{font-size:19px;color:#f0d68a;margin:44px 0 14px;border-left:4px solid #f0d68a;padding-left:12px;}
+  .card{background:#111f31;border:1px solid #24405e;border-radius:12px;padding:22px 26px;margin:14px 0;}
+  .flow{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;margin:18px 0;}
+  .step{background:#15293f;border:1px solid #2d5079;border-radius:10px;padding:12px 16px;flex:1;min-width:150px;}
+  .step b{display:block;color:#f0d68a;font-size:15px;margin-bottom:4px;}
+  .step span{font-size:13px;color:#b9c8da;}
+  .step.old{border-color:#3a5a40;background:#12241a;}
+  .step.old b{color:#97c459;}
+  .step.new{border-color:#8a5a20;background:#241a10;}
+  .step.new b{color:#ef9f27;}
+  .arrow{align-self:center;color:#5a7a9a;font-size:20px;}
+  .loop{border:2px dashed #ef9f27;border-radius:14px;padding:18px 18px 8px;margin:10px 0;position:relative;}
+  .loop .tag{position:absolute;top:-13px;left:18px;background:#241a10;color:#ef9f27;font-size:13px;padding:2px 12px;border-radius:8px;border:1px solid #8a5a20;}
+  table{width:100%;border-collapse:collapse;font-size:14px;margin:12px 0;}
+  th,td{border:1px solid #24405e;padding:9px 12px;text-align:left;vertical-align:top;}
+  th{background:#15293f;color:#f0d68a;font-weight:normal;}
+  td.yes{color:#97c459;} td.new{color:#ef9f27;} td.part{color:#85b7eb;}
+  .note{background:#12241a;border-left:4px solid #97c459;border-radius:8px;padding:14px 18px;margin:16px 0;font-size:14px;color:#c9dcc0;}
+  .warn{background:#241a10;border-left:4px solid #ef9f27;border-radius:8px;padding:14px 18px;margin:16px 0;font-size:14px;color:#e8cfa8;}
+  .big{font-size:17px;color:#f3ecdc;}
+  .k{color:#f0d68a;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>成片审片台 <span class="em">· T-27</span></h1>
+  <div class="sub">2026-10-04 拍板 · 你的角色 = 只看最终成片的审片人 · 逐镜审核退役</div>
+
+  <h2>一、新流程长什么样</h2>
+  <div class="card">
+    <div class="flow">
+      <div class="step old"><b>④ 逐镜渲染 + 自检</b><span>已有（V1.10.11）。T-26① 再把你的 14 条视觉规范喂给它</span></div>
+      <div class="arrow">→</div>
+      <div class="step old"><b>自动组装草稿成片</b><span>已有。⑤ 组接本来就是干这个的，改叫"草稿"</span></div>
+      <div class="arrow">→</div>
+      <div class="step new"><b>⑤ 审片台</b><span>★ 唯一的新页面。你 1.5 倍速看成片</span></div>
+      <div class="arrow">→</div>
+      <div class="step new"><b>打点标记</b><span>看到问题按一下：记下时间点 + 一句话</span></div>
+    </div>
+    <div class="loop">
+      <div class="tag">循环 · 直到满意</div>
+      <div class="flow" style="margin:6px 0;">
+        <div class="step new"><b>自动回推</b><span>打点时间 → 查镜头起止表 → 是第几镜（认永久 ID）</span></div>
+        <div class="arrow">→</div>
+        <div class="step old"><b>单镜重渲</b><span>已有。意见写进 overrides，走 reshoot 链路</span></div>
+        <div class="arrow">→</div>
+        <div class="step old"><b>自动重组</b><span>已有。ffmpeg 重拼 + 音轨重建，很快</span></div>
+        <div class="arrow">→</div>
+        <div class="step new"><b>再看一遍</b><span>新草稿就位，接着审</span></div>
+      </div>
+    </div>
+    <div class="flow">
+      <div class="step"><b>满意 → 正式导出</b><span>审片循环退出，点导出，成片落盘</span></div>
+    </div>
+  </div>
+
+  <h2>二、零件清单：哪些是现成的</h2>
+  <div class="card">
+    <table>
+      <tr><th style="width:34%">你要的</th><th style="width:16%">状态</th><th>说明</th></tr>
+      <tr><td>首渲逐镜渲染 + 自检</td><td class="yes">✅ 已有</td><td>V1.10.11 固化"渲一镜→抽帧自查四条→过了才渲下一镜"；T-26① 注入 14 条规范后自检标准 = 你的标准</td></tr>
+      <tr><td>完整连贯的预览成片</td><td class="yes">✅ 已有</td><td>⑤ 组接本来就产完整成片，只是现在叫"导出"；改叫"草稿"就位</td></tr>
+      <tr><td>成片打点标记 UI</td><td class="new">★ 要新建</td><td>WPF 播放器 + 时间打点 + 一句话意见输入。主要工作量在这</td></tr>
+      <tr><td>打点 → 回推是哪一镜</td><td class="part">◈ 容易</td><td>每个镜头在成片时间轴上的起止是已知数（FilmSegment 边界），按时间查表即得镜头；认永久 ID 不认镜号</td></tr>
+      <tr><td>意见 → 改镜头</td><td class="yes">✅ 已有</td><td>单镜重渲链路（agent-reshoot）现成，只差"打点"翻译成重渲意见写进 shot-overrides</td></tr>
+      <tr><td>改完自动重组</td><td class="yes">✅ 已有</td><td>⑤ 重组 = ffmpeg 拼接 + 音轨重建，改一镜重拼一次毫无压力</td></tr>
+    </table>
+  </div>
+
+  <h2>三、页面归属（已拍板）</h2>
+  <div class="card">
+    <p class="big">④⑤ 结合，但改造的是 <span class="k">⑤</span>。</p>
+    <p><b>④ 渲染页</b>：保持生产端不动（逐镜渲染 + 自检 + 缩略图）。
+       缩略图审阅台降级为<b>可选的快速扫视工具</b>，不再是你审核的必经之路。</p>
+    <p><b>⑤ 组接导出页 → 升级为「审片台 + 导出」</b>：审的对象是组接后的时间轴，
+       打点映射和重组天然住在这一页。工作流 = 看成片 → 打点 → 回推 → 单镜重渲 → 重组 → 再看……满意才导出。</p>
+  </div>
+
+  <h2>四、两个 bonus</h2>
+  <div class="note">★ <b>听感死角被顺手补掉了</b>：气口断没断、节奏怪不怪、朗诵感、插片声音突兀——
+    这些机器查不了的"听感"，你看成片时耳朵一起验收了。上一版品控方案里最大的缺口，这个设计补上了。</div>
+  <div class="note">★ <b>质检 Agent（原 T-26②）降级为可选预检</b>：先跑机器预检标红项当然更好，
+    但主线变成"人看成片打点"——机器预检等审片台跑顺了再议，不阻塞。</div>
+
+  <h2>五、代价（诚实版）</h2>
+  <div class="warn">★ 审片播放器 + 打点 UI 是全新界面活：<b>量级约 1~2 天</b>，难度 ★★☆，比 T-26① 大。
+    打点要处理暂停 / 回退 / 精确定位（做成"打点后可微调秒数"）。建议顺序：<b>先做 T-26①（半天，规范注入），
+    再做 T-27（审片台）</b>——① 是 ② 的地基，且单独就有收益。</div>
+
+  <div class="sub" style="margin-top:44px">翊瑄的工作台 · T-27 方案留档 · 2026-10-04</div>
+</div>
+</body>
+</html>

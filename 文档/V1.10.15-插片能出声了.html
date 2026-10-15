@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>V1.10.15 · 插片终于能出声了</title>
+<style>
+  :root{
+    --bg:#0a1420;
+    --card:#0f1c2a;
+    --card2:#122234;
+    --line:#1d3650;
+    --ink:#f3ecdc;
+    --dim:#8fb8d8;
+    --faint:#5f7b96;
+    --cyan:#22d3ee;
+    --gold:#f0d68a;
+    --ok:#4ade80;
+    --bad:#f87171;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:34px 18px 60px;
+    background-color:var(--bg);
+    background-image:
+      linear-gradient(rgba(56,116,166,.10) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(56,116,166,.10) 1px, transparent 1px);
+    background-size:44px 44px;
+    color:var(--ink);
+    font-family:"Microsoft YaHei","PingFang SC","Hiragino Sans GB",system-ui,sans-serif;
+    line-height:1.75;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px;margin:0 auto}
+
+  header{margin-bottom:30px;padding:26px 28px;border-radius:14px;
+    background:linear-gradient(135deg,#0f2236 0%,#0d1a29 70%);
+    border:1px solid var(--line);
+    box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .kicker{display:inline-block;font-size:12px;letter-spacing:.16em;color:var(--cyan);
+    border:1px solid rgba(34,211,238,.4);border-radius:999px;padding:3px 12px;margin-bottom:14px}
+  h1{margin:0 0 10px;font-size:34px;letter-spacing:.01em;color:#fff;font-weight:700}
+  h1 em{font-style:normal;color:var(--gold)}
+  .lead{margin:0;color:var(--dim);font-size:15.5px;max-width:820px}
+
+  section{margin:22px 0;padding:22px 26px;border-radius:14px;
+    background:var(--card);border:1px solid var(--line)}
+  h2{margin:0 0 16px;font-size:19px;color:#fff;display:flex;align-items:center;gap:10px}
+  h2 .n{display:inline-flex;width:26px;height:26px;border-radius:8px;align-items:center;justify-content:center;
+    background:rgba(34,211,238,.14);border:1px solid rgba(34,211,238,.45);color:var(--cyan);
+    font-size:13px;font-weight:700;flex:none}
+  p{margin:0 0 12px}
+  p:last-child{margin-bottom:0}
+  .muted{color:var(--dim)}
+  .small{font-size:13.5px}
+  b.hl{color:var(--gold)}
+  code{font-family:Consolas,"Cascadia Mono",monospace;font-size:13px;
+    background:#0a1622;border:1px solid #1b3348;
+    border-radius:5px;padding:1px 6px;color:#9ad8ea}
+
+  /* 两扇门 */
+  .doors{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:4px}
+  @media(max-width:760px){.doors{grid-template-columns:1fr}}
+  .door{padding:18px;border-radius:12px;background:var(--card2);border:1px solid var(--line);position:relative}
+  .door .tag{position:absolute;top:-11px;left:16px;font-size:11.5px;letter-spacing:.08em;
+    background:#0a1420;border:1px solid var(--line);border-radius:999px;padding:2px 10px;color:var(--dim)}
+  .door h3{margin:8px 0 8px;font-size:15.5px;color:#fff}
+  .door .quote{font-size:13px;color:#ffd9a0;background:rgba(240,214,138,.07);
+    border-left:2px solid rgba(240,214,138,.55);border-radius:0 6px 6px 0;padding:8px 12px;margin:10px 0 0}
+  .door .quote code{background:transparent;border:0;color:#ffd9a0}
+
+  /* 对照数字 */
+  table{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}
+  th,td{padding:10px 12px;text-align:left;border-bottom:1px solid #17293b}
+  th{color:var(--faint);font-weight:600;font-size:12.5px;letter-spacing:.05em}
+  td.num{font-family:Consolas,monospace;font-size:14.5px}
+  .v-bad{color:var(--bad);font-weight:700}
+  .v-ok{color:var(--ok);font-weight:700}
+  tr:last-child td{border-bottom:0}
+
+  /* 操作步骤 */
+  .steps{counter-reset:s;display:flex;flex-direction:column;gap:10px;margin-top:4px}
+  .step{display:flex;gap:14px;align-items:flex-start;padding:13px 16px;border-radius:11px;
+    background:var(--card2);border:1px solid var(--line)}
+  .step::before{counter-increment:s;content:counter(s);flex:none;
+    width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;
+    background:rgba(34,211,238,.14);border:1px solid rgba(34,211,238,.45);color:var(--cyan);
+    font-size:12.5px;font-weight:700;margin-top:2px}
+  .step .t{font-size:14.5px}
+  .step .t .s{display:block;color:var(--faint);font-size:13px;margin-top:2px}
+
+  /* 链路阶梯 */
+  .chain{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:4px}
+  @media(max-width:760px){.chain{grid-template-columns:1fr}}
+  .link{padding:16px;border-radius:12px;background:var(--card2);border:1px solid var(--line)}
+  .link .who{font-size:12px;color:var(--cyan);letter-spacing:.08em;margin-bottom:6px}
+  .link .was{font-size:13px;color:var(--faint);text-decoration:line-through;margin-bottom:8px}
+  .link .now{font-size:13.5px;color:var(--ink)}
+
+  .note{margin-top:16px;padding:13px 16px;border-radius:11px;font-size:13.5px;
+    background:rgba(34,211,238,.06);border:1px solid rgba(34,211,238,.28);color:#bfe6f2}
+  .warn{background:rgba(248,113,113,.07);border-color:rgba(248,113,113,.32);color:#ffd2d2}
+
+  .fig{margin:14px 0 4px;padding:16px;border-radius:12px;background:#0a1622;border:1px solid var(--line);
+    font-family:Consolas,monospace;font-size:13px;color:var(--dim);overflow-x:auto;white-space:pre}
+  .fig .c{color:var(--cyan)} .fig .g{color:var(--gold)} .fig .k{color:#a9d18e}
+
+  footer{margin-top:30px;text-align:center;color:var(--faint);font-size:12.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">V1.10.15 · 2026-10-03</div>
+    <h1>插片，终于<em>能出声</em>了</h1>
+    <p class="lead">
+      你插的那段抖音视频本来有声音（−11.3 dB），但渲出来的产物和成片都是 <b class="hl">−91 dB</b>——
+      数字静音。这不是哪个环节「跑偏了」，是产品从 V1.10.0 起就<b class="hl">把「插片 = 静音」写死在全链路</b>。
+      现在开了口子：分镜卡上多一个勾选，<b class="hl">默认还是关</b>，不改你原来的习惯。
+    </p>
+  </header>
+
+  <section>
+    <h2><span class="n">1</span>先说清楚：为什么"只重渲"和"只改一个地方"都救不了</h2>
+    <p class="muted small">因为有两扇门，各自关着一半。只推一扇，声音照样出不来。</p>
+
+    <div class="doors">
+      <div class="door">
+        <span class="tag">门 ① · 渲染层</span>
+        <h3>提示词里写着"必须静音"</h3>
+        <p class="small muted">渲染提示词对插片的原话是硬性要求：</p>
+        <div class="quote"><code>必须 data-volume="0" —— 成片这一段本来就没有声音</code></div>
+        <p class="small muted" style="margin-top:10px">这句注释里的"本来就没有声音"从来没被验证过。于是素材的声被<b class="hl">主动关掉</b>，录进产物就是静音。</p>
+      </div>
+
+      <div class="door">
+        <span class="tag">门 ② · 组接层</span>
+        <h3>成片音轨从来不读产物的音轨</h3>
+        <p class="small muted">成片的音轨是<b class="hl">从原录音重建</b>的（精剪决策 + 源文件）。而插片不属于这次录音——它在原录音里<b class="hl">根本没有对应位置</b>。</p>
+        <p class="small muted">所以那一段只能补一段等长静音；就算产物里有声音，组接也<b class="hl">从来不用</b>它。</p>
+      </div>
+    </div>
+
+    <div class="note small">
+      <b>这就是"只重渲一次"不管用的原因</b>：重渲能让产物有声音，但组接层照样把它丢掉。
+      反过来只改组接也不行：产物本身还是静音的。两扇门必须一起改 —— 这正是本版做的事。
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">2</span>现在怎么用（下次做视频时）</h2>
+    <div class="steps">
+      <div class="step"><div class="t">分镜页，找到插片那一行<span class="s">就是那行青色边框、带「◈ 插片」标记的卡片</span></div></div>
+      <div class="step"><div class="t">勾上「素材原声」<span class="s">勾上之后右边会多出一个音量框，单位 dB（0 = 原样、−6 ≈ 减半、+6 ≈ 加倍）。没素材的插片，这个勾选框是灰的——没素材就谈不上原声。</span></div></div>
+      <div class="step"><div class="t">点「应用到下游」<span class="s">和改台词、改画面一样，改动要走交接才生效（没点 = 下游读的还是上一版）</span></div></div>
+      <div class="step"><div class="t">重渲那一镜，再出片<span class="s">拨了开关，那一镜的画面不变但音轨变了，所以要重渲。渲染页会把这镜标成「待重渲」。</span></div></div>
+    </div>
+
+    <div class="fig"><span class="c">时长</span> 10.0 <span class="c">s</span>   <span class="k">☑</span> <span class="g">素材原声</span>  <span class="c">[ 0.0 ] dB</span>   <span class="c">素材 40.3s · 只播前 10.0s</span>   <span class="c">＋ 换素材</span>   <span class="c">🗑 删掉这段</span></div>
+
+    <div class="note small warn" style="margin-top:14px">
+      <b>默认还是静音。</b> 素材有声音 ≠ 你想把它放出来——如果插片原声不打招呼就冒出来，会跟口播撞在一起。
+      所以这件事必须由你显式勾选，产品不替你决定。
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">3</span>全链路三处一起改了</h2>
+    <div class="chain">
+      <div class="link">
+        <div class="who">渲染提示词</div>
+        <div class="was">必须 data-volume="0"</div>
+        <div class="now">按开关分两支：关了照旧写 0；开了写 <code>data-volume="倍数"</code>，并要求先量一下素材到底有没有声、原声收尾落在时长之内（安全尾会被裁）。</div>
+      </div>
+      <div class="link">
+        <div class="who">渲染任务包</div>
+        <div class="was">silent 恒等于 insert</div>
+        <div class="now">改成 <code>insert &amp;&amp; !素材原声</code>；新增 <code>insertAudio</code> / <code>audioVolumeDb</code> / <code>audioVolume</code>（倍数，替你算好，省得执行者算错）。</div>
+      </div>
+      <div class="link">
+        <div class="who">出片组接</div>
+        <div class="was">那一段补一段静音</div>
+        <div class="now">改接<b class="hl">该镜产物的音轨</b>（多开一路音频输入）。产物还没渲就退回静音并在日志里报警——宁可那一段哑，也绝不让音轨短一截。</div>
+      </div>
+    </div>
+
+    <div class="note small" style="margin-top:14px">
+      <b>顺手还补了一个一直没被发现的缺陷：</b>渲染提示词的正文清单里，<b class="hl">从来没写过哪一镜是插片、素材在哪</b>——
+      而系统提示词那头却说"任务里给了 videoPath 的镜头，照插片那节用"。执行者只能自己回头翻任务包 JSON。
+      现在正文逐镜标出「★ 插片：silent=…」和素材的绝对路径。
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">4</span>验证：跑出来的成片，和手工修好的那份逐项相同</h2>
+    <p class="muted small">用产品的组接引擎真跑了一遍（26 块），输出到临时目录，没动你的成片。</p>
+    <table>
+      <thead>
+        <tr><th>看什么</th><th>修复前（插片静音）</th><th>V1.10.15 跑出来</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>成片开头 0~10s 响度</td><td class="num v-bad">−91.0 dB（数字静音）</td><td class="num v-ok">−12.8 dB（有原声）</td></tr>
+        <tr><td>10~20s 响度（对照）</td><td class="num">−26.1 dB</td><td class="num v-ok">−26.1 dB（一致）</td></tr>
+        <tr><td>30~40s 响度（对照）</td><td class="num">−25.0 dB</td><td class="num v-ok">−25.0 dB（一致）</td></tr>
+        <tr><td>成片时长 / 帧数</td><td class="num">199.200s / 5976 帧</td><td class="num v-ok">199.200s / 5976 帧</td></tr>
+        <tr><td>音画差</td><td class="num">+0.000s</td><td class="num v-ok">+0.000s</td></tr>
+        <tr><td>插片段数</td><td class="num v-bad">静音 1 段</td><td class="num v-ok">原声 1 段</td></tr>
+      </tbody>
+    </table>
+    <div class="note small" style="margin-top:14px">
+      换句话说：<b>这条新链路产出的成片，和上一轮我手工帮你换音轨得到的成片一模一样</b>——
+      所以<b class="hl">本期成片不需要重出</b>，只是以后再做视频不用再手工补了。
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">5</span>三个你可能想知道的细节</h2>
+    <p class="small"><b class="hl">① 为什么"素材原声"不能自动判断？</b><br>
+      素材有声音是客观事实，但"要不要放出来"是<b>意图</b>。自动放出来，反而会在你不想要的时候把口播盖住。</p>
+    <p class="small"><b class="hl">② 拨了开关，为什么别的地方不会"跟着变红"？</b><br>
+      产物指纹确实变了（音轨不一样了），但指纹规则是<b>只对插片行</b>加这两项校验。
+      普通镜头不参与——否则这一次升级会把你 25 个已渲好的镜头集体标成「待重渲」，纯属虚惊。
+      核对过：26 条指纹与清单<b>全部吻合</b>。</p>
+    <p class="small"><b class="hl">③ 音量在哪一级生效？</b><br>
+      在<b>渲染那一级</b>（录进产物）。组接层只负责"把这段声音搬过来"，不再调一次——
+      两边都调就是双倍衰减，那是个很隐蔽的坑。</p>
+  </section>
+
+  <footer>翊瑄的工作台 · V1.10.15 · 详细留痕见《更新日志》与《优化与风险登记 R-21》</footer>
+</div>
+</body>
+</html>

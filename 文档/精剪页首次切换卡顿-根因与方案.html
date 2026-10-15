@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>精剪页首次切换卡顿/崩溃 —— 根因与解决方案</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --line:#2b3441;
+    --tx:#e6edf3; --tx2:#9aa7b4; --tx3:#6e7b8a;
+    --red:#f09595; --redbg:#3d1d1d; --redline:#7a3030;
+    --amber:#ef9f27; --amberbg:#3a2a10; --amberline:#7a5a20;
+    --blue:#85b7eb; --bluebg:#152a42; --blueline:#2f5580;
+    --green:#97c459; --greenbg:#1e3316; --greenline:#3d6626;
+    --mono:ui-monospace,"Cascadia Mono",Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--tx);
+    font-family:"Microsoft YaHei",system-ui,sans-serif; line-height:1.75; font-size:15px;
+    background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+    background-size:36px 36px;
+  }
+  .wrap{max-width:1000px;margin:0 auto;padding:40px 28px 80px}
+  h1{font-size:26px;font-weight:600;margin:0 0 6px;letter-spacing:.5px}
+  .sub{color:var(--tx2);font-size:14px;margin-bottom:8px}
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;
+         background:var(--redbg);color:var(--red);border:1px solid var(--redline);margin-right:8px}
+  .badge.g{background:var(--greenbg);color:var(--green);border-color:var(--greenline)}
+  h2{font-size:19px;font-weight:600;margin:40px 0 14px;padding-left:12px;
+     border-left:4px solid var(--blue)}
+  h3{font-size:16px;font-weight:600;margin:22px 0 10px;color:var(--tx)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+        padding:20px 22px;margin:16px 0}
+  .card.r{border-color:var(--redline)}
+  .card.a{border-color:var(--amberline)}
+  .card.g{border-color:var(--greenline)}
+  .card.b{border-color:var(--blueline)}
+  .kv{display:grid;grid-template-columns:150px 1fr;gap:8px 16px;margin:10px 0;font-size:14px}
+  .kv>div:nth-child(odd){color:var(--tx2)}
+  code{font-family:var(--mono);background:#0a0e14;padding:2px 7px;border-radius:5px;
+       font-size:13px;color:var(--blue);border:1px solid #233040}
+  pre{background:#0a0e14;border:1px solid #233040;border-radius:9px;padding:14px 16px;
+      overflow-x:auto;margin:12px 0}
+  pre code{background:none;border:none;padding:0;color:var(--tx);font-size:13px;line-height:1.6}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left}
+  th{background:var(--panel2);color:var(--tx2);font-weight:500;font-size:13px}
+  td.num{font-family:var(--mono);color:var(--amber);white-space:nowrap}
+  .flow{display:flex;align-items:stretch;gap:0;margin:18px 0;flex-wrap:wrap}
+  .step{flex:1;min-width:150px;background:var(--panel2);border:1px solid var(--line);
+        border-radius:10px;padding:14px 15px;position:relative}
+  .step.bad{background:var(--redbg);border-color:var(--redline)}
+  .step.ok{background:var(--greenbg);border-color:var(--greenline)}
+  .step .n{font-family:var(--mono);font-size:11px;color:var(--tx3);margin-bottom:6px}
+  .step .t{font-size:14px;font-weight:500;margin-bottom:6px}
+  .step.bad .t{color:var(--red)} .step.ok .t{color:var(--green)}
+  .step .d{font-size:12.5px;color:var(--tx2);line-height:1.6}
+  ul{margin:10px 0;padding-left:22px} li{margin:7px 0;font-size:14px}
+  .num2{color:var(--amber);font-family:var(--mono)}
+  .fix{counter-reset:f}
+  .fix>li{margin:14px 0}
+  .lead{background:var(--amberbg);border:1px solid var(--amberline);border-radius:10px;
+        padding:14px 18px;margin:18px 0;font-size:14px}
+  .lead b{color:var(--amber)}
+  .muted{color:var(--tx3);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>精剪页首次切换卡顿 / 崩溃</h1>
+<div class="sub">根因定位 · 实测数据 · 修复方案　｜　2026-10-03　｜　针对 <code>WaveformControl.LoadPeaks</code></div>
+<div>
+  <span class="badge">已定位到单点</span>
+  <span class="badge g">有实测数据支撑</span>
+  <span class="badge g">改动局限在 1 个文件</span>
+</div>
+
+<div class="lead">
+  <b>一句话结论：</b>不是"首次加载东西多"，是<b>在界面线程的绘制函数里同步解码了整个源音频文件</b>。
+  你的源素材 652 秒 ≈ 1.7 秒卡死；同时后台预热线程在解<b>同一个文件</b>，两条线程抢解码器。
+  第二次切换不崩，是因为峰值缓存命中了，一行代码都没执行。
+</div>
+
+<h2>一、故障链路</h2>
+<div class="flow">
+  <div class="step">
+    <div class="n">STEP 1</div>
+    <div class="t">点「精剪」</div>
+    <div class="d">首次进入才创建 <code>EditorView</code>，铺 108 个块（你的项目实测日志）</div>
+  </div>
+  <div class="step bad">
+    <div class="n">STEP 2</div>
+    <div class="t">绘制波形</div>
+    <div class="d">每个块调 <code>LoadPeaks</code>，缓存未命中 → <b>开解码器读完整文件</b></div>
+  </div>
+  <div class="step bad">
+    <div class="n">STEP 3</div>
+    <div class="t">UI 冻结 1.7 秒</div>
+    <div class="d">绘制函数里同步解码，界面完全无响应，看起来像崩了</div>
+  </div>
+  <div class="step bad">
+    <div class="n">STEP 4</div>
+    <div class="t">叠加预热线程</div>
+    <div class="d">后台同时解同一文件，内存与解码器争抢 → 真正崩</div>
+  </div>
+  <div class="step ok">
+    <div class="n">STEP 5</div>
+    <div class="t">第二次切换</div>
+    <div class="d">缓存命中，0 毫秒 —— 所以"重启第二次就不崩"</div>
+  </div>
+</div>
+
+<h2>二、代码上的三个问题（互相叠加）</h2>
+
+<div class="card r">
+<h3>问题 1（主因）：在 <code>OnRender</code> 里同步解码整个文件</h3>
+<p><code>WaveformControl.cs:872-880</code> —— <code>DrawClipWaveform</code> 是个<b>纯绘制函数</b>，却在缓存未命中时直接调 <code>LoadPeaks</code>：</p>
+<pre><code>private void DrawClipWaveform(...)
+{
+    if (!_peakCache.TryGetValue(clip.SourcePath, out var peakData))
+    {
+        peakData = LoadPeaks(clip.SourcePath);   // ★ 在界面线程解整个文件
+        ...
+    }</code></pre>
+<p>而 <code>LoadPeaks</code>（<code>:933</code>）做的事是：<code>new AudioFileReader(path)</code> → 逐样本读<b>到文件结尾</b> → 每 100 个采样点记一个峰值。它<b>不管当前视野只用到其中几个像素</b>。</p>
+<p class="muted">绘制函数必须"要么有数据、要么什么都不画"，绝不能在里面干活。这是 WPF 的硬规矩。</p>
+</div>
+
+<div class="card a">
+<h3>问题 2：后台预热被触发 108 次，和 UI 线程抢同一个文件</h3>
+<p><code>EditorView.xaml.cs:118</code> 把预热挂在 <code>_project.Changed</code> 上；<code>LoadPreCutProject</code> 铺块时每加一个块就 <code>AddClip</code> → <code>NotifyChanged()</code>（<code>TimelineProject.cs:77</code>）。</p>
+<p>108 个块 = 108 次事件。虽然有 400ms 防抖，但<b>最后一次必然触发</b>，于是 <code>TimelineAudioRenderer.Render</code> 在后台线程又开一个 <code>AudioFileReader</code> 解<b>同一个 m4a</b>。</p>
+<p class="muted">m4a 定位很贵（工程注释里实测过 ±42ms 且方向不定），两条线程同时抢 MediaFoundation 解码器，内存峰值直接翻倍。</p>
+</div>
+
+<div class="card a">
+<h3>问题 3：<code>SetProject</code> 重复挂事件处理器（顺手发现的隐患）</h3>
+<p><code>WaveformControl.cs:117</code> —— <code>SetProject</code> 每次调用都 <code>_project.Changed += ...</code> 加一个新委托，<b>旧的从不摘掉</b>。而它被调了 4 次（<code>EditorView.xaml.cs</code> 的 111 / 517 / 555 / 637）。</p>
+<p>同一个 <code>TimelineProject</code> 被反复 <code>SetProject</code>，于是"内容变了"会引发 N 次 <code>InvalidateVisual</code>。<code>InvalidateVisual</code> 本身便宜，但 N 份 <code>Changed</code> 处理器意味着后面任何优化都要乘 N。</p>
+</div>
+
+<h2>三、实测数据（本机，真实 m4a 素材）</h2>
+<p class="muted">用工程里那份 NAudio 2.2.1 + 同一份 <code>LoadPeaks</code> 原样复刻，跑真实素材：</p>
+<table>
+  <tr><th>操作</th><th>素材时长</th><th>实测耗时</th></tr>
+  <tr><td><code>GetDurationSec</code>（只读时长）</td><td>285 秒</td><td class="num">291 ms</td></tr>
+  <tr><td><code>LoadPeaks</code>（读全文件算峰值）</td><td>285 秒</td><td class="num">748 ms</td></tr>
+  <tr><td><code>LoadPeaks</code> 第二次（无缓存）</td><td>285 秒</td><td class="num">748 ms</td></tr>
+  <tr><td><b>按比例推算到你的 652 秒素材</b></td><td>652 秒</td><td class="num">≈ 1.7 s</td></tr>
+</table>
+<div class="card r">
+<p style="margin:0"><b>这就是"卡顿"的全部：</b>1.7 秒里界面线程 100% 被占住，什么都画不出来、点不动。<br>
+<span class="muted">用户视角 = "点一下就卡死 / 好像崩了"。而"崩溃"是第二步 —— 叠加后台预热线程后内存峰值翻倍，或 WPF 渲染超时被系统判为未响应。</span></p>
+</div>
+
+<h2>四、为什么第二次切换就没事</h2>
+<div class="card g">
+<p style="margin:0"><code>_peakCache</code>（<code>WaveformControl.cs:40</code>）是<b>实例字段</b>，而 <code>WaveformControl</code> 活在 <code>EditorView</code> 里，编辑器是 <b>KeepAlive</b> 的（<code>NavTree</code> 里只有精剪页 <code>KeepAlive = true</code>），切换时不销毁。</p>
+<p style="margin:10px 0 0">→ 第二次进来时 <code>TryGetValue</code> 命中，<b>0 毫秒解码</b>。缓存甚至和项目同寿命，所以"同一个会话内第二次永远不卡"。</p>
+</div>
+<div class="card a">
+<p style="margin:0"><b>但这不是修复，是把问题推迟了：</b>换一个项目、关掉再开，缓存就没了，同一场卡顿会<b>原样再来一次</b>。所以必须动代码。</p>
+</div>
+
+<h2>五、修复方案</h2>
+
+<div class="card g">
+<h3>修法 1（必须做）：把峰值计算挪出绘制函数，丢到后台</h3>
+<p>三步走：</p>
+<ol class="fix">
+<li><b>绘制函数只读缓存，绝不解码。</b>缓存没有 → 这一帧就不画波形（块仍是实心的），立刻返回。</li>
+<li><b>新增一个静态的"后台峰值任务"</b>：<code>Task.Run</code> 里解码，结果写进带 <code>lock</code> 的字典；<code>WaveformControl</code> 订阅"算好了"通知 → <code>InvalidateVisual()</code> 补画一次。</li>
+<li><b>同一路径只解一次。</b>用 <code>ConcurrentDictionary</code> + <code>Lazy&lt;Task&gt;</code>，或一个 <code>_loading</code> 集合，保证 108 个块指向同一文件时<b>只开一个解码器</b>（现在靠 <code>TryGetValue</code> 侥幸没重复，一旦改成异步就必须显式去重）。</li>
+</ol>
+<p style="margin-top:14px">效果：界面<b>立刻</b>可交互，波形在 1.7 秒内自己补齐。用户看到的是"波形慢慢长出来"，不是"卡死"。</p>
+</div>
+
+<div class="card b">
+<h3>修法 2（强烈建议）：铺块期间别触发音频预热</h3>
+<p><code>LoadPreCutProject</code> / <code>RestoreTimeline</code> 批量加块时，<code>Changed</code> 会发 N 次。改法二选一：</p>
+<ul>
+<li><b>加"批量模式"开关</b>：<code>BeginBatch() / EndBatch()</code>，批量期间不发 <code>Changed</code>，结束时发一次。</li>
+<li><b>更省事：铺完块再手动调一次 <code>ScheduleAudioPrewarm()</code></b>，并在这两个方法期间"静音"事件。</li>
+</ul>
+<p>收益：预热只跑一次、且在铺块完成后才启动 → 不与 UI 线程的峰值解码抢同一个文件。</p>
+</div>
+
+<div class="card b">
+<h3>修法 3（顺手，2 行）：<code>SetProject</code> 先摘旧处理器</h3>
+<pre><code>public void SetProject(TimelineProject project)
+{
+    if (_project != null)   // ★ 先摘掉旧的，否则挂几次就叠几层
+    {
+        _project.Changed -= _onProjectChanged;
+        _project.SelectionChanged -= _onSelectionChanged;
+    }
+    _project = project;
+    _project.Changed += _onProjectChanged;
+    ...
+}</code></pre>
+<p class="muted">要把 lambda 提成命名字段才能 <code>-=</code>。这属于第 5.1 节记的那类"重复挂载"隐患，顺手清掉。</p>
+</div>
+
+<div class="card b">
+<h3>修法 4（可选，最彻底）：峰值缓存提到进程级</h3>
+<p><code>_peakCache</code> 现在跟着编辑器活。把静态峰值缓存提为进程级（按 <code>文件路径 + mtime + 大小</code> 做键），收益：换项目、重开工作台、编辑器和别处共用同一份 → <b>永远只解一次</b>。</p>
+<p class="muted">成本：要管缓存上限（比如最多 8 份、超了就按最后使用时间淘汰），否则大项目会把内存吃住。</p>
+</div>
+
+<h2>六、改动清单与验收</h2>
+<table>
+  <tr><th>文件</th><th>改什么</th><th>风险</th></tr>
+  <tr><td><code>WaveformControl.cs</code></td><td>修法 1（异步峰值）+ 修法 3（摘旧处理器）</td><td>低 — 只影响绘制与缓存</td></tr>
+  <tr><td><code>EditorView.xaml.cs</code></td><td>修法 2（批量模式）</td><td>低 — 只影响事件时机</td></tr>
+  <tr><td><code>TimelineProject.cs</code>（可选）</td><td>修法 4（进程级峰值缓存）</td><td>中 — 涉及缓存生命周期</td></tr>
+</table>
+<div class="card">
+<h3>验收判据（每条都要有数字，不能靠"看起来不卡"）</h3>
+<ul>
+<li>首次点「精剪」→ <b>界面在 200ms 内可交互</b>（现在约 1700ms 冻结）。</li>
+<li>波形在 1.5~2 秒内<b>自动补画完整</b>，不需要用户做任何操作。</li>
+<li>整个过程<b>日志里没有</b>内存异常；任务管理器里工作台内存不出现双倍尖峰。</li>
+<li>切走再切回 → 波形立即在（0 毫秒，和现在一样）。</li>
+<li>换一个新项目重复上述 1~3 条 → 仍然流畅（这条验的是修法 1 的去重逻辑）。</li>
+<li><code>dotnet build 工作台\工作台.csproj -c Debug</code> → <b>0 警告 0 错误</b>。</li>
+</ul>
+</div>
+
+<div class="card a">
+<p style="margin:0"><b>一句话验收：</b>把日志里那行 <code>[INFO] 工作台交接：108 段保留区间，铺开总长 200.4s</code> 的<b>前面</b>补一条时间戳，再补一条"峰值就绪"的时间戳 —— 两行之差就是卡顿的真实时长，改完应该小于 200ms。</p>
+</div>
+
+</div>
+</body>
+</html>

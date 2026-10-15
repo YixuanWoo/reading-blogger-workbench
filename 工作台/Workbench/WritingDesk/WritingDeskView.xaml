@@ -1,0 +1,369 @@
+<!-- ============================================================
+     WritingDeskView.xaml - 写作台（Markdown 版）
+     ============================================================
+     Markdown 写作 / 渲染 / 标题结构导航。
+
+     【★ 用户习惯是这一页的地基】
+       写稿就是写一整篇 Markdown：
+         · 回车只是换行，不再切段
+         · 标题（#~######）表达结构
+         · 左侧导航栏 = 按标题自动生成的目录（TOC）
+         · 右上角「展开预览」才打开渲染面板（不默认，按需开）
+
+     【★ 本页只做写作，录音已整体删除（期二另做）】
+       旧版的段落录音脚手架（永久ID/audio/待重录）全部随块模型删除，
+       本页不再有任何与"分段录音"相关的状态。
+
+     【★ 渲染预览按需开】
+       默认只有原文编辑区；点右上角「展开预览」才在右侧滑出渲染面板，
+       再点收起。模式会记到 view-state.json，重开保留。
+     ============================================================ -->
+<UserControl x:Class="LiteCut.Workbench.WritingDesk.WritingDeskView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{StaticResource BgDeep}"
+             Foreground="{StaticResource TextMain}">
+
+    <UserControl.Resources>
+        <!-- ============================================================
+             深色滚动条（写作台自带，独立迁移时一并带走）
+             ============================================================
+             工作台默认滚动条是系统浅色，在深色 UI 里很突兀。这里统一成：
+               · Track 透明，只有 Thumb 可见
+               · Thumb 常态中性灰 #FF2A3038（跟 Border 一致，低调）
+               · 悬停用 ColorAnimation 淡入暗橙 #FFEA580C（跟分栏线同色）
+             写作台内所有滚动区域（目录/原文/预览）共用这一个隐式样式。
+             ============================================================ -->
+        <Style TargetType="ScrollBar">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Width" Value="8"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Grid Background="Transparent">
+                            <Track x:Name="PART_Track" IsDirectionReversed="True">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageUpCommand" Focusable="False">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="RepeatButton">
+                                                <Border Background="Transparent"/>
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb x:Name="ThumbPart">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Border x:Name="ThumbBar" Background="#FF2A3038"
+                                                        CornerRadius="4" Margin="1,2,1,2"/>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Trigger.EnterActions>
+                                                            <BeginStoryboard>
+                                                                <Storyboard>
+                                                                    <ColorAnimation Storyboard.TargetName="ThumbBar"
+                                                                                    Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
+                                                                                    To="#FFEA580C" Duration="0:0:0.25"/>
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </Trigger.EnterActions>
+                                                        <Trigger.ExitActions>
+                                                            <BeginStoryboard>
+                                                                <Storyboard>
+                                                                    <ColorAnimation Storyboard.TargetName="ThumbBar"
+                                                                                    Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
+                                                                                    To="#FF2A3038" Duration="0:0:0.25"/>
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </Trigger.ExitActions>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageDownCommand" Focusable="False">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="RepeatButton">
+                                                <Border Background="Transparent"/>
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>   <!-- 标题栏 -->
+            <RowDefinition Height="*"/>      <!-- 主体 -->
+            <RowDefinition Height="Auto"/>   <!-- 底部状态栏 -->
+        </Grid.RowDefinitions>
+
+        <!-- 顶部标题栏 -->
+        <Border Grid.Row="0" Padding="20,14,20,12"
+                Background="#FF12151A" BorderBrush="{StaticResource Border}"
+                BorderThickness="0,0,0,1">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal"
+                            VerticalAlignment="Center" Margin="0,0,16,0">
+                    <!-- ★ 沉浸式创作：收起/展开左侧工作台导航（只动导航，顶栏状态栏保留） -->
+                    <Button x:Name="BtnImmersive" Click="BtnImmersive_Click"
+                            Style="{StaticResource Btn}" Width="34" Height="30"
+                            Padding="0" ToolTip="沉浸式创作：收起左侧导航"
+                            ToolTipService.InitialShowDelay="400">
+                        <Viewbox Width="17" Height="17">
+                            <Grid Width="24" Height="24">
+                                <!-- 双栏图标（竖线偏左 = 收起左侧导航的语义） -->
+                                <Path x:Name="ImmersiveFrame"
+                                      Data="M3,2.5 H21 A0.5,0.5 0 0 1 21.5,3 V21 A0.5,0.5 0 0 1 21,21.5 H3 A0.5,0.5 0 0 1 2.5,21 V3 A0.5,0.5 0 0 1 3,2.5 Z"
+                                      Stroke="{StaticResource TextDim}" StrokeThickness="1.7"
+                                      Fill="Transparent" StrokeLineJoin="Round"/>
+                                <Path x:Name="ImmersiveDivider"
+                                      Data="M6,5 V19"
+                                      Stroke="{StaticResource TextDim}" StrokeThickness="1.7"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                            </Grid>
+                        </Viewbox>
+                    </Button>
+                </StackPanel>
+
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- ★ 展开预览：图标按钮，按需打开渲染面板（不默认）
+                         图标 = 双栏布局（圆角框 + 内部竖线偏右 75% = "原文|预览"） -->
+                    <Button x:Name="BtnPreview" Click="BtnPreview_Click"
+                            Style="{StaticResource Btn}" Width="34" Height="30"
+                            Padding="0" Margin="0,0,8,0" ToolTip="展开预览"
+                            ToolTipService.InitialShowDelay="400">
+                        <Viewbox Width="17" Height="17">
+                            <Grid Width="24" Height="24">
+                                <!-- 双栏：预览图标 -->
+                                <Path x:Name="PreviewFrame"
+                                      Data="M3,2.5 H21 A0.5,0.5 0 0 1 21.5,3 V21 A0.5,0.5 0 0 1 21,21.5 H3 A0.5,0.5 0 0 1 2.5,21 V3 A0.5,0.5 0 0 1 3,2.5 Z"
+                                      Stroke="{StaticResource TextDim}" StrokeThickness="1.7"
+                                      Fill="Transparent" StrokeLineJoin="Round"/>
+                                <Path x:Name="PreviewDivider"
+                                      Data="M18,5 V19"
+                                      Stroke="{StaticResource TextDim}" StrokeThickness="1.7"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                <!-- 收起态：双栏加一条斜杠（再点即收起） -->
+                                <Path x:Name="PreviewClose" Visibility="Collapsed"
+                                      Data="M3.5,3.5 L20.5,20.5"
+                                      Stroke="{StaticResource TextDim}" StrokeThickness="1.7"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                            </Grid>
+                        </Viewbox>
+                    </Button>
+                    <Button x:Name="BtnOpenMd" Content="打开 script.md"
+                            Click="BtnOpenMd_Click" Style="{StaticResource Btn}"
+                            FontSize="12" Padding="12,5"
+                            ToolTip="用系统默认程序打开稿源文件"/>
+                </StackPanel>
+
+                <StackPanel>
+                    <TextBlock Text="写作台" FontSize="17" FontWeight="SemiBold" Foreground="White"/>
+                    <TextBlock x:Name="TxtSub" FontSize="11.5" Margin="0,4,0,0"
+                               Foreground="{StaticResource TextFaint}"
+                               Text="一整篇 Markdown · 回车只是换行 · 标题结构自动成目录"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- 主体：左目录 + 原文（+ 按需预览） -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="240"/>   <!-- 目录 TOC -->
+                <ColumnDefinition Width="*"/>     <!-- 原文编辑（* = 吃掉剩余宽度） -->
+                <ColumnDefinition Width="Auto"/>  <!-- 预览分栏线（拖动调比例） -->
+                <ColumnDefinition x:Name="ColPreview" Width="0" MinWidth="0"/> <!-- 预览（默认收起） -->
+            </Grid.ColumnDefinitions>
+
+            <!-- 左：文章目录（按标题自动生成，真正的标题结构导航） -->
+            <Border Grid.Column="0" Background="{StaticResource BgNav}"
+                    BorderBrush="{StaticResource Border}" BorderThickness="0,0,1,0">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Margin="16,14,16,8"
+                               FontSize="11.5" Foreground="{StaticResource TextDim}">
+                        <Run Text="目录"/><Run Text="（按标题自动生成 · 点标题定位）"
+                             Foreground="{StaticResource TextFaint}"/>
+                    </TextBlock>
+
+                    <ListBox x:Name="ListToc" Background="Transparent" BorderThickness="0"
+                             Margin="8,0,8,0" Padding="0"
+                             HorizontalContentAlignment="Stretch"
+                             SelectionChanged="OnTocPick"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Padding" Value="0"/>
+                                <Setter Property="Margin" Value="0,0,0,2"/>
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                                    BorderBrush="Transparent" BorderThickness="3,0,0,0"
+                                                    CornerRadius="6" Padding="6,6">
+                                                <ContentPresenter/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="#FF1E2733"/>
+                                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#FF3B82F6"/>
+                                                </Trigger>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="#FF1B1F25"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <!-- ★ 缩进 = 标题层级：level 1 不缩，2 缩一级，依次加深 -->
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding Indent}"
+                                                   FontFamily="Consolas" FontSize="11.5"
+                                                   Foreground="{StaticResource TextFaint}"/>
+                                        <TextBlock Text="{Binding LevelMark}" FontSize="11"
+                                                   FontFamily="Consolas"
+                                                   Foreground="{StaticResource TextFaint}"/>
+                                        <TextBlock Text="{Binding Text}" FontSize="12.5"
+                                                   Margin="4,0,0,0" TextTrimming="CharacterEllipsis"
+                                                   Foreground="{StaticResource TextMain}"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+
+            <!-- 中：原文编辑区 -->
+            <Grid Grid.Column="1" Margin="16,14,16,14">
+                <Border Background="{StaticResource BgCard}"
+                        BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="8">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top" FontSize="11.5" Margin="14,12,0,0"
+                                   Foreground="{StaticResource TextDim}">
+                            <Run Text="写稿"/><Run Text="（Markdown · 回车只是换行 · 标题 # 表达结构）"
+                                 Foreground="{StaticResource TextFaint}"/>
+                        </TextBlock>
+                        <TextBox x:Name="TbxEditor"
+                                 Background="Transparent" BorderThickness="0"
+                                 Foreground="{StaticResource TextMain}"
+                                 FontSize="14.5" TextBlock.LineHeight="27"
+                                 AcceptsReturn="True" AcceptsTab="True"
+                                 TextWrapping="Wrap"
+                                 VerticalScrollBarVisibility="Auto"
+                                 HorizontalScrollBarVisibility="Disabled"
+                                 FontFamily="Microsoft YaHei, PingFang SC"
+                                 CaretBrush="White" SelectionBrush="#66D4AF37"
+                                 TextChanged="TbxEditor_TextChanged"
+                                 Margin="14,4,14,12"/>
+                    </DockPanel>
+                </Border>
+            </Grid>
+
+            <!-- ★ 分栏线：拖动可左右调整"原文 / 预览"的显示比例（只在预览展开时出现）。
+                 悬停用 ColorAnimation 淡入淡出（不是 Setter 瞬间变），颜色暗橙 #EA580C
+                 —— 工作台色板里已有暖色（BrushAccent 金 #D4AF37 / Warn 琥珀 #F59E0B），
+                 暗橙与深色 UI 同属一个家族，鲜但搭调。 -->
+            <GridSplitter x:Name="SplitterPreview" Grid.Column="2" Width="8"
+                          HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                          Background="Transparent" ResizeBehavior="PreviousAndNext"
+                          Visibility="Collapsed" Cursor="SizeWE"
+                          ToolTip="拖动调整原文/预览比例"
+                          ToolTipService.InitialShowDelay="500">
+                <GridSplitter.Template>
+                    <ControlTemplate TargetType="GridSplitter">
+                        <Border Background="Transparent" BorderBrush="Transparent">
+                            <!-- 显式 SolidColorBrush：ColorAnimation 才能动它 -->
+                            <Border x:Name="Bar" Width="2" HorizontalAlignment="Center"
+                                    Margin="0,10,0,10">
+                                <Border.Background>
+                                    <SolidColorBrush x:Name="BarBrush" Color="#FF2A3038"/>
+                                </Border.Background>
+                            </Border>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="BarBrush"
+                                                            Storyboard.TargetProperty="Color"
+                                                            To="#FFEA580C" Duration="0:0:0.25"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="BarBrush"
+                                                            Storyboard.TargetProperty="Color"
+                                                            To="#FF2A3038" Duration="0:0:0.25"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </GridSplitter.Template>
+            </GridSplitter>
+
+            <!-- 右：渲染预览（默认收起；点「展开预览」才滑出） -->
+            <Grid Grid.Column="3" x:Name="GridPreview" Visibility="Collapsed"
+                  Margin="0,14,16,14">
+                <Border Background="{StaticResource BgCard}"
+                        BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="8">
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="14,10,0,6">
+                            <TextBlock Text="预览" FontSize="11.5" VerticalAlignment="Center"
+                                       Foreground="{StaticResource TextDim}"/>
+                            <TextBlock Text="（Markdown 渲染效果 · 随输入实时更新）" FontSize="11"
+                                       Margin="8,0,0,0" VerticalAlignment="Center"
+                                       Foreground="{StaticResource TextFaint}"/>
+                        </StackPanel>
+                        <FlowDocumentScrollViewer x:Name="PreviewViewer"
+                                                  Background="Transparent"
+                                                  VerticalScrollBarVisibility="Auto"
+                                                  HorizontalScrollBarVisibility="Disabled"
+                                                  Margin="10,0,10,10"
+                                                  BorderThickness="0"/>
+                    </DockPanel>
+                </Border>
+            </Grid>
+        </Grid>
+
+        <!-- 底部状态栏 -->
+        <Border Grid.Row="2" Padding="20,7,20,7"
+                Background="#FF12151A" BorderBrush="{StaticResource Border}"
+                BorderThickness="0,1,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="TxtStatL" FontSize="11"
+                           Foreground="{StaticResource TextFaint}" TextTrimming="CharacterEllipsis"/>
+                <TextBlock x:Name="TxtStat" Grid.Column="1" FontSize="11"
+                           Margin="16,0,16,0" Foreground="{StaticResource TextDim}"/>
+                <TextBlock x:Name="TxtStatR" Grid.Column="2" FontSize="11"
+                           HorizontalAlignment="Right" TextTrimming="CharacterEllipsis"
+                           Foreground="{StaticResource TextFaint}"/>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

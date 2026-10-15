@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<defs>
+  <clipPath id="clipC"><rect width="256" height="256" rx="40"/></clipPath>
+  <linearGradient id="bgC" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#142C4E"/><stop offset="1" stop-color="#07121E"/>
+  </linearGradient>
+  <pattern id="gridC" width="32" height="32" patternUnits="userSpaceOnUse">
+    <path d="M32 0 H0 V32" fill="none" stroke="#27496F" stroke-width="1.4" opacity=".5"/>
+  </pattern>
+  <linearGradient id="blueC" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#9BD8FF"/><stop offset="1" stop-color="#4E9BE0"/>
+  </linearGradient>
+  <linearGradient id="goldC" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#FFE6B4"/><stop offset="1" stop-color="#E09B2E"/>
+  </linearGradient>
+</defs>
+<g clip-path="url(#clipC)">
+  <rect width="256" height="256" fill="url(#bgC)"/>
+  <rect width="256" height="256" fill="url(#gridC)"/>
+
+  <!-- ============================================================
+       三条素材轨（V1.9.10 补丁：内容贴边）
+       ★ 任务栏按钮只给 24px 左右。图标"显小"从来不是尺寸不够，
+         是图形在画布里占的比例太小：以前底板圆角吃掉四个角，
+         内容又往里缩了 30px，两重浪费叠加，缩到 24px 只剩几条细线。
+         这版底板圆角 56→40，内容边距 30→18，轨高 34→40，
+         有效图形面积从约六成提到八成半。
+       ============================================================ -->
+  <rect x="18" y="46"  width="184" height="40" rx="20" fill="url(#blueC)"/>
+  <rect x="18" y="100" width="126" height="40" rx="20" fill="#F5F1E8" opacity=".38"/>
+  <rect x="18" y="154" width="220" height="40" rx="20" fill="url(#blueC)"/>
+
+  <!-- 播放头：正在扫过第三条（画在轨之上，所以"穿"过它） -->
+  <rect x="212" y="26" width="14" height="206" rx="7" fill="url(#goldC)"/>
+  <circle cx="219" cy="24" r="15" fill="url(#goldC)"/>
+</g>
+</svg>

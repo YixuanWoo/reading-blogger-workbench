@@ -1,0 +1,180 @@
+<!-- ============================================================
+     EditorView.xaml - 嵌入式精剪编辑器（原独立窗口 MainWindow 的"壳重构"版）
+     ============================================================
+     【为什么存在】
+       原来的精剪流程是"工作台开一个独立编辑器窗口"，用户反馈：
+       从轻剪长出来的工作台，轻剪凭什么还要独立打开？
+       所以把窗口外壳拆掉、改成 UserControl，直接铺进工作台第②步。
+       里面的全部能力（拖块/剪刀/淡化/撤销/素材库/手机上传）一行没动。
+
+     【布局】
+       上 = 工具条（WrapPanel，窗口再窄也不挤坏）
+       中 = 左素材库 + 右波形（波形占满剩余空间，全屏时自动吃满）
+       下 = 播放控制 / 时间 / 手机上传状态
+
+     【配色】
+       全部用 App.xaml 里工作台的全局资源（BgNav/Border/TextMain...），
+       和其它步骤页视觉一致。
+     ============================================================ -->
+<UserControl x:Class="LiteCut.EditorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:LiteCut"
+             Background="{StaticResource BgDeep}"
+             Foreground="{StaticResource TextMain}"
+             Focusable="True">
+
+    <DockPanel>
+
+        <!-- ============ 顶部工具条 ============ -->
+        <Border DockPanel.Dock="Top"
+                Background="#FF12151A"
+                BorderBrush="{StaticResource Border}"
+                BorderThickness="0,0,0,1" Padding="10,7,10,7">
+            <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+
+                <!-- 文件区 -->
+                <Button x:Name="OpenButton" Content="导入" Click="OnOpenClick"
+                        Style="{StaticResource Btn}" FontSize="12.5"
+                        Margin="0,0,6,4" Padding="12,5" />
+                <Button x:Name="ExportButton" Content="导出" Click="OnExportClick"
+                        Style="{StaticResource Btn}" FontSize="12.5"
+                        Margin="0,0,6,4" Padding="12,5" />
+
+                <!-- 分隔线 -->
+                <Border Width="1" Background="{StaticResource Border}" Margin="4,2,8,4" />
+
+                <!-- 编辑区 -->
+                <Button x:Name="UndoButton" Content="撤销" Click="OnUndoClick"
+                        Style="{StaticResource Btn}" FontSize="12.5"
+                        Margin="0,0,6,4" Padding="10,5" />
+                <Button x:Name="RedoButton" Content="重做" Click="OnRedoClick"
+                        Style="{StaticResource Btn}" FontSize="12.5"
+                        Margin="0,0,6,4" Padding="10,5" />
+                <Button x:Name="CutButton" Content="剪刀" Click="OnScissorsClick"
+                        Style="{StaticResource Btn}" FontSize="12.5"
+                        Margin="0,0,6,4" Padding="10,5" />
+                <Button x:Name="DeleteClipButton" Content="删除块" Click="OnDeleteClipClick"
+                        Style="{StaticResource Btn}" FontSize="12.5"
+                        Margin="0,0,6,4" Padding="10,5" />
+
+                <!-- 分隔线 -->
+                <Border Width="1" Background="{StaticResource Border}" Margin="4,2,8,4" />
+
+                <!-- 音量区：滑块松手生效，实时只显示数值 -->
+                <TextBlock Text="音量" VerticalAlignment="Center" Margin="0,0,8,4"
+                           Opacity="0.8" FontSize="12" />
+                <Slider x:Name="VolumeSlider" Width="130" Minimum="-20" Maximum="20" Value="0"
+                        VerticalAlignment="Center" Margin="0,0,8,4"
+                        ValueChanged="OnVolumeValueChanged" />
+                <TextBlock x:Name="VolumeText" Text="0 dB" VerticalAlignment="Center"
+                           Width="48" Opacity="0.8" FontFamily="Consolas" FontSize="12"
+                           Margin="0,0,6,4" />
+
+                <!-- 淡入淡出区 -->
+                <Button x:Name="FadeInButton" Content="淡入" Click="OnFadeInClick"
+                        Style="{StaticResource Btn}" FontSize="12.5"
+                        Margin="0,0,6,4" Padding="10,5" />
+                <Button x:Name="FadeOutButton" Content="淡出" Click="OnFadeOutClick"
+                        Style="{StaticResource Btn}" FontSize="12.5"
+                        Margin="0,0,6,4" Padding="10,5" />
+                <Button x:Name="ClearSelButton" Content="清除选择" Click="OnClearSelectionClick"
+                        Style="{StaticResource Btn}" FontSize="12.5"
+                        Margin="0,0,6,4" Padding="10,5" />
+            </WrapPanel>
+        </Border>
+
+        <!-- ============ 底部：播放控制 / 时间 / 上传提示 ============ -->
+        <Border DockPanel.Dock="Bottom"
+                Background="#FF12151A"
+                BorderBrush="{StaticResource Border}"
+                BorderThickness="0,1,0,0" Padding="10,6,10,6">
+            <DockPanel>
+                <!-- 右侧：上传提示 -->
+                <TextBlock x:Name="UploadHint" DockPanel.Dock="Right"
+                           VerticalAlignment="Center" Opacity="0.7" FontSize="11.5"
+                           Foreground="{StaticResource TextDim}" />
+
+                <!-- 左侧：播放控制 + 时间 -->
+                <Button x:Name="PlayButton" Content="▶ 播放" Click="OnPlayClick"
+                        Style="{StaticResource BtnPrimary}" FontSize="12.5"
+                        Padding="14,4" Width="96" HorizontalAlignment="Left" />
+                <TextBlock x:Name="TimeText" Text="00:00.000 / 00:00.000"
+                           VerticalAlignment="Center" Margin="12,0,0,0"
+                           FontFamily="Consolas" FontSize="12" Opacity="0.9" />
+            </DockPanel>
+        </Border>
+
+        <!-- ============ 中部：左素材库 + 右波形 ============ -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="230" />   <!-- 左：素材库 -->
+                <ColumnDefinition Width="*" />      <!-- 右：波形（占满剩余） -->
+            </Grid.ColumnDefinitions>
+
+            <!-- 左侧素材库面板 -->
+            <Border Grid.Column="0"
+                    Background="{StaticResource BgNav}"
+                    BorderBrush="{StaticResource Border}"
+                    BorderThickness="0,0,1,0" Padding="8,8">
+                <DockPanel>
+                    <!-- 顶部标题 + 刷新 -->
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+                        <Button x:Name="RefreshLibButton" DockPanel.Dock="Right"
+                                Content="刷新" Click="OnRefreshLibraryClick"
+                                Style="{StaticResource Btn}" FontSize="11.5"
+                                Padding="8,3" />
+                        <TextBlock Text="素材库" FontWeight="SemiBold" FontSize="13"
+                                   VerticalAlignment="Center" Foreground="White" />
+                    </DockPanel>
+                    <!-- 底部提示 -->
+                    <TextBlock DockPanel.Dock="Bottom" Text="双击素材加入时间轴；也可按住拖到右侧波形区"
+                               FontSize="11" Opacity="0.55" Margin="0,8,0,0" TextWrapping="Wrap"
+                               Foreground="{StaticResource TextDim}" />
+                    <!-- 素材列表 -->
+                    <ListView x:Name="LibraryList"
+                              Background="Transparent"
+                              BorderThickness="0"
+                              Foreground="{StaticResource TextMain}"
+                              AllowDrop="False"
+                              MouseDoubleClick="OnLibraryDoubleClick"
+                              SelectionMode="Single">
+                        <ListView.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="移除（不删文件）" Click="OnLibraryDeleteClick" />
+                            </ContextMenu>
+                        </ListView.ContextMenu>
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="0,3">
+                                    <TextBlock Text="{Binding FileName}" TextTrimming="CharacterEllipsis"
+                                                Foreground="{StaticResource TextMain}" FontSize="12.5" />
+                                    <StackPanel Orientation="Horizontal" Opacity="0.55" Margin="0,1,0,0">
+                                        <TextBlock Text="{Binding SizeText}" FontSize="11" FontFamily="Consolas"
+                                                   Foreground="{StaticResource TextDim}" />
+                                        <TextBlock Text="  ·  " FontSize="11"
+                                                   Foreground="{StaticResource TextDim}" />
+                                        <TextBlock Text="{Binding TimeText}" FontSize="11" FontFamily="Consolas"
+                                                   Foreground="{StaticResource TextDim}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </DockPanel>
+            </Border>
+
+            <!-- 右侧波形区（支持从左侧拖入素材） -->
+            <DockPanel Grid.Column="1" Margin="8">
+                <!-- 底部水平滚动条 -->
+                <ScrollBar x:Name="WaveScrollBar" DockPanel.Dock="Bottom"
+                           Height="18" Orientation="Horizontal"
+                           Scroll="OnWaveScroll" />
+                <!-- 波形控件（占满剩余空间） -->
+                <local:WaveformControl x:Name="Wave"
+                                       AllowDrop="True" Drop="OnWaveDrop"
+                                       ClipToBounds="True" />
+            </DockPanel>
+        </Grid>
+    </DockPanel>
+</UserControl>

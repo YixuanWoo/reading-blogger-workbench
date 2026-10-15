@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- ============================================================
+       LiteCut.Core - 工作台核心库
+       ============================================================
+
+       这是什么：
+         工作台所有"跨平台、跟界面无关"的逻辑都放这里。
+         数据契约、Agent 客户端、流水线编排、导出器……都在这一层。
+
+       为什么 TargetFramework 是 net8.0（而不是 net8.0-windows）：
+         这是本项目的"跨平台判据"。
+         - 带 -windows 后缀 = 只能在 Windows 上编译，将来 Mac 上要重写
+         - 不带 -windows   = 任何平台都能编译，将来 Mac 上一行不改
+
+         规矩：这个项目里不能出现 System.Windows / NAudio /
+              任何 Windows 专有 API。一旦出现，编译就会失败——
+               而"编译失败"正是我们想要的提醒。
+
+       谁能引用它：
+         轻剪（WPF 主程序）→ 可以引用它 ✅
+         未来的写作台、灵感台 → 也可以引用它 ✅
+         它自己 → 不能引用任何 Windows 专有的东西 ❌
+       ============================================================ -->
+
+  <PropertyGroup>
+    <!-- ★ 关键：不带 -windows。这一行就是跨平台的保证。 -->
+    <TargetFramework>net8.0</TargetFramework>
+
+    <RootNamespace>LiteCut.Core</RootNamespace>
+    <AssemblyName>LiteCut.Core</AssemblyName>
+
+    <!-- 跟主程序保持一致：允许可空引用类型标注 -->
+    <Nullable>enable</Nullable>
+
+    <!-- 跟主程序保持一致：每个文件的 using 都手写，方便看懂引用了什么 -->
+    <ImplicitUsings>disable</ImplicitUsings>
+
+    <!-- C# 12（.NET 8 自带） -->
+    <LangVersion>12.0</LangVersion>
+
+    <!-- 这是库，不是程序，不生成 exe -->
+    <OutputType>Library</OutputType>
+
+    <!-- 调试时输出 XML 文档（方便 IDE 里悬停看注释） -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- JSON Schema 文件随程序集一起打包。
+         运行时可以直接读出来，塞进给 Agent 的提示词里，
+         当作"必须按这个格式输出"的硬约束。 -->
+    <EmbeddedResource Include="Schemas\*.json" />
+  </ItemGroup>
+
+</Project>

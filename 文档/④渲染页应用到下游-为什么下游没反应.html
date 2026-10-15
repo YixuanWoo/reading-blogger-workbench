@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>④渲染页「应用到下游」为什么下游没反应</title>
+<style>
+  :root{
+    --bg:#0b1020; --card:#141b2e; --line:#25314d;
+    --txt:#f3ecdc; --dim:#9aa8bf; --gold:#f0d68a; --blue:#8fb8d8;
+    --red:#e08a7a; --green:#7fc79b;
+  }
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);
+    font-family:'Noto Serif SC','Songti SC','Microsoft YaHei',system-ui,serif;}
+  body{
+    background-image:
+      linear-gradient(rgba(120,160,220,.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(120,160,220,.07) 1px, transparent 1px);
+    background-size:46px 46px, 46px 46px;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:44px 28px 60px;}
+  h1{font-size:30px;margin:0 0 6px;letter-spacing:1px;}
+  .sub{color:var(--dim);font-size:15px;margin-bottom:26px;}
+  .lead{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gold);
+    border-radius:14px;padding:18px 22px;font-size:18px;line-height:1.75;margin-bottom:30px;}
+  .lead b{color:var(--gold);}
+  h2{font-size:19px;margin:38px 0 14px;color:var(--gold);letter-spacing:1px;}
+  .flow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+  .box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;}
+  .box .tag{font-size:12px;color:var(--dim);letter-spacing:1px;margin-bottom:8px;}
+  .box h3{margin:0 0 10px;font-size:17px;}
+  .box ul{margin:0;padding-left:18px;font-size:14px;line-height:1.85;color:#d7dfec;}
+  .box.hl{border-color:var(--gold);box-shadow:0 0 0 1px rgba(240,214,138,.25) inset;}
+  .box.ro{border-color:#3a4a6d;}
+  .arrowrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin:6px 0;color:var(--dim);
+    text-align:center;font-size:13px;}
+  table{width:100%;border-collapse:collapse;background:var(--card);border-radius:14px;overflow:hidden;
+    font-size:14.5px;}
+  th,td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--line);}
+  th{background:#182238;color:var(--gold);font-weight:600;font-size:13.5px;letter-spacing:.5px;}
+  tr:last-child td{border-bottom:none;}
+  td.yes{color:var(--green);font-weight:700;}
+  td.no{color:var(--red);font-weight:700;}
+  .ev{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 20px;
+    font-size:14.5px;line-height:1.9;}
+  .ev code{background:#0a0f1c;border:1px solid var(--line);border-radius:5px;padding:1px 6px;
+    font-family:Consolas,monospace;font-size:13px;color:var(--blue);}
+  .opts{display:grid;grid-template-columns:1fr;gap:12px;}
+  .opt{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 18px;
+    font-size:14.5px;line-height:1.8;}
+  .opt .h{font-size:16px;font-weight:700;margin-bottom:6px;}
+  .opt.a{border-left:4px solid var(--green);}
+  .opt.b{border-left:4px solid #8a94a8;}
+  .opt.c{border-left:4px solid var(--blue);}
+  .opt .bad{color:var(--red);}
+  .foot{margin-top:36px;color:var(--dim);font-size:13px;line-height:1.9;border-top:1px solid var(--line);
+    padding-top:16px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>④渲染页点了「应用到下游」，下游什么都没看到</h1>
+  <div class="sub">结论 + 证据 + 怎么处置 · 2026-10-03</div>
+
+  <div class="lead">
+    一句话：<b>这颗按钮按设计就是只读的</b>，它压根不往下游交接任何东西。<br>
+    ④ 渲染和 ⑤ 组接之间<b>根本不存在需要交接的东西</b> —— ⑤ 是自己去 <code>渲染产物\</code> 里拿片的，
+    <b>不需要你点任何按钮</b>。<br>
+    <span style="color:var(--dim);font-size:15px;">（它弹的那句「✓ 已宣布为第⑤步的正式源」是<strong style="color:var(--red)">嘴上的宣布</strong>—— 磁盘上没有任何东西被"宣布"，⑤ 也不读它。）</span>
+  </div>
+
+  <h2>① 你点下去，实际发生了什么</h2>
+  <div class="flow">
+    <div class="box hl">
+      <div class="tag">第 ④ 步 · 渲染页</div>
+      <h3>点击「应用到下游」</h3>
+      <ul>
+        <li>逐个 <b>ffprobe</b> 量实测时长</li>
+        <li>算 <b>Δ = 画面 − 音频段</b></li>
+        <li>只写一个文件：<br><code>04-render\apply-preview.json</code></li>
+        <li>渲染产物 <b>一个字节没动</b></li>
+      </ul>
+    </div>
+    <div class="box">
+      <div class="tag">共享目录 · 不是谁的私有物</div>
+      <h3><code>渲染产物\shot_001…026.mp4</code></h3>
+      <ul>
+        <li>④ 渲染时写进这里</li>
+        <li>⑤ 组接时从这里读</li>
+        <li><b>不需要任何"交接标记"</b></li>
+      </ul>
+    </div>
+    <div class="box ro">
+      <div class="tag">第 ⑤ 步 · 组接导出</div>
+      <h3>点「画面成片」</h3>
+      <ul>
+        <li>读镜头表（时长 / 顺序）</li>
+        <li>按镜号去 <code>渲染产物\</code> 取 mp4</li>
+        <li>直接拼 —— <b>它不看 apply-preview.json</b></li>
+      </ul>
+    </div>
+  </div>
+  <div class="arrowrow">
+    <div>只读预览（不交接）</div>
+    <div>← 两边共用同一个文件夹 →</div>
+    <div>自己去拿，不用等谁点</div>
+  </div>
+
+  <h2>② 为什么 ①②③ 的「应用到下游」是真闸门，④ 不是</h2>
+  <p style="color:var(--dim);font-size:15px;line-height:1.85;margin:0 0 14px;">
+    闸门存在的理由只有一个：<b>上游改的是"下游依赖的决策"，不点就会静默错位。</b>
+    ④ 只把画面渲出来，<b>没改任何下游依赖的东西</b>，所以它无门可关。
+  </p>
+  <table>
+    <thead>
+      <tr><th style="width:150px">页面</th><th>它改的是什么</th><th style="width:150px">要交接吗</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>① 音频粗剪</td><td>保留哪几段（决策）</td><td class="yes">✅ 必须点</td></tr>
+      <tr><td>② 精剪</td><td>时间轴 / 剪辑点 / 音量（决策）</td><td class="yes">✅ 必须点</td></tr>
+      <tr><td>③ 分镜设计</td><td>镜头表结构（拆 / 合 / 镜号）</td><td class="yes">✅ 必须点（闸门 <code>CommitShotDraft</code>）</td></tr>
+      <tr><td>④ 渲染</td><td>只是把画面渲出来，不改结构、不改决策</td><td class="no">❌ 不需要</td></tr>
+    </tbody>
+  </table>
+
+  <h2>③ 你这次点击留下的痕迹（都在磁盘上，可对账）</h2>
+  <div class="ev">
+    · <code>stages\04-render\apply-preview.json</code> 写入时间 <code>2026-10-03 13:51:39</code> → <b>按钮确实跑了</b>，不是没反应<br>
+    · 块数 <code>26</code> · 已出片 <code>26</code> · <b>缺产物 0 块</b><br>
+    · Δ 平均 <code>+116.2ms</code>（画面比音频段长，⑤ 会自动裁掉）· 目标总长 <code>197.933s</code>（音频 197.512s + 帧对齐余量 421ms）<br>
+    · <code>stages\05-assemble\</code> <b>不存在</b> → 第⑤步一次片都还没出过，所以那边当然"什么都没有"
+  </div>
+
+  <h2>④ 怎么处置（三个选项，一句话我就动手）</h2>
+  <div class="opts">
+    <div class="opt a">
+      <div class="h">A. 只改文案（推荐 · 约 10 分钟）</div>
+      把按钮名和提示语改成实话，例如按钮 →「逐块对账预览（不改文件）」，
+      提示语 →「这是只读预览；第⑤步直接从 渲染产物 取片，不需要交接」。
+      <b>只动两个字符串，零风险</b>，以后不会再有人被这句话骗到。
+    </div>
+    <div class="opt b">
+      <div class="h">B. 真做"宣布"（T-06 的第①件事）</div>
+      ④ 落一个"已应用"标记，⑤ 也去读它。<span class="bad">不推荐</span> ——
+      这等于凭空多一道闸门：你渲完忘了点，⑤ 就按旧版拼，<b>正是"交接铁律"当初要消灭的那类静默错位</b>。
+    </div>
+    <div class="opt c">
+      <div class="h">C. 什么都不改，直接往下走</div>
+      本轮 26/26 齐（含刚重渲的 #021），现在去第⑤步点「画面成片」就能拼成片。
+      第⑤步自己也有一个「逐块对齐预览」，和④那颗按钮是同一套只读探测。
+    </div>
+  </div>
+
+  <div class="foot">
+    代码依据：<code>Step3RenderView.xaml.cs:1709 BtnApplyDown_Click</code>（T-06 注释明确写「只『宣布 + 算 Δ 预览』，不碰任何文件」）；
+    <code>Step4ExportView.xaml.cs:257 CollectBlocks</code>（⑤ 的取源 = 镜头表 + <code>渲染产物\shot_NNN.mp4</code>）。
+    全仓检索确认：<b>没有任何一行代码读 <code>apply-preview.json</code></b>。
+  </div>
+
+</div>
+</body>
+</html>

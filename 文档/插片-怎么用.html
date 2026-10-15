@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>插片怎么用 · 翊瑄的工作台 V1.10.7</title>
+<style>
+  :root{
+    --bg:#0E1013; --panel:#1A1E24; --line:#2A3038;
+    --txt:#E6E9EF; --dim:#8B93A1; --faint:#78828F;
+    --cyan:#22D3EE; --gold:#D4AF37; --ok:#22C55E; --warn:#F59E0B;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; padding:32px 20px 60px;
+    background:var(--bg);
+    background-image:linear-gradient(rgba(255,255,255,.028) 1px, transparent 1px),
+                     linear-gradient(90deg, rgba(255,255,255,.028) 1px, transparent 1px);
+    background-size:44px 44px;
+    font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif; color:var(--txt);}
+  .wrap{max-width:880px; margin:0 auto}
+  h1{font-size:30px; margin:0 0 6px; font-weight:600; letter-spacing:.5px}
+  .sub{color:var(--dim); font-size:14px; margin:0 0 28px}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:12px;
+        padding:18px 20px; margin-bottom:16px}
+  .card.cy{border-color:rgba(34,211,238,.42)}
+  h2{font-size:17px; margin:0 0 4px; font-weight:600}
+  .one{color:var(--dim); font-size:13px; margin:0 0 14px}
+  .steps{display:flex; gap:10px; flex-wrap:wrap}
+  .step{flex:1 1 190px; background:#12161C; border:1px solid var(--line);
+        border-radius:9px; padding:12px 14px}
+  .n{display:inline-block; width:20px; height:20px; line-height:20px; text-align:center;
+     border-radius:50%; background:rgba(34,211,238,.16); color:var(--cyan);
+     font-size:12px; margin-bottom:8px}
+  .step b{display:block; font-size:13.5px; margin-bottom:4px; font-weight:600}
+  .step span{font-size:12.5px; color:var(--dim); line-height:1.65}
+  .rule{display:flex; gap:12px; padding:11px 0; border-top:1px dashed var(--line); font-size:13px}
+  .rule:first-of-type{border-top:none}
+  .tag{flex:0 0 74px; color:var(--cyan); font-size:12.5px; padding-top:1px}
+  .rule div{flex:1; color:var(--txt); line-height:1.6}
+  .rule em{color:var(--dim); font-style:normal; font-size:12px; display:block; margin-top:3px}
+  .note{background:#12161C; border-left:3px solid var(--warn); border-radius:0 8px 8px 0;
+        padding:10px 14px; font-size:12.5px; color:var(--dim); line-height:1.7; margin-top:10px}
+  .kv{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+  .chip{background:#12161C; border:1px solid var(--line); border-radius:20px;
+        padding:5px 12px; font-size:12px; color:var(--dim)}
+  .chip b{color:var(--cyan); font-weight:600}
+  code{font-family:Consolas,monospace; font-size:12px; color:var(--gold)}
+  .foot{color:var(--faint); font-size:12px; margin-top:22px; line-height:1.8}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>插片怎么用</h1>
+  <p class="sub">插片 = 普通镜头，写分镜一模一样，只有两处不同：<b style="color:var(--cyan)">时长自己定</b>、<b style="color:var(--cyan)">成片里静音</b>。素材可选。</p>
+
+  <div class="card cy">
+    <h2>三步插一段</h2>
+    <p class="one">鼠标移到两镜之间 → 线像夜灯一样渐亮 → 点圆钮就完事。</p>
+    <div class="steps">
+      <div class="step">
+        <span class="n">1</span>
+        <b>鼠标移过去</b>
+        <span>卡片之间的空隙里会<b style="color:var(--cyan)">渐亮</b>出一条线和 ⊕（0.22 秒亮起，0.38 秒熄灭）。列表最上方也有一条，片头空镜插得进来。</span>
+      </div>
+      <div class="step">
+        <span class="n">2</span>
+        <b>左键点 ⊕</b>
+        <span>一步插入，<b>不弹窗</b>。默认 3 秒（记住上次的值）。右键出菜单：插入插片 / 插入插片并选素材…</span>
+      </div>
+      <div class="step">
+        <span class="n">3</span>
+        <b>就地填</b>
+        <span>时长那格直接改；素材可选可不选；画面构思、动效照常写。音频那栏不用管 —— 它显示「静音 5.0s」。</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>时长：你说了算</h2>
+    <p class="one">选了素材也以你填的为准 —— 视频播不完就截断。</p>
+    <div class="rule">
+      <span class="tag">默认</span>
+      <div>刚插入、没选素材 → <b>3.0s</b>
+        <em>连着插几段不用每段都调，它会记住你上次的值。</em></div>
+    </div>
+    <div class="rule">
+      <span class="tag">选了素材</span>
+      <div>你<b>没亲手改过</b> → 自动改成素材全长一次
+        <em>你一改，就永远以你为准，卡上标「素材 8.0s · 只播前 5.0s」。自动改一次是帮忙，改两次是添乱。</em></div>
+    </div>
+    <div class="rule">
+      <span class="tag">素材更短</span>
+      <div>定格在最后一帧，直到这段结束
+        <em>不循环、不补、不拉伸 —— 循环看起来很跳。卡上标「后 N 秒定格」。</em></div>
+    </div>
+    <div class="note">
+      想让视频「从幕布上出现、退场做个特效」—— 写在<b style="color:var(--txt)">动效</b>那格就行，跟别的镜头一样。
+      素材只是画面里的一层：可以放大出现、只露一块区域、缩小淡出。
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>几件要知道的事</h2>
+    <p class="one">都是实现时特意处理的，遇到别觉得是 bug。</p>
+    <div class="rule">
+      <span class="tag">成片会变长</span>
+      <div>底部常显「插片 N 段 · 静音 M 秒」
+        <em>插 10 段 5 秒就是多 50 秒 —— 别到导出才发现。</em></div>
+    </div>
+    <div class="rule">
+      <span class="tag">要交下去</span>
+      <div>插完照常点「应用到下游」
+        <em>下游才开始按新版本走。已有镜头不用重渲，只有新插的那段要渲。</em></div>
+    </div>
+    <div class="rule">
+      <span class="tag">重切分</span>
+      <div>不会冲掉你的插片
+        <em>按原位置插回去，设计 / 素材 / 时长全保留，状态栏会说明保留了 N 段。</em></div>
+    </div>
+    <div class="rule">
+      <span class="tag">插错了</span>
+      <div>插片行末尾「🗑 删掉这段」
+        <em>前后镜头自动接上。插片不能合并、不能拆（合了就说不清这段有没有口播了）。</em></div>
+    </div>
+    <div class="kv">
+      <span class="chip">素材落在 <b>素材\插片素材\</b></span>
+      <span class="chip">引用视频会带进渲染任务包 <b>videoPath</b></span>
+      <span class="chip">渲染时强制 <b>data-volume="0"</b></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>声音怎么处理的</h2>
+    <p class="one">这一段是静音的 —— 但静音不是"删掉一段音频"，而是"补一段等长静音"。</p>
+    <div class="rule">
+      <span class="tag">画面</span>
+      <div>分镜表里多一行 → 画面轴 +N 秒</div>
+    </div>
+    <div class="rule">
+      <span class="tag">音轨</span>
+      <div>组接那一刻补一段<b>同样长</b>的静音 → 音轨 +N 秒
+        <em>两条轴一起变长，自动对齐。不这么做的话，导出前的音画校验会直接拒绝出片（差 0.5 秒就不给过）。</em></div>
+    </div>
+    <div class="note">
+      静音是<b style="color:var(--txt)">组接时才生成</b>的，不去动你的精剪时间轴 ——
+      往时间轴里塞空白块会让口播稿凭空多出一句，而且编辑器里听着是静音、导出却是真的人声。
+    </div>
+  </div>
+
+  <p class="foot">
+    V1.10.7 · 2026-10-03 · 设计理由与代码落点见同目录「更新日志.md」；
+    实现细节见「维护说明.md」第二节「★ 插片」。
+  </p>
+
+</div>
+</body>
+</html>
