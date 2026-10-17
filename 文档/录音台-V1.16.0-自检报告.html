@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>录音台 V1.16.0 · 自检与实测报告</title>
+<style>
+  :root{
+    --bg:#FAF9F6; --card:#FFFFFF; --line:#E4E2DA; --line2:#EFEDE6;
+    --ink:#24231E; --ink2:#5F5E5A; --ink3:#9A978D;
+    --ok:#2C6E49; --ok-bg:#EAF3EC;
+    --warn:#9A6A00; --warn-bg:#FBF2DF;
+    --red:#C0392B; --red-bg:#FBEDEA;
+    --blue:#185FA5; --blue-bg:#E7F1FB;
+  }
+  *{box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);margin:0;padding:36px 16px 60px;
+       font:15px/1.85 "Microsoft YaHei UI","Microsoft YaHei",system-ui,sans-serif;
+       display:flex;flex-direction:column;align-items:center}
+  .wrap{width:980px;max-width:100%}
+  h1{font-size:23px;margin:0 0 4px}
+  .sub{color:var(--ink2);font-size:13px;margin-bottom:22px}
+  h2{font-size:17px;margin:34px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line2)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:12px 0}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;margin:10px 0}
+  th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+  th{background:#F6F4EE;font-weight:700}
+  .tag{display:inline-block;border-radius:6px;padding:1px 9px;font-size:12px;font-weight:700}
+  .g{background:var(--ok-bg);color:var(--ok)} .y{background:var(--warn-bg);color:var(--warn)}
+  .r{background:var(--red-bg);color:var(--red)} .b{background:var(--blue-bg);color:var(--blue)}
+  .shot{width:100%;border:1px solid var(--line);border-radius:10px;margin:8px 0 4px}
+  .cap{font-size:12px;color:var(--ink3);margin-bottom:16px}
+  code{background:#F1EFE8;border:1px solid var(--line2);border-radius:4px;padding:0 5px;font-family:Cascadia Mono,Consolas,monospace;font-size:12.5px}
+  .note{font-size:13px;color:var(--ink2)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>录音台 V1.16.0 · 自检与实测报告</h1>
+<div class="sub">2026-10-17 深夜 · 代码自检（编译 0 警告 0 错误）→ 调试模式实测（遥控口 + 真录真落盘）→ 修 bug → 复测 → 发布</div>
+
+<h2>一、结论</h2>
+<div class="card">
+  <b><span class="tag g">全链路通过</span> 录音台已经能用了。</b>
+  发布版在 <code>D:\工作台\工作台.exe</code>（版本戳 1.16.0），打开任意项目，左侧菜单「文稿」组里就能看到「◉ 录音台」。
+  <br><span class="note">唯一还没验证的是"真人声音好听不好听"——这必须你连上手机 WO Mic 真实录一段才算数（今晚的测试录音是静音的，因为手机没连）。</span>
+</div>
+
+<h2>二、这版做了什么（大白话版）</h2>
+<div class="card">
+  <b>一句话：左边是整篇稿子（能点），右边是录音机，两边当场配对。</b>
+  <ul>
+    <li>点一句 = 从这句开始录；<b>Shift+点</b>另一句 = 中间全选（<b>能跨自然段</b>——你说"文案分两段、实际一口气"就是干这个的）；点段落左边的小圆点 = 选整段。</li>
+    <li>也可以<b>什么都不选直接按空格</b>：念到合适的地方再按空格停，程序按"录音多长 × 你的语速"猜出你刚才念的是哪几句（蓝框标出来），对就回车，不对点一下改。</li>
+    <li><b>重录 = 再录一条新的</b>，旧的不删（灰着留底，点一下能恢复）。所以永远没有剪接、没有接缝。</li>
+    <li>录完程序先替你筛一遍：<b>红灯</b>=这条根本没声音（WO Mic 掉线就是这样），<b>黄灯</b>=语速不对劲（多半是口胡/念漏）。灯只是提醒，你回车照样过。</li>
+    <li>全程手不离键盘：<b>空格</b> 录/停 · <b>回车</b> 确认 · <b>R</b> 重录 · <b>P</b> 试听 · <b>Esc</b> 作废这条 · <b>↑↓</b> 挪光标。</li>
+  </ul>
+</div>
+
+<h2>三、代码自检</h2>
+<table>
+  <tr><th style="width:200px">检查项</th><th>结果</th></tr>
+  <tr><td>编译</td><td><span class="tag g">0 警告 0 错误</span>（Debug 与 Release 各一遍）</td></tr>
+  <tr><td>老功能回归</td><td>本版<b>没改任何现有页面的代码</b>：写作台 / 粗剪 / 精剪 / 分镜 / 渲染 / 导出 / 复盘一行没动，script.md 只被读不被写</td></tr>
+  <tr><td>写盘安全</td><td>record.json 无 BOM（外部工具能读）+ 先写临时文件再替换（断电不坏账）</td></tr>
+  <tr><td>打开页面零副作用</td><td>装载期程序触发的"假事件"不落盘——光是打开录音台不会凭空建出文件夹</td></tr>
+  <tr><td>切页安全</td><td>录到一半切走，这条音<b>自动安全停录并保留</b>，不会丢</td></tr>
+</table>
+
+<h2>四、实机实测（调试模式 + 遥控口，12 项全过）</h2>
+<table>
+  <tr><th style="width:44px">#</th><th style="width:280px">测什么</th><th>结果</th></tr>
+  <tr><td>1</td><td>点一句选中（"段1 · 第 1 句"）</td><td><span class="tag g">过</span></td></tr>
+  <tr><td>2</td><td>Shift+点 跨段选区（第 1–7 句 · 179 字）</td><td><span class="tag g">过</span></td></tr>
+  <tr><td>3</td><td>点段落圆点选整段（段2 · 第 2–3 句）</td><td><span class="tag g">过</span></td></tr>
+  <tr><td>4</td><td>录 4 秒 → wav 落盘（时长/字节数/峰值全部对得上）</td><td><span class="tag g">过</span></td></tr>
+  <tr><td>5</td><td>静音体检：这条录音没声音 → <b>红灯"这一条没声音"</b></td><td><span class="tag g">过</span>（正是 WO Mic 掉线的探测器）</td></tr>
+  <tr><td>6</td><td>回车确认绑定 → 光标自动跳到下一句</td><td><span class="tag g">过</span></td></tr>
+  <tr><td>7</td><td>清除选择后自由录 → 按语速猜范围生效</td><td><span class="tag g">过</span></td></tr>
+  <tr><td>8</td><td>重录同一段 → 旧录音自动变"已作废"、新录音生效</td><td><span class="tag g">过</span></td></tr>
+  <tr><td>9</td><td>点作废的卡片 → 恢复它、盖掉新的（可反悔）</td><td><span class="tag g">过</span></td></tr>
+  <tr><td>10</td><td>候选态点句子改绑定终点（第 4 句 → 扩到第 7 句）</td><td><span class="tag g">过</span></td></tr>
+  <tr><td>11</td><td>试听 P：回放中状态 → 播完回到原状态</td><td><span class="tag g">过</span></td></tr>
+  <tr><td>12</td><td>Esc 作废当前录音（不留垃圾文件）；切页往返状态保持</td><td><span class="tag g">过</span></td></tr>
+</table>
+
+<h2>五、实测揪出并修掉的 bug</h2>
+<div class="card">
+  <span class="tag r">真 bug</span> <b>自动试听还在播的时候，点左栏句子会"偷改"绑定范围</b>——
+  你只是想先点着看看，结果回放一结束选区已经被改了。
+  <br><span class="tag g">修法</span> 回放中 / 录音中，点句子和方向键一律不理会（等半秒再点，不抢戏）。修完复测第 10 项通过。
+</div>
+
+<h2>六、实测截图</h2>
+<div class="card">
+  <img class="shot" src="录音台-自检截图/1-主界面-选句.png" alt="主界面">
+  <div class="cap">① 主界面：左边稿子（金色=当前句），右边提词区大字，底部控制条 + 录音台账</div>
+
+  <img class="shot" src="录音台-自检截图/2-录完待确认-静音红灯.png" alt="录完待确认">
+  <div class="cap">② 录完：蓝框=待确认范围，底部出现 t001 卡片，右下红灯"这一条没声音"（测试环境手机没连，静音——这正是它该干的活）</div>
+
+  <img class="shot" src="录音台-自检截图/3-已绑定-台账与恢复.png" alt="已绑定">
+  <div class="cap">③ 绑定后：左栏 7 句变绿（已录），台账里金框=t005 生效、灰的=被盖掉留底可恢复，光标自动跳到第 8 句</div>
+</div>
+
+<h2>七、给你的三句话</h2>
+<div class="card">
+  1. <b>直接用</b>：打开工作台 → 进行中 → 随便开个有稿子的项目 → 左侧「录音台」。
+  首次录音前：手机连上 WO Mic 客户端，右上角点一下「刷新」。
+  <br>2. <b>有个练习场</b>：测试项目 <code>录音台自检（临时）</code> 我特意留着（里面是《粥糊了》的稿子 + 几条静音测试录音），
+  你可以先在那里把按键玩熟。想删跟我说一声，我不动它。
+  <br>3. <b>下一步</b>：你真实录一段满意的，我就开工 V1.17.0——把绑好的录音直接拼出 <code>transcript.json</code>，
+  粗剪往下的所有流程一行不用改。
+</div>
+
+</div>
+</body>
+</html>
