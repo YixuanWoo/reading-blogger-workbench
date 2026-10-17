@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>录音台 · 设计方案 v3（录音与文案自由配对）</title>
+<style>
+  :root{
+    --bg:#FAF9F6; --card:#FFFFFF; --line:#E3E1D9; --ink:#26251F; --ink2:#5F5E5A;
+    --blue-bg:#E6F1FB; --blue:#185FA5; --blue-line:#B7D6F0;
+    --warn-bg:#FDF3E3; --warn:#A15C00; --warn-line:#F0D9B5;
+    --ok-bg:#E8F3EC; --ok:#2C6E49; --ok-line:#C3DFCD;
+    --red:#B23B2E;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:16px/1.75 "Microsoft YaHei UI","Microsoft YaHei","PingFang SC",system-ui,sans-serif;
+       -webkit-font-smoothing:antialiased}
+  .wrap{max-width:960px;margin:0 auto;padding:40px 24px 90px}
+  h1{font-size:30px;line-height:1.35;margin:0 0 10px;letter-spacing:-.3px}
+  .sub{color:var(--ink2);font-size:15px;margin:0 0 6px}
+  .meta{color:#8A8880;font-size:13px;margin:18px 0 34px;padding-bottom:18px;border-bottom:1px solid var(--line)}
+  h2{font-size:21px;margin:46px 0 6px;letter-spacing:-.2px}
+  h2 .n{display:inline-block;min-width:30px;color:var(--blue);font-weight:700}
+  h3{font-size:16px;margin:26px 0 8px}
+  p{margin:10px 0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px 22px;margin:16px 0}
+  .lead{background:var(--blue-bg);border:1px solid var(--blue-line);border-radius:10px;padding:20px 22px;margin:18px 0}
+  .lead .k{font-weight:700;color:var(--blue)}
+  .ok{background:var(--ok-bg);border:1px solid var(--ok-line);border-radius:10px;padding:16px 20px;margin:16px 0}
+  .warn{background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:10px;padding:16px 20px;margin:16px 0}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14.5px}
+  th,td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--line)}
+  th{background:#F4F2EC;font-weight:700;color:var(--ink)}
+  td:first-child{white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  code{background:#F2F0EA;border-radius:4px;padding:1px 5px;font-size:13.5px;
+        font-family:"Cascadia Mono",Consolas,monospace}
+  .flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0}
+  .step{background:#FFFFFF;border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:14px}
+  .step.gone{background:#F7F4EE;border-style:dashed;color:#A8A59C;text-decoration:line-through}
+  .step.new{background:var(--blue-bg);border-color:var(--blue-line);color:var(--blue);font-weight:700}
+  .arrow{color:#B4B2A9;font-size:14px}
+  ul,ol{margin:10px 0;padding-left:22px}
+  li{margin:6px 0}
+  .q{background:#fff;border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:8px;
+     padding:14px 18px;margin:14px 0}
+  .q b{display:block;margin-bottom:4px}
+  .small{font-size:13.5px;color:var(--ink2)}
+  .loop{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:16px 0;
+        background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+  .loop .s{font-size:13.5px;background:#F6F4EE;border:1px solid var(--line);border-radius:20px;padding:5px 13px}
+  .loop .s.hot{background:#FBEDEA;border-color:#EFC9C2;color:var(--red);font-weight:700}
+  .loop .s.key{background:#F2F0E9;font-family:"Cascadia Mono",Consolas,monospace;font-size:12.5px}
+  .loop .ar{color:#B4B2A9}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>录音台 · 设计方案 <span style="color:#8A8880;font-size:18px;font-weight:400">v3 · 录音与文案自由配对</span></h1>
+<p class="sub">你这轮指出的要害：上一版把稿子切成固定的"片"，<b>两段连贯的内容就被迫分开录</b>，这不合理。<br>
+这一版把模型反过来：<b>录音是录音，选文是选文，两者当场配对</b> —— 想怎么连就怎么连。</p>
+<p class="meta">2026-10-17 ｜ 方案 + 界面原型（<code>录音台-UI原型.html</code>，可点）｜ 未改一行工程代码</p>
+
+<div class="lead">
+<p><span class="k">一句话：</span>左边一条可滚动的<b>完整文案</b>，你想念哪几句就选哪几句（可跨段、可整段、可单句），
+选中就开录；也可以反过来 —— <b>先念，念到合适的地方停，程序猜出你刚才念的是哪几句</b>，你扫一眼、点一下确认。</p>
+<p style="margin-bottom:0">"每段录哪部分"从此不由程序决定，由你决定。程序只做两件事：<b>让你少点几下</b>，和<b>记住每次录音绑的是哪几句</b>。</p>
+</div>
+
+<h2><span class="n">1</span>模型就两条，很简单</h2>
+
+<div class="card">
+<p style="margin-top:0"><b>① 录音（take）</b>：你按一次空格到再按一次空格，就是一条录音，一个独立文件。<br>
+<span class="small">一条可以只装一句话，也可以装下三四个连贯的自然段 —— 长短完全由你。</span></p>
+<p style="margin-bottom:0"><b>② 绑定（哪几句）</b>：每条录音必须知道"我念的是稿子里哪几句"，
+这个对应关系<b>由你在界面上定</b>，程序只帮忙猜初值。</p>
+</div>
+
+<p>之前担心的"固定切片"没有 了。稿子里的段落只是<b>显示结构</b>（让你看得清、点得快），
+不再是录制的牢笼。你说的那种情况 —— 文案里分了两段、念起来其实是一口气 ——
+就是一次录音绑了两个段的事，界面上选的时候拉过去就行。</p>
+
+<h2><span class="n">2</span>界面：左边文案，右边提词</h2>
+
+<div class="card">
+<p style="margin-top:0"><b>左栏（约 320px）＝完整文案，可滚动。</b>
+标题当章节分隔，句子是最小单位，三种颜色一眼分清：</p>
+<ul style="margin:6px 0">
+<li><b>绿底</b> = 这句已经录过（并告诉你录进了哪一条）；</li>
+<li><b>蓝底</b> = 当前选中 / 程序刚猜出来的范围；</li>
+<li><b>金底</b> = 光标所在句（下一句要念的）。</li>
+</ul>
+<p><b>右栏＝提词区。</b>选中（或光标起默认三句）放大显示，上一句下一句淡色跟着，念的时候有上下文。</p>
+<p style="margin-bottom:0"><b>底部＝两条录音的台账。</b>每按一次空格多一张卡片：
+绑了第几到第几句、多长、要不要再听。<b>点任意一张卡片，左栏立刻点亮它绑的是哪几句</b> ——
+"我刚才录的那条对应哪里"这个问题，答案永远在眼前。</p>
+</div>
+
+<h3>左栏怎么选（这是交互的核心，我斟酌了三种做法）</h3>
+
+<table>
+<tr><th style="width:210px">动作</th><th>效果</th><th style="width:220px">适合</th></tr>
+<tr><td><b>点一句</b></td><td>从这句开始录</td><td>最常用：顺序往下念，点一下就够</td></tr>
+<tr><td><b>点一句，Shift+点另一句</b></td><td>选中间这一整段范围（<b>可跨段</b>）</td><td>两三段连贯内容一起录</td></tr>
+<tr><td><b>点段落左侧的小圆点</b></td><td>选中整个自然段</td><td>整段一起录</td></tr>
+<tr><td><b>不选，直接按空格</b></td><td>自由录：从光标句往下念，念到哪算哪</td><td>先录后配 —— 你说的那种</td></tr>
+</table>
+
+<p class="small">为什么不用"拖拽划选"：录音时你一只手可能还握着鼠标之外的东西，
+拖拽要按住不放、起点终点都要对准，是最容易失手的选法。
+"点一下 + Shift 点一下"每一步都是独立的点击，错了点一下就改。</p>
+
+<h2><span class="n">3</span>两条工作路线，都顺</h2>
+
+<h3>路线 A · 先选后录（默认推荐）</h3>
+<div class="loop">
+  <span class="s">左栏点起句</span><span class="ar">→</span>
+  <span class="s">Shift+点止句</span><span class="ar">→</span>
+  <span class="s key">空格</span><span class="s hot">念</span><span class="ar">→</span>
+  <span class="s key">空格</span><span class="s">停 · 自动回放</span><span class="ar">→</span>
+  <span class="s key">回车</span><span class="s hot">绑定，光标跳到下一句</span>
+</div>
+<p class="small">录音的范围就是你选的范围，录完直接绑定，<b>连确认都省了</b>。</p>
+
+<h3>路线 B · 先录后配（你说的那种）</h3>
+<div class="loop">
+  <span class="s">不选，直接按</span><span class="s key">空格</span><span class="s hot">念到合适处</span><span class="ar">→</span>
+  <span class="s key">空格</span><span class="s">停 · 自动回放</span><span class="ar">→</span>
+  <span class="s">程序<b>猜出范围</b>（蓝色框在左栏）</span><span class="ar">→</span>
+  <span class="s key">回车</span><span class="s hot">认了</span>
+  <span style="color:#B4B2A9;font-size:13px">或点别的句子改掉</span>
+</div>
+
+<div class="ok">
+<b>程序怎么猜：</b>从你上次念完的下一句开始，按<b>录音时长 ÷ 你的语速</b>折算出字数，往后数到差不多就是候选范围。
+语速是程序自己学的 —— 每绑定一条，它就用"这句的字数 ÷ 这条录音的时长"更新你的平均语速，越用越准。<br>
+<span class="small">猜错了不碍事：候选范围就是几个蓝底的句子，点一下就能把起点或终点改到任意句。
+你比程序多知道的（比如你中间跳着念了），一次点击就补上了。</span>
+</div>
+
+<h2><span class="n">4</span>录音重叠怎么办（念重了、改了稿）</h2>
+
+<table>
+<tr><th style="width:230px">情况</th><th>处理</th></tr>
+<tr><td>新录音的范围和旧录音重叠</td>
+    <td>自动把旧的标记为<b>"被替换"</b>（在台账里变灰、文件留底不删），新的顶上。
+    你不用管谁是旧谁是新 —— <b>每一句永远只认最新录的那条</b>。</td></tr>
+<tr><td>同一句念了两遍，第二遍更好</td><td>就是上面的情况，自动处理。</td></tr>
+<tr><td>旧的那条其实更好，想反悔</td><td>台账里点旧的灰卡片，有一个"恢复这条"。</td></tr>
+<tr><td>稿子后来改了字</td>
+    <td>改到的那几句会标出来"录音时的稿子和现在不一样"，你自己决定要不要重录。</td></tr>
+</table>
+
+<h2><span class="n">5</span>录完当场体检（不变）</h2>
+
+<table>
+<tr><th style="width:64px">灯</th><th style="width:210px">判据</th><th>你会看到什么</th></tr>
+<tr><td><b style="color:#B23B2E">红</b></td><td>整条几乎无声音</td><td>"这条没有声音 —— 手机可能断开了"</td></tr>
+<tr><td><b style="color:#A15C00">黄</b></td><td>语速 &lt;3.0 或 &gt;6.5 字/秒</td><td>"这段可能停顿多或念漏了，听一下再定"</td></tr>
+<tr><td><b style="color:#2C6E49">绿</b></td><td>正常</td><td>"✓ 71 字 · 语速 4.9 字/秒 · 14.6 秒"</td></tr>
+</table>
+
+<p class="small">灯只是提示。黄灯你按回车照样绑 —— 人说了算。</p>
+
+<h2><span class="n">6</span>WO Mic 的坑，对策不变</h2>
+
+<p class="small">刷新设备按钮、实时电平、每条录音独立落盘（掉线最多毁当前这一条）、可选增益（默认关）；
+<b>试听必须戴耳机</b>（手机麦会收电脑外放，会回授），首次试听时提示。</p>
+
+<h2><span class="n">7</span>两个配套细节（要你点头）</h2>
+
+<div class="q"><b>① 段首尾自动裁静音（保留约 200ms 气口）+ 接缝 3ms 微淡入 —— 破"音频零处理"铁律，同意吗？</b>
+<span class="small">分段录音"听起来一顿一顿"的真正原因就是每段头尾的空白没裁。裁了反而节奏干净。只处理空白和接缝，不动音色。</span></div>
+
+<div class="q" style="margin-bottom:0"><b>②「录完自动试听」+「录完自动猜范围」默认开，行吗？</b>
+<span class="small">都开着 = 顺序念稿时你只按空格和回车。顶栏随时可关。</span></div>
+
+<h2><span class="n">8</span>交付分两次</h2>
+
+<table>
+<tr><th style="width:100px">版本</th><th style="width:170px">做什么</th><th>你能得到什么</th></tr>
+<tr><td><b>第一次</b><br>V1.16.0</td><td>录音台能录能绑</td>
+    <td>左栏文案（滚动/三色/点选/跨段选/整段选）、右栏提词、空格录停、自动回放、猜范围、回车绑定、
+    台账卡片、重叠自动替换、红黄绿体检、落盘 <code>素材\录音\segs\t001.wav…</code> + <code>record.json</code>。</td></tr>
+<tr><td><b>第二次</b><br>V1.17.0</td><td>合带 + 直出转写稿</td>
+    <td>把所有<b>采用的</b>录音按句子顺序排好、拼成一条 <code>record.wav</code>（裁静音 + 接缝处理），
+    生成 <code>stages\01-transcript\transcript.json</code>（格式不变，下游零改动）并设为项目源音频；
+    自动跑对稿自检（T-28 已有）。<br>
+    <span class="small">★ 因为绑定是"句子 ↔ 时间"，跳着录、改选区、重叠替换都天然支持 —— 这正是这个模型比"固定切片"强的地方。</span></td></tr>
+</table>
+
+<h2><span class="n">9</span>风险登记</h2>
+
+<table>
+<tr><th style="width:70px">编号</th><th style="width:210px">风险</th><th>兜底</th></tr>
+<tr><td>R-24</td><td>分段录音听感"一顿一顿"</td>
+    <td>裁静音统一气口 + 接缝淡化；仍不行则加"连录模式"开关（一口气录、录完按静音切）。</td></tr>
+<tr><td>R-25</td><td>WO Mic 链路不稳</td>
+    <td>每条录音独立落盘、红灯判据、刷新设备、先连手机再选设备。</td></tr>
+<tr><td>R-26</td><td>临场加词，稿子里没有</td>
+    <td>这条录音不绑句子（或绑一句"占位"），合成时退回纯音频插在原位 —— 老路仍在。</td></tr>
+<tr><td>R-28</td><td>猜范围猜错（跳着念、回头念）</td>
+    <td>猜的只是初值，蓝框可见、可点改；绑定前你总是看得到它绑的是哪几句。</td></tr>
+</table>
+
+<h2><span class="n">10</span>工程落点</h2>
+
+<table>
+<tr><th style="width:340px">文件</th><th>职责</th></tr>
+<tr><td><code>Workbench/Record/ScriptIndex.cs</code></td><td><code>script.md</code> → 章节/段落/句子索引（去 Markdown 符号，句子按句末标点切，全文指纹）</td></tr>
+<tr><td><code>Workbench/Record/RecorderEngine.cs</code></td><td>WASAPI 采集、实时电平、停即落盘</td></tr>
+<tr><td><code>Workbench/Record/RecordStore.cs</code></td><td><code>record.json</code>：take 列表（句子区间/时长/状态/稿子指纹）、语速自学习、无 BOM</td></tr>
+<tr><td><code>Workbench/Record/RangeGuesser.cs</code></td><td>录完按"时长×语速"从光标句往后猜句子区间</td></tr>
+<tr><td><code>Workbench/Record/TakeInspector.cs</code></td><td>红黄绿体检（峰值 / 语速 / 静音）</td></tr>
+<tr><td><code>Workbench/Views/RecordView.xaml(.cs)</code></td><td>左栏文案 / 提词区 / 波形 / 控制条 / 台账</td></tr>
+<tr><td><code>Workbench/Navigation/NavTree.cs</code></td><td>加一项（约 8 行，写作台之后）</td></tr>
+<tr><td><code>LiteCut.Core/Engine/TakesAssembler.cs</code></td><td>第二次交付：排序合带 + Transcript 生成</td></tr>
+</table>
+
+<p class="small" style="margin-top:26px;padding-top:16px;border-top:1px solid var(--line)">
+落盘：<code>&lt;项目&gt;\素材\录音\segs\t001.wav…</code>、<code>…\takes\</code>（被替换的留底）、
+<code>…\record.json</code>；合带产物 <code>…\素材\录音\record.wav</code>；
+转写稿仍落 <code>stages\01-transcript\transcript.json</code>。项目自包含铁律不变。</p>
+
+<p style="margin-top:30px;font-weight:700">回「开工」就动第一版（V1.16.0）；改哪条说编号。</p>
+
+</div>
+</body>
+</html>

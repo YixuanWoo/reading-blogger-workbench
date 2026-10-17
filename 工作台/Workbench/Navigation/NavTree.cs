@@ -72,6 +72,19 @@ public static class NavTree
 
         /// <summary>⭐ 写作台（项目内流水线的第 0 步，在① 粗剪之前）。</summary>
         public const string Script = "project.script";
+
+        /// <summary>
+        /// ★ V1.16.0 录音台：稿子 → 声音的桥。
+        ///
+        /// 【为什么单独一页，而不是塞进写作台】
+        ///   写作台是"改字"的地方，录音台是"念字"的地方：
+        ///   一个要安静、要大段文字；一个要提词、要电平、要一遍遍重录。
+        ///   塞在一起，改稿时会误碰录音键，录音时又会被光标和编辑框干扰。
+        ///   分成两页之后，两边都只做一件事 —— 数据仍然只有一份 script.md。
+        ///
+        /// 【顺序】文稿组里排在写作台之后：先写，再念，然后才是① 粗剪。
+        /// </summary>
+        public const string RecordingDesk = "project.record";
     }
 
     // ========================================================
@@ -140,6 +153,17 @@ public static class NavTree
             IsNew = true,
             CreateView = () => new WritingDeskView(),
             // ★ 必须缓存：主区是 Markdown 原文编辑区 + 光标位置，重建就丢
+            KeepAlive = true,
+        },
+        new NavNode
+        {
+            Id = Ids.RecordingDesk,
+            Title = "录音台",
+            Icon = "◉",
+            Group = "文稿",
+            IsNew = true,
+            CreateView = () => new RecordingDeskView(),
+            // ★ 必须缓存：光标、选区、刚录完还没确认的那条都在内存里，重建就丢
             KeepAlive = true,
         },
 

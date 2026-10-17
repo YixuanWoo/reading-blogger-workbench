@@ -1,0 +1,475 @@
+<!-- ============================================================
+     RecordingDeskView.xaml - 录音台（V1.16.0）
+     ============================================================
+     【这一页的核心模型：录音 ≠ 段落】
+       录音是物理单位（一次空格到空格 = 一条 wav）；
+       文案区间是逻辑单位（第 12–14 句）。
+       两者**当场配对**，配错了点一下改过来 —— 这就是用户要的
+       "先录、录完再手工选刚才录的是哪几句"，也允许"先选好再录"。
+
+     【界面分四块】
+       左：整篇稿子，可滚动，句子可点（点=从这里录，Shift+点=选到那句，
+           段落左边小圆点=选整段）
+       右上：提词区（上一句淡 / 本段大字 / 下一句淡）
+       右中：波形条
+       右下：控制条 + 录音台账（点一条 = 在左栏点亮它绑了哪几句）
+
+     【配色沿用工作台的深色主题】
+       只有三种状态色：红=正在录、蓝=选中/待确认、绿=已绑定。
+       其余全是中性灰 —— 少即是清楚，录音的时候不该有花里胡哨的东西抢注意力。
+     ============================================================ -->
+<UserControl x:Class="LiteCut.Workbench.Views.RecordingDeskView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:rd="clr-namespace:LiteCut.Workbench.RecordingDesk"
+             Background="{StaticResource BgDeep}"
+             Foreground="{StaticResource TextMain}"
+             FontFamily="Microsoft YaHei UI, Microsoft YaHei, Segoe UI"
+             Focusable="True" FocusVisualStyle="{x:Null}">
+
+    <UserControl.Resources>
+
+        <!-- ===== 深色滚动条（与写作台一致） ===== -->
+        <Style TargetType="ScrollBar">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Width" Value="8"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Grid Background="Transparent">
+                            <Track x:Name="PART_Track" IsDirectionReversed="True">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageUpCommand" Focusable="False">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="RepeatButton">
+                                                <Border Background="Transparent"/>
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb>
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Border Background="#FF2A3038" CornerRadius="4" Margin="1,2,1,2"/>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageDownCommand" Focusable="False">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="RepeatButton">
+                                                <Border Background="Transparent"/>
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ===== 普通按钮 ===== -->
+        <Style x:Key="GhostBtn" TargetType="Button">
+            <Setter Property="Background" Value="#FF1B1F26"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMain}"/>
+            <Setter Property="BorderBrush" Value="#FF2A3038"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1"
+                                CornerRadius="7" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="BorderBrush" Value="#FF465263"/>
+                                <Setter TargetName="bd" Property="Background" Value="#FF232A33"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.32"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ===== 控制条大按钮（颜色在代码里按状态给） ===== -->
+        <Style x:Key="BigBtn" TargetType="Button">
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="Padding" Value="15,0"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                BorderBrush="#22FFFFFF" BorderThickness="1"
+                                CornerRadius="9" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="BorderBrush" Value="#55FFFFFF"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.84"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.3"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ===== 键帽 ===== -->
+        <Style x:Key="Kbd" TargetType="Border">
+            <Setter Property="Background" Value="#1FFFFFFF"/>
+            <Setter Property="BorderBrush" Value="#2EFFFFFF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="5,1"/>
+            <Setter Property="Margin" Value="9,0,0,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style x:Key="KbdText" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, Microsoft YaHei UI"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="Foreground" Value="#D9FFFFFF"/>
+        </Style>
+
+        <!-- ===== 开关（勾选框） ===== -->
+        <Style x:Key="Toggle" TargetType="CheckBox">
+            <Setter Property="Foreground" Value="#FF8B93A1"/>
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <StackPanel Orientation="Horizontal" Background="Transparent">
+                            <Border x:Name="box" Width="14" Height="14" CornerRadius="4"
+                                    Background="#FF1B1F26" BorderBrush="#FF3A424E" BorderThickness="1"
+                                    VerticalAlignment="Center" Margin="0,0,6,0">
+                                <TextBlock x:Name="tick" Text="✓" FontSize="9" Foreground="#FF0E1013"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Visibility="Collapsed"/>
+                            </Border>
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="box" Property="Background" Value="#FFC9D2DE"/>
+                                <Setter TargetName="box" Property="BorderBrush" Value="#FFC9D2DE"/>
+                                <Setter TargetName="tick" Property="Visibility" Value="Visible"/>
+                                <Setter Property="Foreground" Value="#FFE6E9EF"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="box" Property="BorderBrush" Value="#FF6B7684"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>   <!-- 顶栏：设备 / 电平 / 开关 -->
+            <RowDefinition Height="*"/>      <!-- 主体 -->
+        </Grid.RowDefinitions>
+
+        <!-- ============================================================
+             顶栏
+             ============================================================ -->
+        <Border Grid.Row="0" Height="54" Background="#FF11141A"
+                BorderBrush="#FF22272F" BorderThickness="0,0,0,1" Padding="18,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="录音台" FontSize="13.5" FontWeight="Bold" Foreground="#FFE6E9EF"
+                               VerticalAlignment="Center" Margin="0,0,12,0"/>
+                    <Border Width="1" Height="14" Background="#FF2A3038" Margin="0,0,12,0"/>
+
+                    <TextBlock Text="麦克风" FontSize="11.5" Foreground="#FF78828F"
+                               VerticalAlignment="Center" Margin="0,0,7,0"/>
+                    <ComboBox x:Name="CmbDevice" Width="216" Height="28" FontSize="12"
+                              VerticalAlignment="Center" SelectionChanged="CmbDevice_SelectionChanged"/>
+                    <Button x:Name="BtnRefreshDevices" Content="刷新" Style="{StaticResource GhostBtn}"
+                            Margin="7,0,0,0" Padding="10,5" Click="BtnRefreshDevices_Click"
+                            ToolTip="先连上手机、再点刷新（WO Mic 必须客户端在跑）"/>
+
+                    <Border Width="1" Height="14" Background="#FF2A3038" Margin="14,0"/>
+
+                    <!-- 电平表 -->
+                    <TextBlock Text="电平" FontSize="11.5" Foreground="#FF78828F" VerticalAlignment="Center"/>
+                    <Border x:Name="MeterHost" Width="76" Height="6" CornerRadius="3"
+                            Background="#FF232A33" Margin="8,0,8,0" VerticalAlignment="Center">
+                        <Border x:Name="MeterFill" Width="0" HorizontalAlignment="Left" CornerRadius="3"
+                                Background="#FF22C55E"/>
+                    </Border>
+                    <TextBlock x:Name="TxtDb" Text="-96" FontFamily="Cascadia Mono, Consolas"
+                               FontSize="11.5" Foreground="#FF78828F" VerticalAlignment="Center"
+                               Width="34" TextAlignment="Right"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <CheckBox x:Name="ChkAutoPlay" Content="录完自动试听" Style="{StaticResource Toggle}"
+                              Margin="0,0,16,0" Checked="ChkAutoPlay_Changed" Unchecked="ChkAutoPlay_Changed"/>
+                    <CheckBox x:Name="ChkAutoGuess" Content="没选就猜范围" Style="{StaticResource Toggle}"
+                              Margin="0,0,16,0" Checked="ChkAutoGuess_Changed" Unchecked="ChkAutoGuess_Changed"/>
+                    <Button x:Name="BtnReloadScript" Content="重读稿子" Style="{StaticResource GhostBtn}"
+                            Padding="10,5" Click="BtnReloadScript_Click"
+                            ToolTip="稿子改过之后点一下（不会动录音，只重排句子）"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ============================================================
+             主体：左文案 + 右录音
+             ============================================================ -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="348"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- ===== 左：整篇稿子 ===== -->
+            <Border Grid.Column="0" Background="#FF12151A"
+                    BorderBrush="#FF22272F" BorderThickness="0,0,1,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Padding="14,11,12,10" BorderBrush="#FF1E232B"
+                            BorderThickness="0,0,0,1">
+                        <Grid>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="文案" FontSize="12.5" FontWeight="Bold"
+                                           Foreground="#FFE6E9EF" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="TxtDocStat" Text="0 / 0 句" FontSize="11"
+                                           Foreground="#FF78828F" Margin="9,0,0,0" VerticalAlignment="Center"
+                                           FontFamily="Cascadia Mono, Consolas"/>
+                            </StackPanel>
+                            <Button x:Name="BtnClearSel" Content="清除选择" HorizontalAlignment="Right"
+                                    Style="{StaticResource GhostBtn}" Padding="9,3" FontSize="11"
+                                    Click="BtnClearSel_Click"/>
+                        </Grid>
+                    </Border>
+
+                    <ScrollViewer x:Name="ScriptScroll" Grid.Row="1"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  Padding="12,8,8,22">
+                        <StackPanel x:Name="ScriptPanel"/>
+                    </ScrollViewer>
+
+                    <Border Grid.Row="2" Padding="14,7" Background="#FF0F1216"
+                            BorderBrush="#FF1E232B" BorderThickness="0,1,0,0">
+                        <TextBlock FontSize="10.5" Foreground="#FF6E7783" TextWrapping="Wrap" LineHeight="17">
+                            点一句 <Run Foreground="#FFC9D2DE">从这里录</Run> ·
+                            <Run Foreground="#FFC9D2DE">Shift+点</Run> 选到那句（可跨段）·
+                            点左侧 <Run Foreground="#FFC9D2DE">·</Run> 选整段
+                        </TextBlock>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- ===== 右：提词 / 波形 / 控制 / 台账 ===== -->
+            <Grid Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- 提词区 -->
+                <Grid Grid.Row="0" Margin="44,22,44,8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Orientation="Horizontal">
+                        <TextBlock x:Name="TxtSegNow" Text="第 1 句" FontSize="12.5" FontWeight="Bold"
+                                   Foreground="#FFE6E9EF" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="TxtSegMeta" Text="" FontSize="11.5" Foreground="#FF78828F"
+                                   Margin="10,0,0,0" VerticalAlignment="Center"
+                                   FontFamily="Cascadia Mono, Consolas"/>
+                        <Border x:Name="BadgeHost" CornerRadius="5" Padding="7,2" Margin="10,0,0,0"
+                                Background="#FF232A33" VerticalAlignment="Center">
+                            <TextBlock x:Name="TxtBadge" Text="自动 · 从这句往下念" FontSize="11"
+                                       Foreground="#FF8B93A1"/>
+                        </Border>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" VerticalAlignment="Center" Margin="0,8,0,0">
+                        <TextBlock x:Name="TxtPrev" Text="" FontSize="15" Foreground="#FF59616C"
+                                   TextTrimming="CharacterEllipsis" Margin="3,0,0,12"/>
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border x:Name="CurBar" Grid.Column="0" Width="3" CornerRadius="2"
+                                    Background="#FF39414C" Margin="0,8,16,8"/>
+                            <TextBlock x:Name="TxtCur" Grid.Column="1" Text=""
+                                       FontSize="30" LineHeight="52" TextWrapping="Wrap"
+                                       Foreground="#FFF4F2EC"/>
+                        </Grid>
+                        <TextBlock x:Name="TxtNext" Text="" FontSize="15" Foreground="#FF59616C"
+                                   TextTrimming="CharacterEllipsis" Margin="3,0,0,0"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- 波形 -->
+                <Border Grid.Row="1" Padding="40,8,40,6">
+                    <StackPanel>
+                        <Grid Margin="4,0,4,3">
+                            <TextBlock x:Name="WaveLabel" Text="还没有录" FontSize="10.5"
+                                       Foreground="#FF6E7783"/>
+                            <TextBlock x:Name="WaveTime" Text="00:00.0" FontSize="10.5" HorizontalAlignment="Right"
+                                       Foreground="#FF6E7783" FontFamily="Cascadia Mono, Consolas"/>
+                        </Grid>
+                        <rd:TakeWaveBar x:Name="Wave" Height="64"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- 控制条 -->
+                <Border Grid.Row="2" BorderBrush="#FF1E232B" BorderThickness="0,1,0,0"
+                        Padding="22,0" Height="64">
+                    <Grid>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock x:Name="TxtTime" Text="00:00.0" FontFamily="Cascadia Mono, Consolas"
+                                       FontSize="15" Foreground="#FFE6E9EF" Width="92"
+                                       VerticalAlignment="Center"/>
+                            <Ellipse x:Name="RecDot" Width="8" Height="8" Fill="#FF39414C" Margin="0,0,14,0"
+                                     VerticalAlignment="Center"/>
+
+                            <Button x:Name="BtnMain" Style="{StaticResource BigBtn}" Click="BtnMain_Click"
+                                    Background="#FFC7443A" Margin="0,0,8,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock x:Name="TxtMainDot" Text="●" FontSize="10" VerticalAlignment="Center"
+                                               Margin="0,0,8,0"/>
+                                    <TextBlock x:Name="TxtMainLabel" Text="开始录音" FontSize="13" FontWeight="SemiBold"
+                                               VerticalAlignment="Center"/>
+                                    <Border Style="{StaticResource Kbd}">
+                                        <TextBlock Text="空格" Style="{StaticResource KbdText}"/>
+                                    </Border>
+                                </StackPanel>
+                            </Button>
+
+                            <Button x:Name="BtnPlay" Style="{StaticResource BigBtn}" Click="BtnPlay_Click"
+                                    Background="#FF1B1F26" Foreground="#FFE6E9EF" Margin="0,0,8,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="▶" FontSize="10" VerticalAlignment="Center" Margin="0,0,7,0"
+                                               Foreground="#FFC9D2DE"/>
+                                    <TextBlock Text="试听" FontSize="12.5" VerticalAlignment="Center"/>
+                                    <Border Style="{StaticResource Kbd}" Background="#0FFFFFFF" BorderBrush="#1FFFFFFF">
+                                        <TextBlock Text="P" Style="{StaticResource KbdText}" Foreground="#99FFFFFF"/>
+                                    </Border>
+                                </StackPanel>
+                            </Button>
+
+                            <Button x:Name="BtnRedo" Style="{StaticResource BigBtn}" Click="BtnRedo_Click"
+                                    Background="#FF1B1F26" Foreground="#FFE6E9EF" Margin="0,0,8,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="↻" FontSize="12" VerticalAlignment="Center" Margin="0,0,7,0"
+                                               Foreground="#FFC9D2DE"/>
+                                    <TextBlock Text="重录" FontSize="12.5" VerticalAlignment="Center"/>
+                                    <Border Style="{StaticResource Kbd}" Background="#0FFFFFFF" BorderBrush="#1FFFFFFF">
+                                        <TextBlock Text="R" Style="{StaticResource KbdText}" Foreground="#99FFFFFF"/>
+                                    </Border>
+                                </StackPanel>
+                            </Button>
+
+                            <Button x:Name="BtnOk" Style="{StaticResource BigBtn}" Click="BtnOk_Click"
+                                    Background="#FF2C6E49" Margin="0,0,4,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="✓" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="就绑这段" FontSize="13" FontWeight="SemiBold"
+                                               VerticalAlignment="Center"/>
+                                    <Border Style="{StaticResource Kbd}">
+                                        <TextBlock Text="回车" Style="{StaticResource KbdText}"/>
+                                    </Border>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                            <Border x:Name="VerdictTagHost" CornerRadius="5" Padding="7,2" Visibility="Collapsed"
+                                    Margin="0,0,8,0" Background="#FF232A33">
+                                <TextBlock x:Name="TxtVerdictTag" Text="" FontSize="11" FontWeight="Bold"
+                                           Foreground="#FF8B93A1"/>
+                            </Border>
+                            <TextBlock x:Name="TxtVerdict" Text="" FontSize="11" Foreground="#FF78828F"
+                                       MaxWidth="330" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- 录音台账 -->
+                <Border Grid.Row="3" Background="#FF0F1216" BorderBrush="#FF1E232B"
+                        BorderThickness="0,1,0,0" Padding="20,8,16,10">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="2,0,0,7">
+                            <TextBlock Text="录过的" FontSize="11.5" FontWeight="Bold" Foreground="#FFB6BEC9"/>
+                            <TextBlock Text="点一条＝在左栏点亮它绑的是哪几句" FontSize="10.5"
+                                       Foreground="#FF6E7783" Margin="9,1,0,0"/>
+                        </StackPanel>
+                        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                            <StackPanel x:Name="TakeRow" Orientation="Horizontal"/>
+                        </ScrollViewer>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- ===== 空状态：这个项目还没有稿子 ===== -->
+            <Grid x:Name="EmptyHost" Grid.ColumnSpan="2" Background="#FF0E1013" Visibility="Collapsed">
+                <Border HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="520"
+                        Background="#FF161A20" BorderBrush="#FF2A3038" BorderThickness="1"
+                        CornerRadius="12" Padding="30,26">
+                    <StackPanel>
+                        <TextBlock Text="这个项目还没有稿子" FontSize="17" FontWeight="Bold"
+                                   Foreground="#FFE6E9EF" Margin="0,0,0,10"/>
+                        <TextBlock x:Name="TxtEmptyWhy" TextWrapping="Wrap" LineHeight="23" FontSize="12.5"
+                                   Foreground="#FF8B93A1"
+                                   Text="录音台是照着稿子念的。先去写作台写（或者把已有的稿子贴进 script.md 保存），再回来这里。"/>
+                        <TextBlock Text="稿子路径：&lt;项目&gt;\script.md" FontSize="11" Margin="0,14,0,0"
+                                   Foreground="#FF5F6772" FontFamily="Cascadia Mono, Consolas"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+                            <Button Content="去写作台" Style="{StaticResource BigBtn}" Height="34"
+                                    Background="#FF2563EB" Click="BtnGoScript_Click"/>
+                            <Button Content="重新读一次" Style="{StaticResource GhostBtn}" Margin="10,0,0,0"
+                                    Padding="14,7" Click="BtnReloadScript_Click"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>

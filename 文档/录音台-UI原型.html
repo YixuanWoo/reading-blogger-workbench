@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>录音台 · 界面原型 v3（左栏选文案）</title>
+<style>
+  :root{
+    --bg:#FAF9F6; --panel:#F6F4EE; --card:#FFFFFF; --line:#E4E2DA; --line2:#EFEDE6;
+    --ink:#24231E; --ink2:#5F5E5A; --ink3:#9A978D;
+    --rec:#C0392B; --rec-bg:#FBEDEA;
+    --ok:#2C6E49; --ok-bg:#EAF3EC;
+    --warn:#9A6A00; --warn-bg:#FBF2DF;
+    --blue:#185FA5; --blue-bg:#E7F1FB;
+    --mono:"Cascadia Mono",Consolas,"SF Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:#E7E5DE;color:var(--ink);min-height:100vh;padding:24px 16px 40px;
+       font:15px/1.7 "Microsoft YaHei UI","Microsoft YaHei","PingFang SC",system-ui,sans-serif;
+       -webkit-font-smoothing:antialiased;display:flex;flex-direction:column;align-items:center;gap:14px}
+  .hint{color:#6D6B63;font-size:13px;text-align:center;line-height:1.85;max-width:1200px}
+  .hint b{color:#24231E}
+
+  .app{width:1400px;max-width:100%;height:880px;background:var(--bg);border-radius:14px;overflow:hidden;
+       box-shadow:0 1px 1px rgba(0,0,0,.04),0 18px 50px -12px rgba(40,38,32,.28);
+       display:flex;border:1px solid #D9D6CC}
+
+  /* ===== 左导航 ===== */
+  .nav{width:172px;flex:0 0 172px;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column}
+  .nav .brand{height:50px;display:flex;align-items:center;padding:0 16px;border-bottom:1px solid var(--line);
+              font-size:12.5px;letter-spacing:.14em;color:var(--ink2)}
+  .nav .proj{padding:12px 16px 9px;font-size:13px;font-weight:700;line-height:1.5;border-bottom:1px solid var(--line2)}
+  .nav .grp{font-size:10.5px;color:var(--ink3);letter-spacing:.16em;padding:11px 16px 3px}
+  .nav .item{display:flex;align-items:center;gap:9px;padding:7px 16px;font-size:13px;color:var(--ink2);
+             border-left:2px solid transparent}
+  .nav .item .ic{width:14px;text-align:center;font-family:var(--mono);font-size:11.5px;color:#B0ADA2}
+  .nav .item.on{background:#FFF;color:var(--ink);font-weight:700;border-left-color:var(--rec)}
+  .nav .item.on .ic{color:var(--rec)}
+  .nav .grow{flex:1}
+
+  .main{flex:1;display:flex;flex-direction:column;min-width:0}
+
+  /* ===== 顶栏 ===== */
+  .top{height:50px;flex:0 0 50px;border-bottom:1px solid var(--line);display:flex;align-items:center;
+       gap:12px;padding:0 18px;background:#FCFBF8}
+  .top .title{font-size:13px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:250px}
+  .top .sep{width:1px;height:15px;background:var(--line)}
+  .pill{font-size:11.5px;color:var(--ink2);background:#F2F0E9;border:1px solid var(--line);
+        border-radius:20px;padding:3px 10px;display:flex;align-items:center;gap:6px;white-space:nowrap}
+  .pill b{font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+  .pill .dotq{width:7px;height:7px;border-radius:50%;background:var(--ok)}
+  .meter{width:62px;height:6px;border-radius:3px;background:#E9E7DF;overflow:hidden;flex:0 0 62px}
+  .meter i{display:block;height:100%;width:0%;background:var(--ok)}
+  .top .right{margin-left:auto;display:flex;align-items:center;gap:12px}
+  .sw{font-size:11.5px;color:var(--ink2);display:flex;align-items:center;gap:5px;cursor:pointer;user-select:none}
+  .sw .box{width:14px;height:14px;border-radius:4px;border:1px solid #CFCCC0;background:#fff;
+           display:grid;place-items:center;font-size:9px;color:#fff}
+  .sw.on .box{background:#3D3B34;border-color:#3D3B34}
+
+  .body{flex:1;display:flex;min-height:0}
+
+  /* ===== 左栏：完整稿子 ===== */
+  .doc{width:326px;flex:0 0 326px;border-right:1px solid var(--line);display:flex;flex-direction:column;
+       background:#FCFBF8}
+  .dochead{height:44px;flex:0 0 44px;display:flex;align-items:center;gap:8px;padding:0 14px;
+           border-bottom:1px solid var(--line2);font-size:12px;color:var(--ink3)}
+  .dochead .t{font-size:12.5px;color:var(--ink);font-weight:700;letter-spacing:.04em}
+  .dochead .st{margin-left:auto;font-variant-numeric:tabular-nums}
+  .dochead .clear{cursor:pointer;border:1px solid var(--line);border-radius:6px;padding:2px 7px;
+                  background:#fff;font-size:11px;color:var(--ink2)}
+  .docscroll{flex:1;overflow-y:auto;overflow-x:hidden;padding:12px 12px 24px 10px}
+  .docscroll::-webkit-scrollbar{width:9px}
+  .docscroll::-webkit-scrollbar-thumb{background:#DCD9CF;border-radius:6px;border:2px solid #FCFBF8}
+  .docscroll::-webkit-scrollbar-track{background:transparent}
+
+  .chapter{font-size:15px;font-weight:700;letter-spacing:.02em;margin:16px 4px 8px;color:#3A3830;
+           padding-bottom:5px;border-bottom:1px solid var(--line2)}
+  .chapter:first-child{margin-top:2px}
+
+  .para{position:relative;margin:0 0 11px;padding:4px 8px 4px 13px;border-radius:6px;
+        font-size:13px;line-height:1.85;color:#4A4841;cursor:text}
+  .para:hover{background:#F4F2EB}
+  .para .pdot{position:absolute;left:2px;top:9px;width:7px;height:7px;border-radius:50%;
+              background:#D8D5CA;cursor:pointer;opacity:0;transition:opacity .12s}
+  .para:hover .pdot{opacity:1}
+  .para .pdot:hover{background:var(--blue);transform:scale(1.25)}
+
+  .s{cursor:pointer;border-radius:3px;padding:1px 0;transition:background .12s}
+  .s:hover{background:#E7F1FB}
+  .s.done{background:var(--ok-bg);box-shadow:inset 2px 0 0 var(--ok);color:#3C4A41}
+  .s.sel{background:#CFE4F8;box-shadow:inset 2px 0 0 var(--blue);color:#123A5C}
+  .s.cand{background:#DCEBF9;box-shadow:inset 0 0 0 1px #8DC0E8;color:#123A5C}
+  .s.cur{font-weight:700;color:#141310;background:#F6EFE0;box-shadow:inset 2px 0 0 #C9A227}
+
+  .docfoot{flex:0 0 46px;border-top:1px solid var(--line2);padding:7px 12px;font-size:11px;color:var(--ink3);
+           line-height:1.5;background:#F8F6F0}
+  .docfoot b{color:var(--ink2);font-weight:700}
+
+  /* ===== 右侧 ===== */
+  .right{flex:1;display:flex;flex-direction:column;min-width:0}
+
+  .stage{flex:1;position:relative;padding:0 48px;display:flex;flex-direction:column;justify-content:center;min-height:0}
+  .segline{font-size:11.5px;color:var(--ink3);letter-spacing:.02em;margin-bottom:12px;display:flex;
+           align-items:center;gap:9px;font-variant-numeric:tabular-nums;flex-wrap:wrap}
+  .segline .now{color:var(--ink);font-weight:700;font-size:12.5px}
+  .segline .badge{background:var(--blue-bg);color:var(--blue);border-radius:5px;padding:1px 7px;font-weight:700}
+  .segline .badge.y{background:var(--warn-bg);color:var(--warn)}
+  .cur{letter-spacing:.005em;max-width:820px;color:#1F1E1A;position:relative;padding-left:18px;
+       transition:font-size .15s}
+  .cur::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:3px;border-radius:2px;
+               background:#E4E2DA;transition:background .2s}
+  .app.rec .cur::before{background:var(--rec)}
+  .app.cand .cur::before{background:var(--blue)}
+  .app.done .cur::before{background:var(--ok)}
+  .cur .mark{background:transparent;transition:background .3s}
+  .app.rec .cur .mark{background:linear-gradient(180deg,transparent 80%,#F6DFDA 80%)}
+  .next{color:#B4B1A6;font-size:15.5px;line-height:1.9;margin-top:18px;max-width:820px;
+        white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .prev{color:#B4B1A6;font-size:15.5px;line-height:1.9;margin-bottom:16px;max-width:820px;
+        white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* 波形 */
+  .wavebox{padding:0 26px}
+  .wavehead{display:flex;align-items:center;gap:9px;font-size:11px;color:var(--ink3);
+            padding:0 4px 3px;font-variant-numeric:tabular-nums}
+  canvas{display:block;width:100%;height:66px}
+
+  /* 控制条 */
+  .ctrl{flex:0 0 64px;display:flex;align-items:center;gap:10px;padding:0 26px;border-top:1px solid var(--line2)}
+  .btn{border:1px solid var(--line);background:#fff;border-radius:9px;padding:8px 14px;font-size:13px;
+       color:var(--ink);display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;
+       font-family:inherit;transition:border-color .15s,background .15s,transform .05s}
+  .btn:hover:not(:disabled){border-color:#C9C6BA;background:#FDFCF9}
+  .btn:active:not(:disabled){transform:translateY(1px)}
+  .btn:disabled{opacity:.36;cursor:default}
+  .btn kbd{font-family:var(--mono);font-size:10px;color:#95928A;background:#F5F3ED;border:1px solid #E6E3D9;
+           border-radius:4px;padding:1px 4px}
+  .btn.primary{background:#2C2A24;border-color:#2C2A24;color:#fff}
+  .btn.primary kbd{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.2);color:#E8E5DA}
+  .btn.rec{background:var(--rec);border-color:var(--rec);color:#fff}
+  .btn.rec kbd{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.24);color:#FBE7E3}
+  .btn.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+  .btn.ok kbd{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.24);color:#E4EFE7}
+  .btn.blue{background:var(--blue);border-color:var(--blue);color:#fff}
+  .timing{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:14.5px;
+          font-variant-numeric:tabular-nums;min-width:104px}
+  .rdot{width:9px;height:9px;border-radius:50%;background:#D5D2C7;flex:0 0 9px}
+  .app.rec .rdot{background:var(--rec);animation:breathe 1.7s ease-in-out infinite}
+  @keyframes breathe{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(192,57,43,.35)}50%{opacity:.55;box-shadow:0 0 0 5px rgba(192,57,43,0)}}
+  .verdict{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--ink2);
+           font-variant-numeric:tabular-nums;min-height:24px;white-space:nowrap;overflow:hidden;
+           max-width:400px;flex-direction:row-reverse;justify-content:flex-end}
+  .tag{border-radius:6px;padding:2px 8px;font-size:11.5px;font-weight:700}
+  .tag.g{background:var(--ok-bg);color:var(--ok)}
+  .tag.y{background:var(--warn-bg);color:var(--warn)}
+  .tag.r{background:var(--rec-bg);color:var(--rec)}
+  .tag.b{background:var(--blue-bg);color:var(--blue)}
+  .nums{color:var(--ink3);font-size:11px;overflow:hidden;text-overflow:ellipsis}
+
+  /* take 列表 */
+  .takes{flex:0 0 104px;border-top:1px solid var(--line);background:#F8F6F0;padding:9px 20px 0;
+         display:flex;flex-direction:column;gap:6px;min-width:0}
+  .takes .h{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink3)}
+  .takes .h b{font-size:11.5px;color:var(--ink2);letter-spacing:.04em}
+  .takeRow{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px}
+  .takeRow::-webkit-scrollbar{height:7px}
+  .takeRow::-webkit-scrollbar-thumb{background:#DCD9CF;border-radius:6px}
+  .take{flex:0 0 auto;border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 10px;
+        display:flex;align-items:center;gap:9px;font-size:12px;cursor:pointer;min-width:196px}
+  .take:hover{border-color:#C9C6BA}
+  .take.on{border-color:#2C2A24;box-shadow:0 0 0 1px #2C2A24}
+  .take.dead{opacity:.45}
+  .take .id{font-family:var(--mono);font-size:10.5px;color:var(--ink3)}
+  .take .rg{font-weight:700;color:var(--ink);font-size:11.5px}
+  .take .du{color:var(--ink3);font-variant-numeric:tabular-nums;font-size:11px}
+  .take .ic{color:var(--ink2);font-size:11px}
+</style>
+</head>
+<body>
+
+<div class="hint">
+  <b>v3：录音是一个单位，文案里的"选中范围"是另一个单位，两者当场配对。</b><br>
+  左栏点一句＝从这里录（提词区立刻跟着走）；<b>Shift + 点</b>＝把选区拉到那句（可以跨段，两段连贯就一起选）；
+  点段落左侧小圆点＝选中整段。<b>空格</b>录/停，录完自动试听，<b>回车</b>确认，<b>R</b> 重录。<br>
+  <span style="color:#8A887F">也可以完全不管选区：直接按空格就录，录完程序猜一段区间给你，点一下就能改。</span>
+</div>
+
+<div class="app idle" id="app">
+
+  <aside class="nav">
+    <div class="brand">翊瑄的工作台</div>
+    <div class="proj">粥糊了：我只是陈述事实<br>是最大的语言陷阱</div>
+    <div class="grp">文稿</div>
+    <div class="item"><span class="ic">0</span>写作台</div>
+    <div class="item on"><span class="ic">◉</span>录音台</div>
+    <div class="grp">成片</div>
+    <div class="item"><span class="ic">1</span>音频粗剪</div>
+    <div class="item"><span class="ic">2</span>精剪</div>
+    <div class="item"><span class="ic">3</span>分镜设计</div>
+    <div class="item"><span class="ic">4</span>渲染</div>
+    <div class="item"><span class="ic">5</span>组接导出</div>
+    <div class="grp">资源</div>
+    <div class="item"><span class="ic">▤</span>素材库</div>
+    <div class="grow"></div>
+  </aside>
+
+  <div class="main">
+    <div class="top">
+      <span class="title">粥糊了：我只是陈述事实是最大的语言陷阱</span>
+      <span class="sep"></span>
+      <span class="pill"><span class="dotq"></span>麦克风 (WO Mic Device)</span>
+      <span class="pill">电平 <span class="meter"><i id="meter"></i></span> <b id="db">-68</b> dB</span>
+      <span class="pill" style="cursor:pointer" id="refresh">刷新设备</span>
+      <div class="right">
+        <span class="sw on" id="sw1"><span class="box">✓</span>录完自动试听</span>
+        <span class="sw on" id="sw2"><span class="box">✓</span>录完自动猜范围</span>
+      </div>
+    </div>
+
+    <div class="body">
+
+      <!-- ============ 左栏：完整文案 ============ -->
+      <aside class="doc">
+        <div class="dochead">
+          <span class="t">文案</span>
+          <span class="st"><b id="doneCount">0</b> / <span id="sentCount">0</span> 句</span>
+          <span class="clear" id="clearSel">清除选择</span>
+        </div>
+        <div class="docscroll" id="doc"></div>
+        <div class="docfoot">
+          点一句 <b>从这里录</b> · <b>Shift+点</b> 选到那句 · 点左侧 <b>·</b> 选整段
+        </div>
+      </aside>
+
+      <!-- ============ 右侧 ============ -->
+      <section class="right">
+        <div class="stage">
+          <div class="segline" id="segline"></div>
+          <div class="prev" id="prev"></div>
+          <div class="cur" id="cur"></div>
+          <div class="next" id="next"></div>
+        </div>
+
+        <div class="wavebox">
+          <div class="wavehead">
+            <span id="waveLabel">还没有录</span>
+            <span style="margin-left:auto" id="waveTime">00:00.0</span>
+          </div>
+          <canvas id="wave"></canvas>
+        </div>
+
+        <div class="ctrl">
+          <div class="timing"><span class="rdot"></span><span id="time">00:00.0</span></div>
+          <button class="btn rec" id="btnMain"><span>●</span>开始录音 <kbd>空格</kbd></button>
+          <button class="btn" id="btnPlay" disabled><span>▶</span>试听 <kbd>P</kbd></button>
+          <button class="btn" id="btnRedo" disabled><span>↻</span>重录 <kbd>R</kbd></button>
+          <button class="btn ok" id="btnOk" disabled><span>✓</span>就绑这段 <kbd>回车</kbd></button>
+          <div class="verdict" id="verdict"></div>
+        </div>
+
+        <div class="takes">
+          <div class="h"><b>录过的</b><span>点一条＝在左栏点亮它绑的是哪几句；▶ 试听</span></div>
+          <div class="takeRow" id="takeRow"><span class="nums" style="padding:8px 2px">还没录过</span></div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ============ 稿子（真实稿件摘录）→ 章节 / 段落 / 句子 ============
+  var RAW = [
+    {h:"开场"},
+    {p:"打住。拿一句没有上下文、没有背景、充满了歧义和模糊、甚至都算不上事实的话，就对他人进行道德审判，说人家把话听歪——这合适么？"},
+    {h:"一 · 粥糊了，算事实吗"},
+    {p:"刷到这个视频是真想吐槽。“粥糊了”这句话，严格来说甚至都不算一个事实。"},
+    {p:"很多人觉得事实和判断、或者说观点很好区分，我看到很多视频也教这个。所以你认为，粥糊了是个事实吗？"},
+    {p:"实际上“糊”的意思是：我心里有个对粥浓稠度的期待，这碗粥没达到我的期待。这是在讲自己的标准，不是在描述客观现实。"},
+    {p:"哪怕他说“这碗粥一口咽了三次才咽下去”，这都算事实，因为这是客观可验证的事情。"},
+    {h:"二 · 差生不是事实"},
+    {p:"这就像是，假如我说我家孩子是个差生，这是事实吗？当然不是。"},
+    {p:"事实可能是“最近考试没及格过”，这学期旷了七节课，上一节课睡觉了。这些都叫事实。"},
+    {p:"但唯独“差生”不是事实，而是一个判断。我说我的孩子是差生，意思是她没有达到我心中好学生的标准。"},
+    {p:"粥糊了也是一样的道理。如果你非要说“粥糊了”是客观陈述，那按照这个逻辑，为什么“糊粥总比没粥好”就不能是客观陈述了呢？"},
+    {h:"三 · 语境与意涵"},
+    {p:"其次，你说粥糊了，在没有上下文、前言不搭后语的语境里，你期待别人说什么呢？"},
+    {p:"再次，任何话在特定环境和语境下，都会有可能的言外之意。"},
+    {p:"“这粥糊了”这句话，在一群人一起吃饭、没有上下文没有额外补充的情况下，本来就可能存在“你是在表达抱怨”“你是想换一碗粥”等潜台词。"},
+    {p:"除非你不知道自己的话存在歧义，否则作为表达的一方，你就应该承担起解释清楚、消除歧义的责任。而不是故意埋个语言陷阱，等别人掉进去再高高在上地批判。"},
+    {h:"四 · 表达者的责任"},
+    {p:"明明是说的人没有承担表达责任，以至于听众只能靠猜测来揣摩你的意图，结果你反过来倒打一耙，说这些猜测的人把话听歪了。"},
+    {p:"那怎样才算不歪，你倒是说呀。你不能拿着一把只有自己心里清楚的尺子，去衡量一切吧？"},
+    {p:"一句话别人听不听得懂，表达者至少有一半责任。"}
+  ];
+
+  // 切成 段落[]（每段含 句子[]），句子按中文句末标点切
+  var PARAS = [];      // {sents:[{text, s:globalIndex}]}
+  var SENTS = [];      // 拍平：{text, para}
+  (function build(){
+    var gi = 0;
+    RAW.forEach(function(item){
+      if (item.h){ PARAS.push({chapter:item.h, sents:[]}); return; }
+      var parts = item.p.split(/(?<=[。！？；])/).filter(function(x){ return x.trim().length>0; });
+      var para = {chapter:null, sents:[]};
+      parts.forEach(function(txt){
+        var o = {text: txt.trim(), s: gi, para: PARAS.length};
+        para.sents.push(o); SENTS.push(o); gi++;
+      });
+      PARAS.push(para);
+    });
+  })();
+  var N = SENTS.length;
+
+  // ============ 状态 ============
+  var doneSet = {};                 // 句子索引 -> takeId（已采用）
+  var takes = [];                   // {id, a, b, dur, dead}
+  var selA = null, selB = null;     // 选区（句子索引，含两端）
+  var cursor = 0;                   // 当前句
+  var mode = "idle";                // idle | rec | play | cand | done
+  var t = 0, timer = null, playTimer = null, recToken = 0;
+  var activeTake = null;            // 当前这条（录完/选中的）
+
+  var $ = function(id){ return document.getElementById(id); };
+  var app = $("app");
+  var RATE = 4.3;                   // 估算语速：字/秒
+
+  // 预置：前两段已录（让左栏一打开就有"已录 / 未录"的对比）
+  (function seed(){
+    takes.push({id:"t001", a:0, b:0, dur:9.8, dead:false});
+    for (var i=0;i<=0;i++) doneSet[i] = "t001";
+    takes.push({id:"t002", a:1, b:2, dur:17.2, dead:false});
+    for (var j=1;j<=2;j++) doneSet[j] = "t002";
+    cursor = 3;
+  })();
+
+  // ============ 左栏渲染 ============
+  function renderDoc(){
+    var box = $("doc"); box.innerHTML = "";
+    PARAS.forEach(function(para, pi){
+      if (para.chapter){
+        var h = document.createElement("div");
+        h.className = "chapter"; h.textContent = para.chapter;
+        box.appendChild(h); return;
+      }
+      var p = document.createElement("div");
+      p.className = "para"; p.dataset.para = pi;
+      var dot = document.createElement("span");
+      dot.className = "pdot"; dot.title = "选中整段";
+      dot.onclick = function(e){ e.stopPropagation(); selectPara(pi); };
+      p.appendChild(dot);
+
+      para.sents.forEach(function(s){
+        var sp = document.createElement("span");
+        sp.className = "s"; sp.dataset.s = s.s;
+        sp.textContent = s.text;
+        p.appendChild(sp);
+      });
+      box.appendChild(p);
+    });
+    paintDoc();
+  }
+
+  function paintDoc(){
+    var nodes = $("doc").querySelectorAll(".s");
+    for (var i=0;i<nodes.length;i++){
+      var idx = +nodes[i].dataset.s, cls = "s";
+      if (doneSet[idx] !== undefined) cls += " done";
+      if (selA !== null && idx >= Math.min(selA,selB) && idx <= Math.max(selA,selB)){
+        cls += (mode === "cand" ? " cand" : " sel");
+      }
+      if (idx === cursor && (mode === "idle" || mode === "rec")) cls += " cur";
+      nodes[i].className = cls;
+    }
+    $("doneCount").textContent = Object.keys(doneSet).length;
+    $("sentCount").textContent = N;
+  }
+
+  // ============ 选区 ============
+  function rangeList(a,b){
+    var lo = Math.min(a,b), hi = Math.max(a,b), out = [];
+    for (var i=lo;i<=hi;i++) out.push(i);
+    return out;
+  }
+  function selectPara(pi){
+    var ss = PARAS[pi].sents;
+    if (!ss.length) return;
+    selA = ss[0].s; selB = ss[ss.length-1].s; cursor = selA;
+    if (mode === "cand" || mode === "done") setMode("idle");
+    paintDoc(); renderTake(); paintScript(); scrollTo(cursor);
+  }
+
+  function onSentenceClick(idx, shift){
+    if (mode === "rec") return;
+    if (mode === "cand"){
+      // 候选态：普通点击 = 改终点；Shift 点击 = 改起点
+      if (shift) selA = idx; else selB = idx;
+      cursor = Math.min(selA, selB);
+      paintDoc(); paintScript(); renderTake(); return;
+    }
+    if (shift && selA !== null){ selB = idx; cursor = Math.min(selA, selB); }
+    else { selA = idx; selB = idx; cursor = idx; }
+    if (mode === "done") setMode("idle");
+    paintDoc(); paintScript(); renderTake(); scrollTo(cursor);
+  }
+
+  // ============ 右侧提词 ============
+  function currentRange(){
+    if (selA !== null) return rangeList(selA, selB);
+    // 没选区：从光标起，默认 3 句（念的时候看得见下一句）
+    var out = [];
+    for (var i=cursor;i<N && out.length<3;i++) out.push(i);
+    return out;
+  }
+
+  function paintScript(){
+    var rg = currentRange();
+    var text = rg.map(function(i){ return SENTS[i].text; }).join("");
+    var chars = text.replace(/\s/g,"").length;
+    var fs = chars <= 46 ? 34 : chars <= 78 ? 31 : chars <= 120 ? 28 : chars <= 180 ? 25 : 22;
+    var cur = $("cur");
+    cur.style.fontSize = fs + "px";
+    cur.style.lineHeight = (fs > 30 ? 1.9 : 1.85);
+    cur.innerHTML = '<span class="mark">' + text + '</span>';
+
+    var lo = rg[0], hi = rg[rg.length-1];
+    $("prev").textContent = lo > 0 ? SENTS[lo-1].text : "";
+    $("next").textContent = hi < N-1 ? SENTS[hi+1].text : "";
+
+    // 顶部信息行
+    var paraNo = [];
+    rg.forEach(function(i){ var p = SENTS[i].para; if (paraNo.indexOf(p) < 0) paraNo.push(p); });
+    var paraLabel = paraNo.map(function(pi){
+      var n = 0; PARAS.forEach(function(pp, k){ if (!pp.chapter && k <= pi) n++; });
+      return "段" + n;
+    }).join("–");
+    var est = Math.max(2, Math.round(chars/RATE));
+
+    var badge = "", stText = "";
+    if (mode === "rec"){ badge = '<span class="badge" style="background:#FBEDEA;color:#C0392B">● 正在录</span>'; }
+    else if (mode === "play"){ badge = '<span class="badge">▶ 回放中</span>'; }
+    else if (mode === "cand"){ badge = '<span class="badge">猜的范围 · 可改</span>'; }
+    else if (mode === "done"){ badge = '<span class="badge" style="background:#EAF3EC;color:#2C6E49">已绑定</span>'; }
+    else if (selA !== null){ badge = '<span class="badge">已选中 · 待录</span>'; }
+    else { badge = '<span class="badge" style="background:#F2F0E9;color:#8A887F">自动 · 从这句往下念</span>'; }
+
+    $("segline").innerHTML =
+      '<span class="now">' + paraLabel + ' · 第 ' + (lo+1) + '–' + (hi+1) + ' 句</span>' +
+      '<span>' + chars + ' 字 · 约 ' + est + ' 秒</span>' +
+      badge;
+  }
+
+  function scrollTo(idx){
+    var el = $("doc").querySelector('.s[data-s="'+idx+'"]');
+    if (el) el.scrollIntoView({block:"center", behavior:"smooth"});
+  }
+
+  // ============ 波形 ============
+  var cv = $("wave"), ctx = cv.getContext("2d");
+  var PEAKS = (function(){
+    var arr = [], seed = 11;
+    for (var i=0;i<260;i++){
+      seed = (seed*9301 + 49297) % 233280;
+      var r = seed/233280;
+      var env = 0.3 + 0.7*Math.abs(Math.sin(i/19));
+      arr.push(Math.max(0.05, r*env));
+    }
+    for (var k=0;k<24;k++) arr[k] *= 0.1;
+    return arr;
+  })();
+  function fitCanvas(){
+    var r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio||1;
+    cv.width = Math.round(r.width*dpr); cv.height = Math.round(r.height*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0); drawWave();
+  }
+  function drawWave(){
+    var w = cv.clientWidth, h = cv.clientHeight;
+    ctx.clearRect(0,0,w,h);
+    var n = PEAKS.length, gap = 1.2, bw = Math.max(1,(w-gap*n)/n), mid = h/2;
+    var dur0 = activeTake ? activeTake.dur : 0;
+    var ratio = 0;
+    if (mode === "rec") ratio = dur0 ? Math.min(1, t/dur0) : 0;
+    else if (mode === "play") ratio = dur0 ? Math.min(1, t/dur0) : 0;
+    else if (mode === "done" || mode === "cand") ratio = 1;
+    else if (mode === "idle" && activeTake) ratio = 1;
+
+    for (var i=0;i<n;i++){
+      var x = i*(bw+gap), p = PEAKS[i]*(h*0.42);
+      var live = (i/n) <= ratio;
+      if (!activeTake && mode === "idle") ctx.fillStyle = "#ECE9E0";
+      else ctx.fillStyle = live ? "#4E4B43" : "#DDDACF";
+      ctx.fillRect(x, mid-p, bw, p*2);
+    }
+    if ((mode==="play"||mode==="rec") && ratio>0){
+      var px = ratio*w;
+      ctx.fillStyle = "#C0392B"; ctx.fillRect(px-0.6,0,1.2,h);
+      ctx.beginPath(); ctx.arc(px,4,2.6,0,Math.PI*2); ctx.fill();
+    }
+  }
+
+  // ============ take 列表 ============
+  function renderTake(){
+    var row = $("takeRow");
+    if (!takes.length){ row.innerHTML = '<span class="nums" style="padding:8px 2px">还没录过</span>'; return; }
+    row.innerHTML = "";
+    takes.slice().reverse().forEach(function(tk){
+      var el = document.createElement("div");
+      el.className = "take" + (tk.dead ? " dead" : "") + (activeTake && activeTake.id === tk.id ? " on" : "");
+      var n = 0;
+      for (var i=tk.a;i<=tk.b;i++){ n++; }
+      el.innerHTML = '<span class="id">' + tk.id + '</span>' +
+        '<span class="rg">第 ' + (tk.a+1) + '–' + (tk.b+1) + ' 句</span>' +
+        '<span class="du">' + n + '句 · ' + tk.dur.toFixed(1) + 's</span>' +
+        '<span class="ic">▶</span>';
+      el.onclick = function(){
+        activeTake = tk;
+        selA = tk.a; selB = tk.b; cursor = tk.a;
+        if (mode !== "rec") setMode("idle");
+        paintDoc(); paintScript(); renderTake(); scrollTo(tk.a);
+        $("verdict").innerHTML = '<span class="nums">这一条绑的是第 ' + (tk.a+1) + '–' + (tk.b+1) + ' 句</span>';
+      };
+      row.appendChild(el);
+    });
+  }
+
+  // ============ 模式 ============
+  function setMode(m){
+    mode = m;
+    app.className = "app " + (m === "done" ? "done" : m);
+    var b = $("btnMain"), p = $("btnPlay"), r = $("btnRedo"), o = $("btnOk");
+
+    if (m === "idle"){
+      b.innerHTML = '<span>●</span>开始录音 <kbd>空格</kbd>'; b.className = "btn rec";
+      p.disabled = !activeTake; r.disabled = !activeTake; o.disabled = true;
+      $("time").textContent = "00:00.0";
+      $("waveLabel").textContent = activeTake ? ("这一条 · " + activeTake.dur.toFixed(1) + " 秒") : "还没有录";
+      $("waveTime").textContent = activeTake ? fmt(activeTake.dur) : "00:00.0";
+    }
+    if (m === "rec"){
+      b.innerHTML = '<span>■</span>停止 <kbd>空格</kbd>'; b.className = "btn rec";
+      p.disabled = true; r.disabled = true; o.disabled = true;
+      $("waveLabel").textContent = "录音中…";
+      $("verdict").innerHTML = '<span class="tag r">● REC</span><span class="nums">念完按空格，会自动回放</span>';
+    }
+    if (m === "play"){
+      b.innerHTML = '<span>■</span>停止试听 <kbd>空格</kbd>'; b.className = "btn primary";
+      p.disabled = true; r.disabled = true; o.disabled = true;
+      $("waveLabel").textContent = "回放中";
+    }
+    if (m === "cand"){
+      // 猜出来的范围，等用户确认或修
+      b.innerHTML = '<span>●</span>重录这一条 <kbd>空格</kbd>'; b.className = "btn rec";
+      p.disabled = false; r.disabled = false; o.disabled = false;
+      $("waveLabel").textContent = "录好了 · " + activeTake.dur.toFixed(1) + " 秒";
+      $("waveTime").textContent = fmt(activeTake.dur);
+    }
+    if (m === "done"){
+      b.innerHTML = '<span>●</span>开始录音 <kbd>空格</kbd>'; b.className = "btn rec";
+      p.disabled = false; r.disabled = false; o.disabled = true;
+      $("waveLabel").textContent = "已绑定 · " + activeTake.dur.toFixed(1) + " 秒";
+      $("waveTime").textContent = fmt(activeTake.dur);
+    }
+    paintDoc(); paintScript(); renderTake(); drawWave();
+  }
+
+  function renderVerdict(kind, tk){
+    var chars = 0;
+    for (var i=tk.a;i<=tk.b;i++) chars += SENTS[i].text.replace(/\s/g,"").length;
+    var speed = (chars/tk.dur).toFixed(1);
+    if (kind === "y"){
+      $("verdict").innerHTML = '<span class="tag y">⚠ 听一下</span>' +
+        '<span class="nums">语速 ' + speed + ' 字/秒偏慢 · 这段可能停顿多或念漏了</span>';
+    } else {
+      $("verdict").innerHTML = '<span class="tag g">✓ 这段可以</span>' +
+        '<span class="nums">' + chars + ' 字 · 语速 ' + speed + ' 字/秒 · ' + tk.dur.toFixed(1) + ' 秒</span>';
+    }
+  }
+
+  function fmt(s){ var m = Math.floor(s/60), ss = s%60; return (m<10?"0":"")+m+":"+(ss<10?"0":"")+ss.toFixed(1); }
+
+  function startTimer(){
+    stopTimer();
+    timer = setInterval(function(){
+      if (mode !== "rec") return;
+      t += 0.1;
+      $("time").textContent = fmt(t);
+      $("waveTime").textContent = fmt(t);
+      var db = -30 + Math.round(Math.random()*22);
+      $("db").textContent = db;
+      $("meter").style.width = Math.max(6, Math.min(100,(db+60)/60*100)) + "%";
+      drawWave();
+    }, 100);
+  }
+  function stopTimer(){ if (timer){ clearInterval(timer); timer = null; } }
+  function stopPlay(){ if (playTimer){ clearInterval(playTimer); playTimer = null; } }
+
+  // ============ 录音 ============
+  function startRec(){
+    stopPlay(); stopTimer();
+    recToken++;
+    // 新的一条 take：如果已有选区，就预绑这个选区；没有就等录完再猜
+    var a = selA !== null ? Math.min(selA,selB) : cursor;
+    var b = selA !== null ? Math.max(selA,selB) : cursor;
+    t = 0;
+    var id = "t" + String(takes.length+1).padStart(3,"0");
+    activeTake = { id:id, a:a, b:b, dur:0, dead:false };
+    setMode("rec");
+    $("time").textContent = "00:00.0";
+    startTimer();
+
+    // 模拟：按选区的字数估一个时长；没选区就按 3 句估
+    var chars = 0;
+    if (selA !== null){ for (var i=a;i<=b;i++) chars += SENTS[i].text.replace(/\s/g,"").length; }
+    else { for (var k=cursor;k<N && k<cursor+3;k++) chars += SENTS[k].text.replace(/\s/g,"").length; }
+    var est = Math.max(2.6, chars/RATE);
+    var my = recToken;
+    setTimeout(function(){
+      if (mode === "rec" && my === recToken) stopRec(est);
+    }, Math.min(4200, est*220));
+  }
+
+  function stopRec(durSec){
+    recToken++;
+    stopTimer();
+    activeTake.dur = durSec || Math.max(1.2, t);
+    t = activeTake.dur;
+
+    if (selA === null){
+      // ★ 自由录：按"时长 × 语速"从光标往后猜句数
+      var budget = activeTake.dur * RATE, acc = 0, end = cursor;
+      for (var i=cursor;i<N;i++){
+        acc += SENTS[i].text.replace(/\s/g,"").length;
+        end = i;
+        if (acc >= budget) break;
+      }
+      activeTake.a = cursor; activeTake.b = end;
+      selA = activeTake.a; selB = activeTake.b;
+      $("segline").dataset.cand = "1";
+    }
+    // 与已录重叠 → 旧的标记为被替换
+    takes.forEach(function(tk){
+      if (tk.dead) return;
+      if (!(tk.b < activeTake.a || tk.a > activeTake.b)) tk.dead = true;
+    });
+    takes.push(activeTake);
+    for (var j=activeTake.a;j<=activeTake.b;j++) doneSet[j] = activeTake.id;
+
+    var chars = 0;
+    for (var k=activeTake.a;k<=activeTake.b;k++) chars += SENTS[k].text.replace(/\s/g,"").length;
+    var speed = chars/activeTake.dur;
+
+    setMode("cand");
+    renderVerdict(speed < 3.0 || speed > 6.5 ? "y" : "g", activeTake);
+    if ($("sw1").classList.contains("on")) playTake();
+  }
+
+  function playTake(){
+    if (!activeTake) return;
+    stopPlay(); stopTimer();
+    // 回放结束后要回到"进来之前"的状态（cand 待确认 / idle 已绑好）
+    var back = (mode === "done" || mode === "idle") ? "idle" : "cand";
+    var d = activeTake.dur, steps = 26, i = 0;
+    t = 0; setMode("play");
+    playTimer = setInterval(function(){
+      i++; t = d*(i/steps);
+      if (i >= steps){ stopPlay(); t = d; setMode(back); drawWave();
+        var chars = 0; for (var k=activeTake.a;k<=activeTake.b;k++) chars += SENTS[k].text.replace(/\s/g,"").length;
+        renderVerdict(chars/activeTake.dur < 3.0 ? "y" : "g", activeTake); return; }
+      $("time").textContent = fmt(t); drawWave();
+    }, 90);
+  }
+
+  function confirmBind(){
+    if (mode !== "cand" && mode !== "done") return;
+    // 采用这一条：把区间标成已录（cand → done）
+    for (var i=activeTake.a;i<=activeTake.b;i++) doneSet[i] = activeTake.id;
+    $("segline").dataset.cand = "";
+    cursor = Math.min(N-1, activeTake.b + 1);
+    selA = null; selB = null;
+    // ★ 绑好之后直接回到"准备录下一段"（提词区已经翻到下一句），
+    //   波形还留着刚才那条 —— 想再听一遍随时按 P
+    setMode("idle");
+    $("verdict").innerHTML = '<span class="tag g">✓ 绑好了</span><span class="nums">光标已跳到第 ' + (cursor+1) + ' 句，接着念</span>';
+    scrollTo(cursor);
+  }
+
+  function redo(){
+    $("segline").dataset.cand = "";
+    startRec();
+  }
+
+  // ============ 事件 ============
+  $("doc").addEventListener("click", function(e){
+    var s = e.target.closest(".s");
+    if (s) onSentenceClick(+s.dataset.s, e.shiftKey);
+  });
+
+  $("clearSel").onclick = function(){
+    if (mode === "rec") return;
+    selA = null; selB = null;
+    if (mode === "cand") $("segline").dataset.cand = "";
+    setMode("idle");
+    $("verdict").innerHTML = '<span class="nums">已清除选择 · 直接按空格就录</span>';
+  };
+
+  $("btnMain").onclick = function(){
+    if (mode === "rec") stopRec();
+    else if (mode === "play"){ stopPlay(); setMode($("segline").dataset.cand === "1" ? "cand" : "done"); }
+    else startRec();
+  };
+  $("btnPlay").onclick = function(){ if (mode !== "rec" && activeTake) playTake(); };
+  $("btnRedo").onclick = function(){ if (mode !== "rec") redo(); };
+  $("btnOk").onclick = function(){ confirmBind(); };
+
+  $("refresh").onclick = function(){ var d = document.querySelector(".dotq"); d.style.background = "#C0392B";
+    setTimeout(function(){ d.style.background = "#2C6E49"; }, 600); };
+  $("sw1").onclick = function(){ this.classList.toggle("on"); this.querySelector(".box").textContent = this.classList.contains("on") ? "✓" : ""; };
+  $("sw2").onclick = function(){ this.classList.toggle("on"); this.querySelector(".box").textContent = this.classList.contains("on") ? "✓" : ""; };
+
+  document.addEventListener("keydown", function(e){
+    if (e.code === "Space"){
+      e.preventDefault();
+      if (mode === "rec") stopRec();
+      else if (mode === "play"){ stopPlay(); setMode($("segline").dataset.cand === "1" ? "cand" : "done"); }
+      else startRec();
+    }
+    if (e.key === "Enter"){ e.preventDefault(); if (mode === "cand") confirmBind(); }
+    if ((e.key === "r" || e.key === "R") && mode !== "rec" && mode !== "play") redo();
+    if ((e.key === "p" || e.key === "P") && mode !== "rec" && mode !== "play" && activeTake) playTake();
+    if (e.key === "ArrowDown" && mode !== "rec"){ cursor = Math.min(N-1, cursor+1); selA = cursor; selB = cursor; paintDoc(); paintScript(); scrollTo(cursor); }
+    if (e.key === "ArrowUp" && mode !== "rec"){ cursor = Math.max(0, cursor-1); selA = cursor; selB = cursor; paintDoc(); paintScript(); scrollTo(cursor); }
+  });
+
+  window.addEventListener("resize", fitCanvas);
+
+  // ============ 启动 ============
+  renderDoc(); renderTake(); fitCanvas();
+  selA = cursor; selB = cursor;
+  setMode("idle");
+  $("verdict").innerHTML = '<span class="nums">左栏选好要念的几句（可跨段），按空格开始</span>';
+  scrollTo(cursor);
+
+  var demo = (location.hash||"").replace("#","");
+  if (demo === "cand"){
+    // 直接进入"自由录完、程序猜好范围"的状态（截图自检用）
+    $("sw1").classList.remove("on"); $("sw1").querySelector(".box").textContent = "";
+    selA = null; selB = null;
+    activeTake = { id:"t003", a:cursor, b:cursor, dur:0, dead:false };
+    setMode("rec");
+    stopRec(14.6);
+  }
+})();
+</script>
+</body>
+</html>
