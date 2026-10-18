@@ -159,8 +159,8 @@ public partial class Step4ExportView : UserControl
 
         // 先说清"这一刀是按谁剪的" —— 精剪还是录音铺排，段数时长多少。
         // 用户点了「应用到下游」之后来这一页，第一眼就能确认到底生效了没有。
-        string who = _s.ActiveDecision == DecisionSource.Fine ? "精剪" : "录音铺排";
-        Log($"本次成片依据：{_s.ActiveDecisionLabel}（{who}决策）");
+        // （ActiveDecisionLabel 自带"精剪/录音铺排"前缀，别再拼一次）
+        Log($"本次成片依据：{_s.ActiveDecisionLabel}");
 
         // 决策可能来自粗剪（有 Plan 的统计），也可能来自精剪（只有保留区间）—— 分开设
         if (_s.HasPlan && _s.Plan != null)
