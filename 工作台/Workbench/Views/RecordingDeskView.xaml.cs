@@ -14,11 +14,22 @@
 //     · 两者当场配对，配错了点一下改过来
 //   程序不预先切片、不规定句数，也不在录音里动刀（不做裁剪、不做拼接）。
 //
-// 【状态机】
-//   Idle ──空格──► Recording ──空格──► Candidate（等回车）
-//                                        │
-//                                 回车 ──┴──► Idle（光标跳到下一句）
-//   Candidate/Idle ──P──► Playing ──播完──► 回到进来之前的状态
+// 【状态机】（V1.16.1 改：绑定只在确认那一刻生效）
+//   Idle ──空格──► Recording ──空格──► Candidate（蓝框，可改范围）
+//                    Esc=扔掉          │
+//         回车 ◄───────────────────────┘   ◄── 绑定在这一刻才生效
+//                                                 （重叠的旧录音此时才作废）
+//   · 候选态按空格 = 这条不要了重录：wav 和台账行一起清掉，不留作废卡
+//   · 候选态按 Esc  = 整条扔掉，旧绑定原封不动
+//
+// 【回放不锁界面】（V1.16.1）
+//   录完自动试听只是背景音 —— 回放中照样点句子改范围、照样回车
+//   （回车 = 停回放 + 绑定，一步到位）。
+//
+// 【台账 = 稿子顺序的清单】（V1.16.1）
+//   只排在用的录音（按起始句排序，跟稿子一个方向）；作废的折叠成一个徽章。
+//   点卡片 = 看这条（波形切过去、左栏滚过去），【不碰选区】——
+//   接下来按空格照常录下一条，不会被刚才看的那条带偏。双击 = 试听。
 //
 // 【为什么不自动开始下一段】
 //   录完一段要听、要想、要喘口气。自动往下录会把"人决定节奏"变成"机器赶进度"，
@@ -416,16 +427,15 @@ public partial class RecordingDeskView : UserControl, INavPage
     private void Sentence_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not Hyperlink link || link.Tag is not int idx) return;
+        if (_mode == Mode.Recording) return;    // 录音中不改 —— 这条的范围在开录那一刻就定了
 
-        // ★ 录音中、回放中都不理会：回放还没结束就点句子，会把"看完这条"的
-        //   手滑变成"改了绑定范围"—— 等半秒再点，别抢戏。
-        if (_mode == Mode.Recording || _mode == Mode.Playing) return;
-
-        bool shift = (Keyboard.Modifiers & ModifierKeys.Shift) != 0;
-
-        if (_mode == Mode.Candidate && _activeTake != null)
+        // 候选态（包括"边听边改"——回放只是背景音，不锁界面）：
+        // 普通点 = 改终点；Shift 点 = 改起点
+        bool candEdit = _mode == Mode.Candidate
+            || (_mode == Mode.Playing && _modeBeforePlay == Mode.Candidate);
+        if (candEdit && _activeTake != null)
         {
-            // 候选态：普通点 = 改终点；Shift 点 = 改起点
+            bool shift = (Keyboard.Modifiers & ModifierKeys.Shift) != 0;
             if (shift && _selA.HasValue) _selA = idx;
             else _selB = idx;
 
@@ -434,7 +444,8 @@ public partial class RecordingDeskView : UserControl, INavPage
             return;
         }
 
-        if (shift && _selA.HasValue)
+        bool shift2 = (Keyboard.Modifiers & ModifierKeys.Shift) != 0;
+        if (shift2 && _selA.HasValue)
         {
             _selB = idx;
             _cursor = Math.Min(_selA.Value, idx);
@@ -456,13 +467,15 @@ public partial class RecordingDeskView : UserControl, INavPage
 
     private void SelectParagraph(ScriptPara para)
     {
-        if (para.Sentences.Count == 0 || _mode == Mode.Recording || _mode == Mode.Playing) return;
+        if (para.Sentences.Count == 0 || _mode == Mode.Recording) return;
 
         _selA = para.Sentences[0].Index;
         _selB = para.Sentences[^1].Index;
         _cursor = _selA.Value;
 
-        if (_mode == Mode.Candidate && _activeTake != null)
+        bool candEdit = _mode == Mode.Candidate
+            || (_mode == Mode.Playing && _modeBeforePlay == Mode.Candidate);
+        if (candEdit && _activeTake != null)
         {
             _rangeWasGuessed = false;
             ApplyCandidateRange();
@@ -477,7 +490,7 @@ public partial class RecordingDeskView : UserControl, INavPage
         ScrollTo(_cursor);
     }
 
-    /// <summary>候选态下改了范围 → 立刻重绑（旧的重叠录音自动作废）。</summary>
+    /// <summary>候选态下改了范围 → 立刻更新这一条（只改它自己的 A/B，不碰任何已有绑定）。</summary>
     private void ApplyCandidateRange()
     {
         if (_activeTake == null || !_selA.HasValue || !_selB.HasValue) return;
@@ -486,9 +499,8 @@ public partial class RecordingDeskView : UserControl, INavPage
         _activeTake.B = Math.Max(_selA.Value, _selB.Value);
         _cursor = _activeTake.A;
 
-        _store!.Activate(_activeTake);
-        _store.Save();
-        RebuildDoneMap();
+        _store!.Save();
+        // 注意：这里【不】解决重叠 —— 等用户按回车确认那一刻才 Activate
 
         PaintDoc();
         PaintScript();
@@ -500,7 +512,8 @@ public partial class RecordingDeskView : UserControl, INavPage
 
     private void BtnClearSel_Click(object sender, RoutedEventArgs e)
     {
-        if (_mode == Mode.Recording || _mode == Mode.Candidate) return;
+        if (_mode == Mode.Recording || _mode == Mode.Candidate
+            || (_mode == Mode.Playing && _modeBeforePlay == Mode.Candidate)) return;
         _selA = _selB = null;
         PaintDoc();
         PaintScript();
@@ -648,15 +661,24 @@ public partial class RecordingDeskView : UserControl, INavPage
         else
         {
             TxtMainDot.Text = "●";
-            TxtMainLabel.Text = _mode == Mode.Candidate ? "重录这一条" : "开始录音";
-            BtnMain.Background = Freeze(0xC7, 0x44, 0x3A);
+            TxtMainLabel.Text = _mode switch
+            {
+                Mode.Playing => "停止回放",
+                Mode.Candidate => "重录这条",
+                _ => "开始录音",
+            };
+            BtnMain.Background = _mode == Mode.Playing ? Freeze(0x39, 0x41, 0x4C) : Freeze(0xC7, 0x44, 0x3A);
         }
 
         bool hasTake = _activeTake != null && File.Exists(TakePath(_activeTake));
 
-        BtnPlay.IsEnabled = !rec && !play && hasTake;
-        BtnRedo.IsEnabled = !rec && !play && (hasTake || _selA.HasValue);
-        BtnOk.IsEnabled = _mode == Mode.Candidate && _activeTake != null;
+        // 候选还在（本态，或正被自动回放盖着）→「就绑这段」随时可按
+        bool candPending = _mode == Mode.Candidate
+            || (_mode == Mode.Playing && _modeBeforePlay == Mode.Candidate);
+
+        BtnPlay.IsEnabled = !rec && hasTake;
+        BtnRedo.IsEnabled = !rec && (hasTake || _selA.HasValue);
+        BtnOk.IsEnabled = candPending && _activeTake != null;
         BtnClearSel.IsEnabled = !rec && !play && _mode != Mode.Candidate && _selA.HasValue;
 
         RecDot.Fill = rec ? BarRec : BarIdle;
@@ -683,6 +705,10 @@ public partial class RecordingDeskView : UserControl, INavPage
     {
         if (_doc.IsEmpty || _store == null) return;
         if (_engine.IsRecording) return;
+
+        // 上一条还停在候选态就开新的 = 上一条不要了：wav 和台账行一起清掉
+        // （它从来没被确认过，所以不该留下痕迹，更不该堆出一张"作废卡"）
+        if (_mode == Mode.Candidate) DiscardCandidate();
 
         if (CmbDevice.SelectedItem is not AudioInputDevice dev)
         {
@@ -786,8 +812,9 @@ public partial class RecordingDeskView : UserControl, INavPage
             CreatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
         };
 
-        _store!.Activate(take);
-        _store.Data.Takes.Add(take);
+        // ★ 还没确认：只挂进台账当"候选"，【不动】任何已有绑定 ——
+        //   重叠的旧录音等回车确认那一刻才作废（绑定只在确认时改变）
+        _store!.Data.Takes.Add(take);
         _store.Data.ScriptStamp = _doc.Stamp;
         _store.Save();
 
@@ -797,7 +824,7 @@ public partial class RecordingDeskView : UserControl, INavPage
         _cursor = a;
         _pendingA = _pendingB = null;
 
-        RebuildDoneMap();
+        RebuildDoneMap(take.Id);
         SetMode(Mode.Candidate);
         UpdateVerdict(take);
         Wave.Peaks = peaks;
@@ -1028,6 +1055,12 @@ public partial class RecordingDeskView : UserControl, INavPage
         if (_mode != Mode.Candidate || _activeTake == null) return;
 
         int n = _doc.Sentences.Count;
+
+        // ★ 绑定在这一刻才生效：这条转正，被它盖住的旧录音作废（wav 留底可恢复）
+        _store!.Activate(_activeTake);
+        _store.Save();
+        RebuildDoneMap();
+
         _cursor = Math.Min(n - 1, _activeTake.B + 1);
         _selA = _selB = null;
         _rangeWasGuessed = false;
@@ -1047,7 +1080,8 @@ public partial class RecordingDeskView : UserControl, INavPage
 
     private void Redo()
     {
-        if (_mode == Mode.Recording || _mode == Mode.Playing) return;
+        if (_mode == Mode.Recording) return;
+        if (_mode == Mode.Playing) StopPlayback();   // 边听边嫌不行 → R 直接停下重录
 
         int a, b;
         if (_mode == Mode.Candidate && _activeTake != null) { a = _activeTake.A; b = _activeTake.B; }
@@ -1067,13 +1101,27 @@ public partial class RecordingDeskView : UserControl, INavPage
     // ========================================================
     // 录音台账（右下那条）
     // ========================================================
+    //
+    // 【V1.16.1 重做】它是一份"按稿子顺序排的清单"，不是时间流水：
+    //   · 只排在用的录音（按起始句排序，跟稿子一个方向）—— 一眼对上"录到哪了"
+    //   · 作废的折叠成一个"作废 N 条"小徽章，点开才展开（不再满屏都是）
+    //   · 点卡片 = 【看】这条：波形切过去、左栏滚过去 —— 不碰选区不碰光标，
+    //     接下来按空格照常录下一条，不会被刚才看的那条带偏
+    //   · 双击 = 试听这条；点作废的 = 恢复它（盖住现在重叠的活录音）
+
+    private bool _showDead;   // 作废区展开没有
 
     private void BuildTakeRow()
     {
         if (TakeRow == null || _store == null) return;
         TakeRow.Children.Clear();
 
-        if (_store.Data.Takes.Count == 0)
+        var alive = _store.Data.Takes.Where(t => !t.Dead)
+                                     .OrderBy(t => t.A).ThenBy(t => t.B).ToList();
+        var dead = _store.Data.Takes.Where(t => t.Dead)
+                                    .OrderBy(t => t.A).ThenBy(t => t.B).ToList();
+
+        if (alive.Count == 0 && dead.Count == 0)
         {
             TakeRow.Children.Add(new TextBlock
             {
@@ -1085,116 +1133,172 @@ public partial class RecordingDeskView : UserControl, INavPage
             return;
         }
 
-        // 新的排前面（最近录的永远在第一眼位置）
-        foreach (var t in _store.Data.Takes.AsEnumerable().Reverse())
+        if (dead.Count > 0)
         {
-            bool active = _activeTake != null && _activeTake.Id == t.Id;
-
-            var stack = new StackPanel();
-
-            var line1 = new StackPanel { Orientation = Orientation.Horizontal };
-            line1.Children.Add(new TextBlock
+            var chip = new Border
             {
-                Text = t.Id,
-                FontFamily = new FontFamily("Cascadia Mono, Consolas"),
-                FontSize = 10,
-                Foreground = Freeze(0x6E, 0x77, 0x83),
-                VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(0, 0, 8, 0),
-            });
-            line1.Children.Add(new TextBlock
-            {
-                Text = t.A == t.B ? $"第 {t.A + 1} 句" : $"第 {t.A + 1}–{t.B + 1} 句",
-                FontSize = 11.5,
-                FontWeight = FontWeights.Bold,
-                Foreground = Freeze(0xE6, 0xE9, 0xEF),
-                VerticalAlignment = VerticalAlignment.Center,
-            });
-            if (t.Dead)
-            {
-                line1.Children.Add(new TextBlock
-                {
-                    Text = "已作废",
-                    FontSize = 9.5,
-                    Foreground = Freeze(0x8A, 0x6A, 0x2A),
-                    Margin = new Thickness(7, 1, 0, 0),
-                    VerticalAlignment = VerticalAlignment.Center,
-                });
-            }
-            stack.Children.Add(line1);
-
-            stack.Children.Add(new TextBlock
-            {
-                Text = $"{t.SentenceCount} 句 · {t.DurSec:F1}s" + (t.PeakDb < -50 ? " · 静音" : ""),
-                FontSize = 10.5,
-                Foreground = Freeze(0x78, 0x82, 0x8F),
-                FontFamily = new FontFamily("Cascadia Mono, Consolas"),
-                Margin = new Thickness(0, 3, 0, 0),
-            });
-
-            var card = new Border
-            {
-                Background = Freeze(0x16, 0x1A, 0x20),
-                BorderBrush = active ? Freeze(0xD4, 0xAF, 0x37) : Freeze(0x26, 0x2C, 0x35),
+                Background = Freeze(0x1A, 0x17, 0x12),
+                BorderBrush = Freeze(0x3A, 0x30, 0x1C),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(8),
-                Padding = new Thickness(10, 6, 12, 7),
+                Padding = new Thickness(11, 6, 13, 7),
                 Margin = new Thickness(0, 0, 7, 0),
-                MinWidth = 168,
+                VerticalAlignment = VerticalAlignment.Center,
                 Cursor = Cursors.Hand,
-                Opacity = t.Dead ? 0.45 : 1.0,
-                Child = stack,
-                ToolTip = "点一下 = 在左栏点亮它绑的是哪几句\n双击 = 试听这一条",
-                Tag = t,
+                Child = new TextBlock
+                {
+                    Text = (_showDead ? "▾" : "▸") + $" 作废 {dead.Count} 条",
+                    FontSize = 11,
+                    Foreground = Freeze(0x9A, 0x82, 0x50),
+                    VerticalAlignment = VerticalAlignment.Center,
+                },
+                ToolTip = "点开 / 收起被换下来的旧录音（wav 都还在，可以恢复）",
             };
-
-            card.MouseLeftButtonDown += TakeCard_Click;
-            TakeRow.Children.Add(card);
+            chip.MouseLeftButtonDown += (_, e) => { _showDead = !_showDead; BuildTakeRow(); e.Handled = true; };
+            TakeRow.Children.Add(chip);
         }
+
+        if (_showDead)
+            foreach (var t in dead) TakeRow.Children.Add(MakeTakeCard(t));
+
+        foreach (var t in alive) TakeRow.Children.Add(MakeTakeCard(t));
+    }
+
+    private Border MakeTakeCard(RecordingTake t)
+    {
+        bool active = _activeTake != null && _activeTake.Id == t.Id;
+        bool cand = active && _mode == Mode.Candidate;   // 候选中（还没确认）的那条
+
+        var stack = new StackPanel();
+
+        var line1 = new StackPanel { Orientation = Orientation.Horizontal };
+        line1.Children.Add(new TextBlock
+        {
+            Text = t.A == t.B ? $"第 {t.A + 1} 句" : $"第 {t.A + 1}–{t.B + 1} 句",
+            FontSize = 11.5,
+            FontWeight = FontWeights.Bold,
+            Foreground = Freeze(0xE6, 0xE9, 0xEF),
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        if (cand)
+        {
+            line1.Children.Add(new TextBlock
+            {
+                Text = "待确认",
+                FontSize = 9.5,
+                Foreground = TagBlueFg,
+                Margin = new Thickness(7, 1, 0, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+            });
+        }
+        else if (t.Dead)
+        {
+            line1.Children.Add(new TextBlock
+            {
+                Text = "已作废",
+                FontSize = 9.5,
+                Foreground = Freeze(0x8A, 0x6A, 0x2A),
+                Margin = new Thickness(7, 1, 0, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+            });
+        }
+        stack.Children.Add(line1);
+
+        stack.Children.Add(new TextBlock
+        {
+            Text = $"{t.SentenceCount} 句 · {t.DurSec:F1}s · {t.Id}" + (t.PeakDb < -50 ? " · 静音" : ""),
+            FontSize = 10.5,
+            Foreground = Freeze(0x78, 0x82, 0x8F),
+            FontFamily = new FontFamily("Cascadia Mono, Consolas"),
+            Margin = new Thickness(0, 3, 0, 0),
+        });
+
+        var card = new Border
+        {
+            Background = Freeze(0x16, 0x1A, 0x20),
+            BorderBrush = active ? Freeze(0xD4, 0xAF, 0x37)
+                        : t.Dead ? Freeze(0x26, 0x24, 0x1C)
+                        : Freeze(0x26, 0x2C, 0x35),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(10, 6, 12, 7),
+            Margin = new Thickness(0, 0, 7, 0),
+            MinWidth = 150,
+            Cursor = Cursors.Hand,
+            Opacity = t.Dead ? 0.45 : 1.0,
+            Child = stack,
+            Tag = t,
+            ToolTip = t.Dead
+                ? "点一下 = 恢复这条（现在跟它重叠的录音自动让位）"
+                : "点一下 = 看这条绑的是哪几句（不改你的选择）\n双击 = 试听这一条",
+        };
+        card.MouseLeftButtonDown += TakeCard_Click;
+        return card;
     }
 
     private void TakeCard_Click(object sender, MouseButtonEventArgs e)
     {
         if (sender is not Border card || card.Tag is not RecordingTake take) return;
-        if (_mode == Mode.Recording || _mode == Mode.Playing) return;
+        e.Handled = true;
+
+        if (_mode == Mode.Recording) return;
+        if (_mode == Mode.Playing) StopPlayback();   // 边听边点卡片 = 先停回放，然后照常看
+        if (_mode != Mode.Idle) return;              // 候选态只围着当前这条转，别乱切
 
         if (e.ClickCount >= 2)
         {
             _activeTake = take;
+            BuildTakeRow();
             PlayActive();
-            e.Handled = true;
             return;
         }
 
-        ActivateTake(take);
-        e.Handled = true;
-    }
-
-    private void ActivateTake(RecordingTake take)
-    {
-        // 作废的录音点一下 = 恢复它（跟它重叠的活录音自动作废）
         if (take.Dead)
         {
+            // 恢复：它盖住的现在那些活录音自动作废（每句只认最新确认的这条）
             _store!.Activate(take);
             _store.Save();
             RebuildDoneMap();
             DebugLog.Write("record", "恢复作废录音 " + take.Id, new { take.A, take.B });
         }
 
+        ViewTake(take);
+    }
+
+    /// <summary>
+    /// 看一条录音：波形切过去、左栏滚过去。
+    /// ★ 只"看"—— 不碰选区、不碰光标、不改模式，接下来按空格照常录下一条。
+    /// </summary>
+    private void ViewTake(RecordingTake take)
+    {
         _activeTake = take;
-        _selA = take.A;
-        _selB = take.B;
-        _cursor = take.A;
-        _rangeWasGuessed = false;
-
-        SetMode(Mode.Idle);
         ShowTakeWave(take);
-        PaintDoc();
-        PaintScript();
-        UpdateButtons();
-        ScrollTo(_cursor);
+        BuildTakeRow();
+        ScrollTo(take.A);
 
-        SetVerdict("b", "这一条", $"绑的是第 {take.A + 1}–{take.B + 1} 句 · 按空格会重录这一段，按 P 试听");
+        SetVerdict("b", $"第 {take.A + 1}–{take.B + 1} 句",
+            $"{take.DurSec:F1} 秒 · 空格照常录下一条（不动这条）· R 重录这条");
+    }
+
+    /// <summary>
+    /// 扔掉候选这条。它从来没被确认过 → wav 和台账行一起清掉，
+    /// 任何已有绑定都不动（这是"绑定只在确认时改变"的另一半）。
+    /// </summary>
+    private void DiscardCandidate()
+    {
+        if (_mode != Mode.Candidate || _activeTake == null || _store == null) return;
+
+        string wav = TakePath(_activeTake);
+        _peakCache.Remove(wav);
+        try { if (File.Exists(wav)) File.Delete(wav); } catch { }
+
+        _store.Data.Takes.Remove(_activeTake);
+        _store.Save();
+
+        _activeTake = null;
+        _rangeWasGuessed = false;
+        RebuildDoneMap();
+        DebugLog.Write("record", "扔掉候选录音（未确认，无痕迹）");
     }
 
     // ========================================================
@@ -1347,12 +1451,18 @@ public partial class RecordingDeskView : UserControl, INavPage
                 break;
 
             case Key.Enter:
+                // 回放中也能确认：回车 = 停回放 + 绑定，一步到位
                 if (_mode == Mode.Candidate) ConfirmBind();
+                else if (_mode == Mode.Playing && _modeBeforePlay == Mode.Candidate && _activeTake != null)
+                {
+                    StopPlayback();
+                    ConfirmBind();
+                }
                 e.Handled = true;
                 break;
 
             case Key.R:
-                if (_mode != Mode.Recording && _mode != Mode.Playing) Redo();
+                if (_mode != Mode.Recording) Redo();
                 e.Handled = true;
                 break;
 
@@ -1365,6 +1475,15 @@ public partial class RecordingDeskView : UserControl, INavPage
             case Key.Escape:
                 if (_mode == Mode.Recording) StopRecording(discard: true);
                 else if (_mode == Mode.Playing) StopPlayback();
+                else if (_mode == Mode.Candidate)
+                {
+                    // 候选没确认就 Esc = 整条扔掉（wav 删掉、台账无痕，旧绑定不动）
+                    DiscardCandidate();
+                    _selA = _selB = null;
+                    SetMode(Mode.Idle);
+                    ShowEmptyWave();
+                    SetVerdict("", "", "这条扔掉了 —— 按空格重录");
+                }
                 e.Handled = true;
                 break;
 
@@ -1386,8 +1505,9 @@ public partial class RecordingDeskView : UserControl, INavPage
     {
         if (_doc.IsEmpty) return;
 
-        if (_mode == Mode.Candidate || _mode == Mode.Playing) return;
-        // 候选态用鼠标改范围、回放中别抢 —— 方向键都不掺和
+        // 候选态（含被回放盖着的候选）用鼠标改范围，方向键不掺和
+        if (_mode == Mode.Candidate) return;
+        if (_mode == Mode.Playing && _modeBeforePlay == Mode.Candidate) return;
 
         int n = _doc.Sentences.Count;
         _cursor = Math.Clamp(_cursor + delta, 0, n - 1);
@@ -1404,9 +1524,9 @@ public partial class RecordingDeskView : UserControl, INavPage
     // 杂项
     // ========================================================
 
-    private void RebuildDoneMap()
+    private void RebuildDoneMap(string? excludeId = null)
     {
-        _done = _store?.BuildDoneMap(_doc.Sentences.Count) ?? new Dictionary<int, string>();
+        _done = _store?.BuildDoneMap(_doc.Sentences.Count, excludeId) ?? new Dictionary<int, string>();
         UpdateDocStat();
     }
 

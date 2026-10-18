@@ -178,12 +178,14 @@ public sealed class RecordingStore
         take.Dead = false;
     }
 
-    /// <summary>句子 → 录音编号（没有录过的句子不在字典里）。</summary>
-    public Dictionary<int, string> BuildDoneMap(int sentenceCount)
+    /// <summary>句子 → 录音编号（没有录过的句子不在字典里）。
+    /// excludeId：把某条排除在外 —— 候选态的录音还没确认，不算"已录"。</summary>
+    public Dictionary<int, string> BuildDoneMap(int sentenceCount, string? excludeId = null)
     {
         var map = new Dictionary<int, string>();
         foreach (var t in Alive)
         {
+            if (excludeId != null && t.Id == excludeId) continue;
             int a = Math.Max(0, t.A), b = Math.Min(sentenceCount - 1, t.B);
             for (int i = a; i <= b; i++) map[i] = t.Id;
         }
