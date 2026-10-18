@@ -256,6 +256,18 @@
                     <Button x:Name="BtnReloadScript" Content="重读稿子" Style="{StaticResource GhostBtn}"
                             Click="BtnReloadScript_Click"
                             ToolTip="稿子改过之后点一下（不会动录音）"/>
+
+                    <Border Width="1" Height="16" Background="#FF2A3038" Margin="12,0,12,0"
+                            VerticalAlignment="Center"/>
+                    <Button x:Name="BtnApply" Style="{StaticResource BigBtn}" Height="28"
+                            Padding="12,0" Background="#FF2563EB" Click="BtnApply_Click"
+                            ToolTip="把录好的音按稿子顺序拼成一条母带，并在精剪里按「一条录音一块」铺好">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock x:Name="TxtApplyLabel" Text="应用到下游" FontSize="12"
+                                       FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <TextBlock Text="›" FontSize="14" Margin="7,0,0,1" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
             </Grid>
         </Border>

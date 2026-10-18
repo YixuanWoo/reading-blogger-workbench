@@ -74,6 +74,19 @@ public static class ContractJson
         // null 字段直接不写，文件干净
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
 
+        // ★ V1.17.0：读的时候忽略大小写。
+        //
+        // 【为什么必须开】
+        //   契约文件（transcript.json / cutplan.json …）按约定是**小驼峰**
+        //   （"schemaVersion"），但早期有两条路把同一批对象按 PascalCase 写进了
+        //   project.json（`.NET` 的默认行为）。V1.17.0 给 Transcript 补上了
+        //   显式 JsonPropertyName 之后，老档案里的 PascalCase 字段就**读不回来**了
+        //   —— 用户打开几个月前的项目，转写稿会静默消失（不是报错，是变成空稿）。
+        //
+        //   打开这个开关，两种写法都能读；写出去仍然按 JsonPropertyName 的
+        //   小驼峰 —— 契约一致，老数据不丢。这是"只放宽读、不改变写"的改法。
+        PropertyNameCaseInsensitive = true,
+
         // 枚举写成字符串（小驼峰）
         Converters =
         {

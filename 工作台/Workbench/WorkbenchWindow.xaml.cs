@@ -680,8 +680,10 @@ public partial class WorkbenchWindow : Window, IWritingDeskHost
             return;
         }
 
-        string who = State.ActiveDecision == DecisionSource.Fine ? "精剪" : "粗剪";
-        TxtDecisionBadge.Text = $"下游使用：{State.ActiveDecisionLabel}（{who}决策）";
+        // ★ V1.17.0：不再拼"（粗剪决策）"这种后缀 —— ActiveDecisionLabel 里已经
+        //   说清是「精剪」还是「录音铺排」了，再补一句只会变成
+        //   "录音铺排 · 4 段 · 52.3秒（录音铺排决策）"这种绕口的东西。
+        TxtDecisionBadge.Text = $"下游使用：{State.ActiveDecisionLabel}";
         TxtDecisionBadge.Foreground = (System.Windows.Media.Brush)FindResource("TextDim");
     }
 

@@ -77,7 +77,29 @@ public partial class StepFineCutView : UserControl, INavPage, ISaveSync
     public StepFineCutView()
     {
         InitializeComponent();
+        _instance = this;
         Loaded += (s, e) => Activate();
+    }
+
+    /// <summary>本页唯一实例。KeepAlive 保证了最多一个（见 NavNode.KeepAlive）。</summary>
+    private static StepFineCutView? _instance;
+
+    /// <summary>
+    /// 录音台要重建母带之前调一次：让编辑器松手 + 标记"下次进页必须重铺"。
+    ///
+    /// 【为什么走静态方法】
+    ///   录音台拿不到本页实例（导航页是外壳建的），而 KeepAlive 让本页可能
+    ///   一直活着并压着播放状态和样本缓存。放这里比在录音台里到处找实例干净。
+    /// </summary>
+    public static void PrepareForNewMaster()
+    {
+        if (_instance != null)
+        {
+            _instance._editor?.ReleaseAudio();
+            _instance._loadedPlan = null;
+            _instance._enteredKeeps = null;
+        }
+        PendingEditorReset = true;
     }
 
     private WorkbenchWindow? Win => WorkbenchWindow.FindOwner(this);
@@ -209,24 +231,24 @@ public partial class StepFineCutView : UserControl, INavPage, ISaveSync
         int segs = _s.Plan!.ComputeTimeline().Count;
         double total = _s.Plan.ComputeTimeline().Sum(t => t.SourceEndSec - t.SourceStartSec);
         TxtCoarseUpdate.Text =
-            $"⚠ 粗剪已更新（{segs} 段 · {WorkbenchState.FormatDuration(total)}），" +
+            $"⚠ 录音台重新铺了母带（{segs} 段 · {WorkbenchState.FormatDuration(total)}），" +
             "但当前时间轴还是你上次精剪的结果 —— 精剪成果不会被自动覆盖。" +
-            "想换成新粗剪，点右边按钮（会丢弃当前时间轴）。";
+            "想换成新母带的铺排，点右边按钮（会丢弃当前时间轴）。";
         CoarseUpdateBar.Visibility = Visibility.Visible;
     }
 
     private void HideCoarseUpdate() => CoarseUpdateBar.Visibility = Visibility.Collapsed;
 
-    /// <summary>用户明确要求：用新粗剪重铺时间轴。</summary>
+    /// <summary>用户明确要求：用录音台新铺的母带重铺时间轴。</summary>
     private void BtnReloadCoarse_Click(object sender, RoutedEventArgs e)
     {
         if (!_s.HasPlan) return;
 
         var r = MessageBox.Show(
-            "用最新的粗剪结果重新铺一遍时间轴？\n\n" +
+            "用录音台最新铺的母带重新铺一遍时间轴？\n\n" +
             "当前时间轴上的手工改动（挪过的块、裁过的边界、音量和淡化）会全部丢弃。\n" +
             "这一步不能撤销。",
-            "用新粗剪重铺", MessageBoxButton.OKCancel, MessageBoxImage.Warning);
+            "用新母带重铺", MessageBoxButton.OKCancel, MessageBoxImage.Warning);
         if (r != MessageBoxResult.OK) return;
 
         Editor.LoadPreCutProject(_s.SourcePath, ToTuples(_s.KeepRanges()));
@@ -234,7 +256,7 @@ public partial class StepFineCutView : UserControl, INavPage, ISaveSync
         HideCoarseUpdate();
         _enteredKeeps = Editor.GetTimelineKeeps();
         RefreshSummary();
-        Win?.Status("已按最新粗剪结果重铺时间轴");
+        Win?.Status("已按录音台最新铺的母带重铺时间轴");
     }
 
     /// <summary>
@@ -407,16 +429,16 @@ public partial class StepFineCutView : UserControl, INavPage, ISaveSync
     {
         // 没跑过粗剪的项目没有"粗剪结果"可还原 —— 还原后下游就没有任何决策了
         string msg = _s.HasPlan
-            ? "丢弃精剪修改，还原为粗剪结果？"
-            : "本项目没有粗剪结果，丢弃精剪决策后下游将没有可用内容。确定丢弃？";
+            ? "丢弃精剪修改，还原成录音台刚铺好的样子？"
+            : "这个项目还没有录音铺排，丢弃精剪决策后下游将没有可用内容。确定丢弃？";
         var r = MessageBox.Show(msg, "精剪",
                                 MessageBoxButton.OKCancel, MessageBoxImage.Question);
         if (r != MessageBoxResult.OK) return;
 
         _s.FineCutKeeps = null;
-        Win?.Status(_s.HasPlan ? "已还原为粗剪结果" : "已丢弃精剪决策（本项目没有粗剪结果）");
+        Win?.Status(_s.HasPlan ? "已还原为录音铺排" : "已丢弃精剪决策（本项目没有录音铺排）");
 
-        // 编辑器同步重铺成粗剪的时间轴
+        // 编辑器同步重铺成录音台给的母带铺排
         if (_editor != null && _s.HasPlan)
         {
             _editor.LoadPreCutProject(_s.SourcePath, ToTuples(_s.KeepRanges()));
@@ -443,8 +465,9 @@ public partial class StepFineCutView : UserControl, INavPage, ISaveSync
         {
             var keeps = _s.Plan!.ComputeTimeline();
             double total = keeps.Sum(t => t.SourceEndSec - t.SourceStartSec);
-            string src = _s.Pcm != null ? $"源素材 {Fmt(_s.Pcm.DurationSec)}" : "";
-            TxtPlanSummary.Text = $"粗剪：{keeps.Count} 段 · {Fmt(total)} {src}".TrimEnd();
+            double srcDur = _s.SourceDurationSec;
+            string src = srcDur > 0 ? $"源素材 {Fmt(srcDur)}" : "";
+            TxtPlanSummary.Text = $"录音铺排：{keeps.Count} 段 · {Fmt(total)} {src}".TrimEnd();
         }
         else
         {
@@ -459,7 +482,7 @@ public partial class StepFineCutView : UserControl, INavPage, ISaveSync
         }
         else
         {
-            TxtFineCutStatus.Text = _s.HasPlan ? "未精剪 · 使用粗剪结果" : "";
+            TxtFineCutStatus.Text = _s.HasPlan ? "未精剪 · 用录音铺排" : "";
             BtnRevert.Visibility = Visibility.Collapsed;
         }
 

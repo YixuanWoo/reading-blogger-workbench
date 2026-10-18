@@ -45,6 +45,7 @@ using System.Windows.Threading;
 using LiteCut.Core.Media;
 using LiteCut.Core.Contracts;
 using LiteCut.Workbench.Agent;
+using LiteCut.Workbench.Ui;
 using Microsoft.Win32;
 
 namespace LiteCut.Workbench.Views;
@@ -156,20 +157,20 @@ public partial class Step4ExportView : UserControl
 
         Log($"已就绪：{_s.SourceFileName}");
 
-        // 先说清"这一刀是按谁剪的" —— 粗剪还是精剪，段数时长多少。
+        // 先说清"这一刀是按谁剪的" —— 精剪还是录音铺排，段数时长多少。
         // 用户点了「应用到下游」之后来这一页，第一眼就能确认到底生效了没有。
-        string who = _s.ActiveDecision == DecisionSource.Fine ? "精剪" : "粗剪";
+        string who = _s.ActiveDecision == DecisionSource.Fine ? "精剪" : "录音铺排";
         Log($"本次成片依据：{_s.ActiveDecisionLabel}（{who}决策）");
 
         // 决策可能来自粗剪（有 Plan 的统计），也可能来自精剪（只有保留区间）—— 分开设
         if (_s.HasPlan && _s.Plan != null)
         {
-            Log($"剪辑后时长：{Step1CutView.FormatTime(_s.KeepRanges().Sum(r => r.End - r.Start))}" +
-                $"（原始 {Step1CutView.FormatTime(_s.Plan.Stats.OriginalSec)}）");
+            Log($"剪辑后时长：{TimeText.Format(_s.KeepRanges().Sum(r => r.End - r.Start))}" +
+                $"（原始 {TimeText.Format(_s.Plan.Stats.OriginalSec)}）");
         }
         else
         {
-            Log($"剪辑后时长：{Step1CutView.FormatTime(_s.KeepRanges().Sum(r => r.End - r.Start))}" +
+            Log($"剪辑后时长：{TimeText.Format(_s.KeepRanges().Sum(r => r.End - r.Start))}" +
                 $"（精剪决策，{_s.KeepRanges().Count} 段）");
         }
 
@@ -215,7 +216,7 @@ public partial class Step4ExportView : UserControl
                 ? "还没有加载源素材 —— 先在第①步选一个音频/视频文件。"
                 : $"源素材文件找不到了：{_s.SourcePath}（挪走或改名了？回第①步重新选一次）";
         }
-        return "还没有剪辑决策 —— 先在第①步跑粗剪，或在精剪页点「应用到下游」。";
+        return "还没有剪辑决策 —— 先在录音台点「应用到下游」，母带才会交给精剪。";
     }
 
     /// <summary>

@@ -77,6 +77,8 @@ public partial class RecordingDeskView : UserControl, INavPage
 
     private Mode _mode = Mode.Idle;
 
+    private static readonly WorkbenchState _s = WorkbenchWindow.State;
+
     private string _projectDir = "";
     private ScriptDocument _doc = new();
     private RecordingStore? _store;
@@ -1100,6 +1102,187 @@ public partial class RecordingDeskView : UserControl, INavPage
     }
 
     // ========================================================
+    // 应用到下游（V1.17.0）
+    // ========================================================
+    //
+    // 【这一下到底做了什么】
+    //   ① 把每条录音按稿子顺序拼成一条母带 `素材\录音\vo.wav`（一个采样都不动）
+    //   ② 生成转写稿 `stages\01-transcript\transcript.json`（时间码 = 母带第几秒）
+    //   ③ 铺一层决策：一条录音 = 一个保留段（精剪打开就是"一块一句"）
+    //   ④ 把状态里的源素材切到这条母带，然后跳去精剪
+    //
+    // 【为什么"应用"必须是一次明确的点击】
+    //   它会把下游的源素材整个换掉：精剪的时间轴要重铺、分镜的秒数会整体错位。
+    //   这种"牵一发动全身"的动作不能顺手做（比如录完就自动做）——
+    //   否则用户只是改了一条绑定，精剪里挪了半小时的块就没了，还不知道是谁弄的。
+    //
+    // 【为什么母带要重拼整条，而不是"只接上新录的那条"】
+    //   改一次绑定，某条录音在母带里的位置就变了，后面的全部要顺移。
+    //   重拼是 O(总时长) 的一遍内存拷贝，几秒钟的事；而"增量拼接"要维护一堆
+    //   偏移表，出错时最难查的就是偏移。宁可整条重来。
+
+    private WorkbenchWindow? Win => WorkbenchWindow.FindOwner(this);
+
+    private void BtnApply_Click(object sender, RoutedEventArgs e) => ApplyDownstream();
+
+    private void ApplyDownstream()
+    {
+        if (_store == null || _doc.IsEmpty) return;
+
+        if (_mode == Mode.Recording)
+        {
+            SetVerdict("y", "还在录", "先按空格停下来，再应用");
+            return;
+        }
+        if (_mode == Mode.Candidate)
+        {
+            SetVerdict("y", "还有一条没确认", "先按回车绑定、或按 Esc 扔掉，再应用");
+            return;
+        }
+        if (_mode == Mode.EditBind)
+        {
+            SetVerdict("y", "正在改绑", "先按回车保存、或按 Esc 取消，再应用");
+            return;
+        }
+
+        var takes = OrderedConfirmed();
+        if (takes.Count == 0)
+        {
+            SetVerdict("y", "还是空的", "先录一条、按回车绑定，再应用");
+            return;
+        }
+
+        // ---- 摊开代价（一次问清，不要连弹三个框）----
+        var warns = new List<string>();
+
+        int total = _doc.Sentences.Count;
+        int done = _done.Count;
+        if (done < total)
+            warns.Add($"· 还有 {total - done} 句没录（共 {total} 句），这些句子不会出现在成片里。");
+
+        bool hasFine = (_s.FineCutKeeps is { Count: > 0 }) || _s.TimelineSnapshot.Count > 0;
+        if (hasFine)
+            warns.Add("· 精剪里已经有时间轴，会被按新母带重铺（挪过的块、裁过的边界会丢）。");
+
+        if (_s.Shots.Count > 0)
+            warns.Add($"· 分镜表已有 {_s.Shots.Count} 个镜头，是按上一版音频切的，应用后要回分镜页重做。");
+
+        if (warns.Count > 0)
+        {
+            string text = string.Join("\n", warns) + "\n\n还要应用吗？";
+            if (MessageBox.Show(text, "应用到下游", MessageBoxButton.OKCancel,
+                                MessageBoxImage.Warning) != MessageBoxResult.OK)
+            {
+                SetVerdict("", "", "已取消应用");
+                return;
+            }
+        }
+
+        // ---- 拼母带 ----
+        BtnApply.IsEnabled = false;
+        SetVerdict("b", "正在拼母带", $"把 {takes.Count} 条录音接成一条…");
+        Mouse.OverrideCursor = Cursors.Wait;
+
+        VoiceMasterResult master;
+        try
+        {
+            // 精剪页可能一直活着并压着上一版母带的样本缓存 → 先让它松手，
+            // 不然重铺完听着还是旧音频（这种"静默用旧数据"最难查）
+            StepFineCutView.PrepareForNewMaster();
+            master = VoiceMaster.Build(_store.Dir, takes);
+        }
+        catch (Exception ex)
+        {
+            Mouse.OverrideCursor = null;
+            UpdateApplyButton();
+            SetVerdict("r", "应用失败", "母带没写成功 —— " + ex.Message);
+            MessageBox.Show(ex.Message, "应用到下游", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+        finally
+        {
+            Mouse.OverrideCursor = null;
+        }
+
+        if (master.Pieces.Count == 0)
+        {
+            UpdateApplyButton();
+            SetVerdict("r", "应用失败", "一条音频也没读到 —— takes 目录里的 wav 不见了？");
+            return;
+        }
+
+        // ---- 转写稿 + 决策 + 状态 ----
+        var tr = VoiceMaster.MakeTranscript(_doc, master, master.WavPath);
+        string trPath = VoiceMaster.SaveTranscript(_projectDir, tr);
+
+        string projName = WorkbenchWindow.Session.Current?.Model?.Name ?? "";
+        var plan = VoiceMaster.MakePlan(_doc, master, master.WavPath, projName);
+
+        _s.ApplyVoiceMaster(master.WavPath, master.DurationSec, trPath);
+        _s.Plan = plan;
+        _s.Transcript = tr;
+        _s.ScriptText = string.Join("\n", _doc.Sentences.Select(x => x.Text));
+
+        // 成片口播稿按旧母带算的，作废；下次进分镜页会按新母带重算
+        _s.FinalScriptDoc = null;
+        _s.FinalScriptSource = "";
+
+        // 记下"这一版已经交出去了"，界面据此判断母带是不是过期
+        _store.Data.AppliedStamp = _store.Stamp();
+        _store.Data.AppliedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
+        _store.Data.ScriptStamp = _doc.Stamp;
+        SaveStore();
+
+        // 立刻落盘：万一用户应用完就关程序，这一版不能白做
+        try { WorkbenchWindow.Session.Save(force: true); } catch { }
+
+        string msg = $"已应用：{master.Pieces.Count} 条录音 → 母带 {Fmt(master.DurationSec)} · {tr.Segments.Count} 句";
+        if (master.Skipped.Count > 0)
+            msg += $"　⚠ {master.Skipped.Count} 条读不出来（{master.Skipped[0]}）";
+
+        SetVerdict("g", "已交给精剪",
+            msg + " —— 精剪里已按「一条录音一块」铺好，拖块边界就是调气口");
+
+        UpdateApplyButton();
+        Win?.Status(msg);
+        Win?.GoTo(NavTree.Ids.StepFineCut);
+    }
+
+    /// <summary>
+    /// 应用按钮的可用状态与文案。
+    ///
+    /// 【为什么要区分"应用到下游 / 应用更新 / 已是最新"】
+    ///   这一页的节奏是"录几条 → 应用 → 去精剪调"。用户回来再录一条之后，
+    ///   如果按钮还写着"应用到下游"，他根本看不出来现在下游那份是不是旧的。
+    ///   判据是**磁盘上的台账签名**（RecordFile.AppliedStamp），不是内存标记 ——
+    ///   重开程序照样准。
+    /// </summary>
+    private void UpdateApplyButton()
+    {
+        if (BtnApply == null) return;
+
+        int n = OrderedConfirmed().Count;
+        bool canClick = n > 0 && _mode != Mode.Recording;
+
+        bool never = _s.Plan == null;
+        bool stale = _store == null || _store.IsApplyStale();
+
+        TxtApplyLabel.Text = n == 0 ? "应用到下游"
+            : never ? "应用到下游"
+            : stale ? "应用更新"
+            : "已是最新";
+
+        BtnApply.IsEnabled = canClick;
+        BtnApply.Background = stale && !never ? Freeze(0x25, 0x63, 0xEB) : Freeze(0x2A, 0x30, 0x38);
+
+        BtnApply.ToolTip = n == 0
+            ? "还没有绑定好的录音 —— 录一条、回车绑定之后才能应用"
+            : stale
+                ? "这批录音跟下游的母带不一样了 —— 点一下重拼母带，交给精剪"
+                : "下游就是这一版（点一下也会安全地重拼一次）";
+    }
+
+    // ========================================================
     // 模式 / 按钮
     // ========================================================
 
@@ -1182,6 +1365,8 @@ public partial class RecordingDeskView : UserControl, INavPage
         if (rec) TxtTime.Text = Fmt(_engine.ElapsedSec);
         else if (play) TxtTime.Text = Fmt(_engine.PlayPositionSec);
         else TxtTime.Text = _activeTake != null ? Fmt(_activeTake.DurSec) : "00:00.0";
+
+        UpdateApplyButton();
     }
 
     // ========================================================

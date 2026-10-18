@@ -200,7 +200,7 @@ public partial class Step2ShotView : UserControl
     {
         if (!_s.HasDecision)
         {
-            TxtScriptInfo.Text = "还没有剪辑决策 —— 先在第①步跑粗剪，或到精剪页点「应用到下游」";
+            TxtScriptInfo.Text = "还没有剪辑决策 —— 先在录音台点「应用到下游」，母带才会交给精剪";
             RefreshHint();
             return;
         }
@@ -271,9 +271,9 @@ public partial class Step2ShotView : UserControl
     /// </summary>
     private TimelineProject? BuildPlayProject()
     {
-        // ★ 不要拿 HasSource（要求 Pcm 已解码）当门槛。
-        //   从项目列表直接进分镜页时音频还没解码（解码是第①步做的），
-        //   那时试听不该整个消失 —— 只要源文件还在就能拼。
+        // ★ 门槛一律用 HasSourceFile（`SourcePath` 非空 + 文件还在磁盘上）。
+        //   以前这里注释还提到"Pcm 已解码"——V1.17.0 砍掉粗剪后 Pcm 整个没了，
+        //   时长改从 `SourceDurationSec` 取（探测结果 → 决策里记的源时长）。
         //   SourceTotalSec 只影响"裁切能拖到多远"，这一页不裁，给 0 也没事。
         //
         // ★ 2026-10-03 收口：本页当年是**手搓**了这个判断（`SourcePath 非空`）。
@@ -287,7 +287,7 @@ public partial class Step2ShotView : UserControl
 
         var proj = new TimelineProject();
         double t = 0;
-        double srcTotal = _s.Pcm?.DurationSec ?? 0;
+        double srcTotal = _s.SourceDurationSec;
 
         foreach (var r in ranges)
         {
@@ -377,7 +377,7 @@ public partial class Step2ShotView : UserControl
     {
         if (_playProject == null)
         {
-            Win?.Status("还没有成片可听 —— 先在第①步跑粗剪，或到精剪页点「应用到下游」");
+            Win?.Status("还没有成片可听 —— 先在录音台点「应用到下游」，母带才会交给精剪");
             return;
         }
 
@@ -648,7 +648,7 @@ public partial class Step2ShotView : UserControl
     {
         if (!_s.HasDecision)
         {
-            Win?.Status("还没有剪辑决策 —— 先在第①步跑粗剪，或在精剪页点「应用到下游」");
+            Win?.Status("还没有剪辑决策 —— 先在录音台点「应用到下游」，母带才会交给精剪");
             return false;
         }
 
@@ -1753,7 +1753,7 @@ public partial class Step2ShotView : UserControl
         //   用户以为坏了（2026-09-29 用户反馈："明明稿子也有了，但无法点击"）。
         if (_s.ShotDraft.Count == 0 && _s.Shots.Count == 0 && !AutoSplit())
         {
-            Win?.Status("还没有口播稿 —— 先在第①步跑粗剪，或在精剪页点「应用到下游」");
+            Win?.Status("还没有口播稿 —— 先在录音台点「应用到下游」，母带才会交给精剪");
             return;
         }
 
@@ -2158,7 +2158,7 @@ public partial class Step2ShotView : UserControl
 
         if (!_s.HasDecision)
         {
-            TxtHint.Text = "⚠ 还没有剪辑决策 —— 先在第①步跑粗剪，或在精剪页点「应用到下游」";
+            TxtHint.Text = "⚠ 还没有剪辑决策 —— 先在录音台点「应用到下游」，母带才会交给精剪";
             return;
         }
 
@@ -2601,8 +2601,8 @@ public sealed class ShotVm : INotifyPropertyChanged
     // ---- 卡头元信息 ----
 
     public string IndexText => Model.Index.ToString("D2");
-    public string StartText => Step1CutView.FormatTime(Model.StartSec);
-    public string EndText => Step1CutView.FormatTime(Model.EndSec);
+    public string StartText => TimeText.Format(Model.StartSec);
+    public string EndText => TimeText.Format(Model.EndSec);
     public string DurText => Model.DurationSec.ToString("F1") + "s";
 
     /// <summary>手动调过边界的镜头打 ✎ 标记（重切分前会提醒）。</summary>

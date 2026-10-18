@@ -290,11 +290,11 @@ public sealed class ProjectSession
         _state.TranscriptPath = m.Source.TranscriptPath ?? "";
         _state.Transcript = m.Source.Transcript;
 
-        // 波形 / 探测结果不进存档（能从源文件重算）——
-        // 交给第①步自己解码：把文件排进它的待加载槽位即可。
-        if (!string.IsNullOrWhiteSpace(_state.SourcePath) &&
-            System.IO.File.Exists(_state.SourcePath))
-            Views.Step1CutView.PendingFile = _state.SourcePath;
+        // 波形 / 探测结果不进存档（能从源文件重算）。
+        // ★ V1.17.0：粗剪页砍掉后，工作台里没有任何一页会在"打开项目"时主动解码，
+        //   所以这里不再往某个页面的静态槽位里塞待加载文件 —— 需要时长的地方
+        //   用 `SourceDurationSec`（探测结果 → 决策里的源时长），需要文件的地方
+        //   用 `HasSourceFile`。**别再造一个"只有某页才建立"的状态当门槛**（R-17/R-19）。
 
         // ---- ① 粗剪 ----
         _state.Plan = m.Cut.Plan;
@@ -383,7 +383,6 @@ public sealed class ProjectSession
     private void ClearState()
     {
         _state.SourcePath = "";
-        _state.Pcm = null;
         _state.Probe = new MediaProbe();
         _state.Transcript = null;
         _state.TranscriptPath = "";

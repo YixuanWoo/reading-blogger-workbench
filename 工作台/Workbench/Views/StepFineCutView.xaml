@@ -14,10 +14,10 @@
                不再有第二个窗口。切换到其它步骤时自动把结果接回工作台。
 
          【数据流（不变的部分）】
-           进：State.KeepRanges()（粗剪结果，可能含用户在第①步的逐段修改）
+           进：State.KeepRanges()（录音台铺好的母带区间；精剪接管后就是精剪块）
                → EditorView.LoadPreCutProject() 铺成时间轴块
            出：EditorView.GetTimelineKeeps()
-               → 和粗剪结果比对，有差异才覆盖 State.FineCutKeeps
+               → 和上一版决策比对，有差异才覆盖 State.FineCutKeeps
          ============================================================ -->
     <Grid>
         <Grid.RowDefinitions>
@@ -59,7 +59,7 @@
                     <Button x:Name="BtnApply" Content="应用到下游"
                             Style="{StaticResource BtnPrimary}" FontSize="12.5"
                             Padding="14,6" Click="BtnApply_Click"/>
-                    <Button x:Name="BtnRevert" Content="还原为粗剪"
+                    <Button x:Name="BtnRevert" Content="还原为铺排"
                             Style="{StaticResource Btn}" FontSize="12.5"
                             Padding="12,6" Margin="8,0,0,0" Click="BtnRevert_Click"/>
                     <Button x:Name="BtnFullscreen" Content="⛶ 全屏"
@@ -69,7 +69,7 @@
             </Grid>
         </Border>
 
-        <!-- ============ 粗剪更新提示条（默认隐藏） ============ -->
+        <!-- ============ 录音台更新提示条（默认隐藏） ============ -->
         <!--
              【为什么要这条】
                以前粗剪一重跑，本页会**直接拿新粗剪重铺时间轴** ——
@@ -86,24 +86,24 @@
                 <TextBlock x:Name="TxtCoarseUpdate" FontSize="12"
                            Foreground="{StaticResource Warn}" VerticalAlignment="Center"
                            TextWrapping="Wrap" Margin="0,0,150,0"/>
-                <Button Content="用新粗剪重铺时间轴" HorizontalAlignment="Right"
+                <Button Content="用新母带重铺时间轴" HorizontalAlignment="Right"
                         Style="{StaticResource Btn}" FontSize="12" Padding="12,4"
                         Click="BtnReloadCoarse_Click"
-                        ToolTip="当前时间轴会被新粗剪结果替换（这一步不可撤销）"/>
+                        ToolTip="当前时间轴会被录音台新铺的母带替换（这一步不可撤销）"/>
             </Grid>
         </Border>
 
         <!-- ============ 编辑器（铺满剩余空间，全屏时吃满整窗） ============ -->
         <Grid x:Name="EditorHost" Grid.Row="2"/>
 
-        <!-- ============ 无粗剪时的占位提示 ============ -->
+        <!-- ============ 还没有母带时的占位提示 ============ -->
         <Border x:Name="Placeholder" Grid.Row="2" Visibility="Collapsed">
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="420">
                 <TextBlock Text="还没有可精剪的内容" FontSize="18" FontWeight="SemiBold"
                            Foreground="White" HorizontalAlignment="Center"/>
                 <TextBlock Margin="0,10,0,0" FontSize="13" Foreground="{StaticResource TextDim}"
                            TextWrapping="Wrap" TextAlignment="Center"
-                           Text="两条路都行：① 回第①步加载音频、跑一次粗剪，这里就会铺好可编辑的时间轴；② 直接在本页导入素材，从零手工摆块。"/>
+                           Text="去录音台把稿子念完，点右上角「应用到下游」——母带会拼成一条，这里就按「一条录音一块」铺好，你只管拖边界调气口。"/>
             </StackPanel>
         </Border>
     </Grid>

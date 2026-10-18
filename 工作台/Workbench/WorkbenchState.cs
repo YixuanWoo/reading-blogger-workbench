@@ -49,8 +49,24 @@ public sealed class WorkbenchState
     /// <summary>当前加载的媒体文件路径（音频或视频）。</summary>
     public string SourcePath { get; set; } = "";
 
-    /// <summary>解码后的波形数据。</summary>
-    public PcmData? Pcm { get; set; }
+    /// <summary>
+    /// 源素材的时长（秒）。
+    ///
+    /// 【为什么不是一个字段存着】
+    ///   V1.17.0 砍掉粗剪之后，工作台里**没有任何一页会去解码整条音频**了
+    ///   （以前是粗剪页解码，顺手把 Pcm 存进来当"时长"用）。
+    ///   现在时长从三个地方按可信度取：探测结果 → 决策里记的源时长。
+    ///   都没有就是 0，界面照旧显示，不要拿它当门槛（门槛是 HasSourceFile）。
+    /// </summary>
+    public double SourceDurationSec
+    {
+        get
+        {
+            if (Probe.DurationSec > 0) return Probe.DurationSec;
+            if (Plan?.Source != null && Plan.Source.DurationSec > 0) return Plan.Source.DurationSec;
+            return 0;
+        }
+    }
 
     /// <summary>源文件的探测结果（有没有视频轨等）。</summary>
     public MediaProbe Probe { get; set; } = new();
@@ -390,33 +406,26 @@ public sealed class WorkbenchState
         string.IsNullOrEmpty(SourcePath) ? "未加载" : Path.GetFileName(SourcePath);
 
     /// <summary>
-    /// 源素材的**波形/探测已经解码好了**（Pcm 非空）。
-    ///
-    /// ⚠ 它回答的是"解码这件事做完没有"，**不是"有没有源素材"**。
-    ///   解码只有第①步会做（打开项目时把路径排进 `Step1CutView.PendingFile`，
-    ///   等用户进①页才真正解码）。所以"本次运行没进过①"的会话里它恒为 false。
-    ///   拿它当"能不能往下走"的门槛，下游页会永远灰着 —— 见 HasSourceFile。
-    /// </summary>
-    public bool HasSource => Pcm != null && !string.IsNullOrEmpty(SourcePath);
-
-    /// <summary>
     /// **有没有源素材** —— 逻辑义：路径非空，且文件还在磁盘上。
     ///
-    /// 【为什么必须和 HasSource 分开】（2026-10-03 用户实报「⑤ 开始出片按钮灰着」）
-    ///   `HasSource` 要求 `Pcm != null`，而 Pcm 只有**第①步构造时**才解码。
+    /// 【为什么判据是"磁盘事实"，不是"解码做到没有"】（2026-10-03 用户实报「⑤ 开始出片按钮灰着」）
+    ///   老口径要求 `Pcm != null`，而 Pcm 只有第①步（粗剪）构造时才解码。
     ///   用户打开项目后落在写作台（或上次停的那一页），直接进⑤ ——
     ///   ① 从没构造过，Pcm 就是 null。于是"开始出片"永远灰着，
     ///   界面还谎报"还没有加载源素材"（文件明明躺在磁盘上）。
-    ///   判"有没有源素材"该看**磁盘事实**，跟"解码做到哪一步"无关。
     ///
     ///   ★ 这条和 R-17（"渲完不变绿"）是同一类病：**状态只在某一页里被建立**，
     ///     别的页拿它当门槛就必然对不上。谁要判"能不能往下走"，用这个。
+    ///
+    /// ★ V1.17.0：粗剪页砍掉后 `Pcm` 整个没了，这条已经是**唯一**的源素材判据。
     /// </summary>
     public bool HasSourceFile =>
         !string.IsNullOrWhiteSpace(SourcePath) && File.Exists(SourcePath);
 
     /// <summary>
-    /// 是否已经有粗剪决策。
+    /// 是否已经有剪辑铺排（CutPlan）。
+    /// ★ V1.17.0 起这份决策由**录音台**产出（一条录音 = 一个 Keep 段），
+    ///   不再来自算法粗剪。字段名不变，下游一个字都不用改。
     /// </summary>
     public bool HasPlan => Plan != null && Plan.Segments.Count > 0;
 
@@ -458,7 +467,10 @@ public sealed class WorkbenchState
             var ranges = KeepRanges();
             if (ranges.Count == 0) return "";
 
-            string who = ActiveDecision == DecisionSource.Fine ? "精剪" : "粗剪";
+            // ★ V1.17.0：Plan 不再是"AI 粗剪"，而是录音台拼完母带后
+            //   按一条录音一段铺出来的排布 —— 所以界面上叫「录音铺排」，
+            //   再写"粗剪"只会让人以为还有一步没走。
+            string who = ActiveDecision == DecisionSource.Fine ? "精剪" : "录音铺排";
             double total = ranges.Sum(r => r.End - r.Start);
             return $"{who} · {ranges.Count} 段 · {FormatDuration(total)}";
         }
@@ -494,62 +506,57 @@ public sealed class WorkbenchState
     }
 
     // ========================================================
-    // 源文件解码完成 —— 决策要不要作废，只看"素材换没换"
+    // 录音台交接：母带换了一版，哪些判断必须作废
     // ========================================================
     //
-    // 【为什么这条规矩必须单独拎出来，而且必须写在状态层】
+    // 【这一节的历史】
+    //   原来是第①步（粗剪）解码完调的 `ApplyDecodedSource`。V1.17.0 砍掉粗剪后，
+    //   工作台里再没有"解码整条音频"这件事，唯一换源素材的入口变成
+    //   **录音台的「应用到下游」**（每次重建 vo.wav）。规矩原样搬过来。
     //
-    //   2026-09-29 踩过一个大坑：第①步的加载函数里无条件清空
-    //   Plan / FineCutKeeps / Shots。看着合理（"换了素材，旧决策当然作废"），
-    //   但它漏了一件事 —— **打开项目也会走到那里**：
-    //     打开项目 → ProjectSession 把源文件路径排进待加载槽位
-    //     → 第①步一构造就自动解码 → 决策被清 → 自动保存把空状态写回磁盘。
-    //   于是"重启后粗剪白剪了"、"精剪应用到下游但下次打开又不生效"。
+    // 【当年那个坑，别忘】
+    //   2026-09-29 踩过：加载函数里无条件清空 Plan / FineCutKeeps / Shots，
+    //   看着合理（"换了素材，旧决策当然作废"），但它漏了一件事 ——
+    //   **打开项目也会走到那里**：于是每次开项目都把决策清掉，
+    //   紧接着自动保存又把空状态写回磁盘 → "重启后白剪了"。
+    //   所以清空只能发生在**用户明确换了素材**的那一刻，不能发生在加载路径上。
     //
-    //   现在改成：同一个源文件重新解码 = 决策原样保留；
-    //             只有真的换了素材才作废。
-    //
-    //   放在这里（而不是留在界面代码里）的理由很实际：它是纯数据操作，
-    //   可以被无头验证直接断言，不用去启动 WPF 界面。
+    // 【为什么放在状态层】
+    //   纯数据操作，能被无头验证直接断言，不用起 WPF。
 
     /// <summary>两个路径是不是同一个源文件（同路径即重载，不同才是换素材）。</summary>
     public static bool IsSameSource(string? a, string? b) =>
         string.Equals(a ?? "", b ?? "", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// 源文件解码完成，把 PCM 与探测结果装进状态，并按需作废旧决策。
+    /// 录音台刚重建了母带：把新母带装进状态，并作废**针对旧母带**的那些判断。
+    ///
+    /// 【作废什么】
+    ///   精剪区间 / 时间轴快照 → 旧母带的秒数，铺上新母带就是错的（必须清）。
+    ///   Plan                  → 由调用方随后立刻换成本次新建的那份。
+    ///
+    /// 【不动什么】分镜表。
+    ///   它记录的是"成片第几秒配什么画面"，母带一变就整体错位 —— 但那是用户
+    ///   几十个镜头的心血，程序不能自己删。所以只清时间轴、留镜头表，
+    ///   由界面明确提示「分镜要基于新音频重做」。
     /// </summary>
-    /// <param name="switchedSource">
-    /// true = 真的换了素材（作废和旧素材绑定的决策）。
-    /// false = 同一个文件重新解码（开项目 / 重新加载）—— 决策一个都不动。
-    /// </param>
-    public void ApplyDecodedSource(string path, PcmData pcm, MediaProbe probe, bool switchedSource)
+    public void ApplyVoiceMaster(string wavPath, double durationSec, string transcriptPath)
     {
-        SourcePath = path;
-        Pcm = pcm;
-        Probe = probe;
+        SourcePath = wavPath;
+        Probe = new MediaProbe
+        {
+            HasAudio = true,
+            HasVideo = false,
+            DurationSec = durationSec,
+        };
+        TranscriptPath = transcriptPath;
 
-        if (!switchedSource) return;
-
-        // 切了源文件 → 这些全是"针对旧素材"的判断，留着就会串台：
-        //   旧粗剪决策会当新素材的剪法、旧精剪区间会当新素材的决策、
-        //   旧分镜表会配到新素材上。
-        Plan = null;
+        // 旧母带的精剪成果全部作废（秒数对不上了）
         FineCutKeeps = null;
-        Transcript = null;
-        TranscriptPath = "";
-        Shots.Clear();
-        // 分镜的草稿、已交接时间、发号器同理 —— 它们全是"针对旧素材"的。
-        // 发号器一并归零：新素材的镜头表从头发号，不会跟旧素材的 ID 撞上
-        // （旧素材的产物已经毫无意义，留着旧序号只会让新 ID 变得难读）。
-        ShotDraft.Clear();
-        ShotCommittedAt = "";
-        ShotSeq = 0;
-
-        // 时间轴快照同理 —— 它是"针对旧素材排好的版面"，换素材后毫无意义。
-        // 只清内存里的这一份（项目档案里的副本不动，用户回不去也不会丢）。
         TimelineSnapshot = new List<ClipPart>();
         TimelineSourcePath = "";
+        TimelinePlayheadSec = 0;
+        PendingTimelineSnapshot = null;
     }
 
     /// <summary>
@@ -668,7 +675,7 @@ public enum DecisionSource
     /// <summary>还没有任何决策 —— 分镜/渲染/导出都无从下手。</summary>
     None = 0,
 
-    /// <summary>用第①步的粗剪决策（Plan）。</summary>
+    /// <summary>用录音台铺出来的决策（Plan：一条录音 = 一段）。</summary>
     Coarse = 1,
 
     /// <summary>用第②步的精剪时间轴。人工结果优先于算法。</summary>

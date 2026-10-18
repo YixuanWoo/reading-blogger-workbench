@@ -50,7 +50,7 @@
                       MouseDoubleClick="ListFiles_MouseDoubleClick">
                 <ListView.ContextMenu>
                     <ContextMenu>
-                        <MenuItem Header="设为粗剪源文件" Click="MenuSetSource_Click"/>
+                        <MenuItem Header="用系统播放器打开" Click="MenuOpenWithSystem_Click"/>
                         <MenuItem Header="在资源管理器中显示" Click="MenuReveal_Click"/>
                         <Separator/>
                         <MenuItem Header="从项目移除（挪进 _已移除）" Click="MenuRemove_Click"/>

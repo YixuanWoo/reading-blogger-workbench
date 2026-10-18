@@ -82,6 +82,20 @@ public sealed class RecordFile
     /// <summary>没选选区时，录完按语速猜范围（默认开）。</summary>
     public bool AutoGuess { get; set; } = true;
 
+    /// <summary>
+    /// 上一次「应用到下游」时，这批录音长什么样（签名）。
+    ///
+    /// 【为什么要把这件事记在磁盘上】
+    ///   应用之后只要再录一条、改一次绑定、删一条，下游的母带就过期了 ——
+    ///   界面上得能看出"现在这份母带是不是最新的"。
+    ///   把签名存进 record.json（而不是只放内存）才能跨启动成立：
+    ///   重开程序照样知道"上次应用之后动过没有"。
+    /// </summary>
+    public string AppliedStamp { get; set; } = "";
+
+    /// <summary>上次应用的时间（"2026-10-18 13:40"，空 = 从没应用过）。</summary>
+    public string AppliedAt { get; set; } = "";
+
     /// <summary>全部录音（含作废的）。顺序 = 录制顺序。</summary>
     public List<RecordingTake> Takes { get; set; } = new();
 }
@@ -214,4 +228,25 @@ public sealed class RecordingStore
 
     /// <summary>当前有没有任何一条活录音。</summary>
     public bool HasAlive => Data.Takes.Any(t => !t.Dead);
+
+    /// <summary>
+    /// 这批录音此刻的签名（谁、绑了哪几句、还在不在用）。
+    ///
+    /// 【为什么不用"文件时间"】
+    ///   改一次绑定不碰 wav，靠时间戳看不出来；而"改了绑定"恰恰是最需要
+    ///   重新应用的那类改动（母带里那句的时间码变了）。
+    ///   所以签名取的是**台账内容**，不是文件。
+    /// </summary>
+    public string Stamp()
+    {
+        var sb = new System.Text.StringBuilder();
+        foreach (var t in Data.Takes)
+            sb.Append(t.Id).Append(':')
+              .Append(t.A).Append('-').Append(t.B).Append(':')
+              .Append(t.Dead ? '0' : '1').Append('|');
+        return WorkbenchState.Fnv1a(sb.ToString());
+    }
+
+    /// <summary>下游母带是不是已经跟这批录音对不上了（需要重新应用）。</summary>
+    public bool IsApplyStale() => Data.AppliedStamp != Stamp();
 }

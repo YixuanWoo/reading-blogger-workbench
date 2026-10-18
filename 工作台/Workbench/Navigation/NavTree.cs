@@ -12,10 +12,12 @@
 //              · 没有"模板"—— 用户明确不要
 //              · ★ 复盘搬到这里：它是"发布之后"的回顾，属于账号/项目层面的
 //                整体视角，不是剪辑流程里的一步（用户 2026-10-15 拍板）。
-//   InProject：写作台（0）
-//              + 音频粗剪 / 精剪 / 分镜设计 / 渲染 / 组接导出（= 原流程五步）
+//   InProject：写作台（0）/ 录音台 / 精剪 / 分镜设计 / 渲染 / 组接导出
 //              + 素材库（项目自己的）
 //            · 原"发布"页已砍掉
+//            · ★ V1.17.0 砍掉「音频粗剪」：现在稿子是一句一句录的，
+//              卡壳当场重录，粗剪唯一的用处（砍气口、砍卡壳）已经在录音阶段
+//              解决掉了。录音台的「应用到下游」直接把母带交给精剪。
 //            · 分三组显示：文稿 / 成片 / 资源（Group 字段，只画分隔线）
 //            · 复盘**不在这里**（见上）
 //
@@ -49,7 +51,6 @@ public static class NavTree
         public const string ProjectsActive = "projects.active";
         public const string ProjectsArchived = "projects.archived";
 
-        public const string StepCut = "step.cut";
         public const string StepFineCut = "step.finecut";
         public const string StepShots = "step.shots";
         public const string StepRender = "step.render";
@@ -167,20 +168,21 @@ public static class NavTree
             KeepAlive = true,
         },
 
-        // ── 成片（原流程五步，编号与顺序一个都没动）──
-        new NavNode
-        {
-            Id = Ids.StepCut,
-            Title = "音频粗剪",
-            Icon = "1",
-            Group = "成片",
-            CreateView = () => new Step1CutView(),
-        },
+        // ── 成片（V1.17.0：粗剪砍掉，精剪成为第 1 站）──
+        //
+        //  【为什么砍粗剪】
+        //    它存在的唯一理由就是"砍气口、砍卡壳"。现在稿子一句一句录，
+        //    卡壳当场就重录了 —— 粗剪面对一条已经是干净人声的母带，无事可做。
+        //    （用户 2026-10-18 原话："粗剪是我完全没价值的东西"。）
+        //
+        //  【精剪为什么还在】
+        //    气口留多长、两句之间接多紧，是**判断**不是算法：
+        //    快节奏和慢节奏需要的呼吸长度不一样，只能人拖。
         new NavNode
         {
             Id = Ids.StepFineCut,
             Title = "精剪",
-            Icon = "2",
+            Icon = "1",
             Group = "成片",
             CreateView = () => new StepFineCutView(),
             // ★ 必须缓存：编辑器压着撤销历史 / 播放状态，重建就全丢
@@ -190,7 +192,7 @@ public static class NavTree
         {
             Id = Ids.StepShots,
             Title = "分镜设计",
-            Icon = "3",
+            Icon = "2",
             Group = "成片",
             CreateView = () => new Step2ShotView(),
         },
@@ -198,7 +200,7 @@ public static class NavTree
         {
             Id = Ids.StepRender,
             Title = "渲染",
-            Icon = "4",
+            Icon = "3",
             Group = "成片",
             CreateView = () => new Step3RenderView(),
         },
@@ -206,7 +208,7 @@ public static class NavTree
         {
             Id = Ids.StepExport,
             Title = "组接导出",
-            Icon = "5",
+            Icon = "4",
             Group = "成片",
             CreateView = () => new Step4ExportView(),
         },
@@ -249,8 +251,10 @@ public static class NavTree
     /// 【分流规则（很朴素，只看一件事实：这一支片有没有稿源）】
     ///   有稿源（script.md 存在且非空）→ 落写作台
     ///       理由：这个项目已经在走"文稿驱动"，从稿子开始接着干才对。
-    ///   没稿源                              → 落音频粗剪（老路，一个字不变）
-    ///       理由：它本来就是录音驱动做的，写作台跟它没关系。
+    ///   没稿源                              → 落精剪
+    ///       理由：老项目（2026 年以前直接导音频剪的）没有稿子，写作台/录音台
+    ///             都跟它没关系；它要接着干的下一步就是精剪。
+    ///             （V1.17.0 之前这里是落粗剪 —— 粗剪已经砍掉了。）
     ///
     /// ★ 这样处理的好处：**不需要给project.json 加字段**，
     ///   也就不存在"老档案缺 DriveMode 字段"的迁移问题 —— 判据直接看磁盘事实。
@@ -259,7 +263,7 @@ public static class NavTree
     ///   直接停在全局作用域的「复盘」页（见 WorkbenchWindow.OpenProject）。
     ///   复盘已经搬到一级菜单，它不属于任何项目的工作流。
     /// </summary>
-    public static string DefaultProjectId => HasScript ? Ids.Script : Ids.StepCut;
+    public static string DefaultProjectId => HasScript ? Ids.Script : Ids.StepFineCut;
 
     /// <summary>当前打开的项目是不是"已归档"。</summary>
     public static bool IsArchivedProject =>

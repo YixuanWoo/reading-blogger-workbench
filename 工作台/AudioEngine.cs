@@ -481,6 +481,25 @@ public class AudioEngine : IDisposable
         _positionTimer?.Stop();
     }
 
+    /// <summary>
+    /// 丢掉缓存里的整条样本。
+    ///
+    /// 【什么时候必须调】
+    ///   源文件被**原地重建**之后（V1.17.0：录音台每次「应用到下游」都会重写
+    ///   `素材\录音\vo.wav`）。缓存只按"时间轴指纹"判定命中，不知道磁盘上的
+    ///   文件已经换了一版 —— 不清的话，精剪里听到的、看到的还是上一版母带，
+    ///   而且**看不出哪里不对**（波形还在、能播、长度也差不多）。
+    ///   这类"静默用旧数据"的坑，改一次查半天，所以宁可显式清一遍。
+    /// </summary>
+    public void InvalidateCache()
+    {
+        lock (_cacheLock)
+        {
+            _cachedPlan = null;
+            _cachedSamples = null;
+        }
+    }
+
     public void Dispose()
     {
         StopOutput();

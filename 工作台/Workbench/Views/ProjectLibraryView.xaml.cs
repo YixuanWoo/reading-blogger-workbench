@@ -94,7 +94,7 @@ public partial class ProjectLibraryView : UserControl, INavPage
         ListFiles.ItemsSource = _rows;
 
         TxtHint.Text = _rows.Count > 0
-            ? "双击 = 拿它去做粗剪；右键 = 设为粗剪源 / 在资源管理器里显示 / 移出项目"
+            ? "双击 = 用系统播放器打开；右键 = 打开 / 在资源管理器里显示 / 移出项目"
             : "";
 
         UpdateEmpty(_rows.Count == 0
@@ -205,22 +205,38 @@ public partial class ProjectLibraryView : UserControl, INavPage
     }
 
     private void ListFiles_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        => SetAsCutSource(RowOf(sender));
+        => OpenWithSystem(RowOf(sender));
 
-    private void MenuSetSource_Click(object sender, RoutedEventArgs e)
-        => SetAsCutSource(ListFiles.SelectedItem as MediaRow);
+    private void MenuOpenWithSystem_Click(object sender, RoutedEventArgs e)
+        => OpenWithSystem(ListFiles.SelectedItem as MediaRow);
 
     /// <summary>
-    /// 把素材交给第①步（粗剪）当源文件。
-    /// 走的是既有的静态槽位 —— 页面是重建的，直接调方法拿不到新实例。
+    /// 用系统默认程序打开这个素材（音频/视频 = 播放器）。
+    ///
+    /// 【V1.17.0 改的：这里原来是"交给粗剪当源文件"】
+    ///   粗剪页砍掉之后，那条路没有了，于是这个双击位置空了出来。
+    ///   没有做成"设为当前项目的源素材"是故意的 —— 换源素材要连带作废
+    ///   精剪、分镜一大串判断，那是录音台「应用到下游」该干的事（它有明确的
+    ///   重建母带含义），放在素材库双击上太轻飘了，手滑一次代价太大。
+    ///   所以这里只做最无害的一件事：让我听一眼。
     /// </summary>
-    private void SetAsCutSource(MediaRow? row)
+    private void OpenWithSystem(MediaRow? row)
     {
         if (row == null) return;
 
-        Step1CutView.PendingFile = row.FullPath;
-        Shell?.GoTo(NavTree.Ids.StepCut);
-        Shell?.Status($"已把「{row.Name}」交给粗剪");
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = row.FullPath,
+                UseShellExecute = true,
+            });
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("打不开这个文件：" + ex.Message, "素材库",
+                            MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
     }
 
     private void MenuReveal_Click(object sender, RoutedEventArgs e)

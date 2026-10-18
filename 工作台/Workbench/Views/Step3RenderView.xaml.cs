@@ -61,6 +61,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using LiteCut.Core.Contracts;
 using LiteCut.Core.Media;
+using LiteCut.Workbench.Ui;
 using LiteCut.Workbench.Agent;
 using Microsoft.Win32;
 
@@ -805,7 +806,7 @@ public partial class Step3RenderView : UserControl
 
         TxtSelHead.Text = $"#{i:D3} / 共 {_vms.Count} 镜";
         TxtSelStatus.Text = $"{v.StatusLabel}　·　时长 {v.Model.DurationSec:F3}s　·　"
-                            + $"成片位置 {Step1CutView.FormatTime(v.Model.StartSec)}–{Step1CutView.FormatTime(v.Model.EndSec)}"
+                            + $"成片位置 {TimeText.Format(v.Model.StartSec)}–{TimeText.Format(v.Model.EndSec)}"
                             + (v.Edited ? "\n（你改过这一镜的文案/构思/动效 —— 重渲前这几项会随任务一起交给 Agent）" : "")
                             + (v.Stale ? "\n（磁盘上这版还是旧的：实现改过之后没重渲，所以画面里看不到新内容。重渲一次就对了）" : "");
 
@@ -2198,7 +2199,7 @@ public sealed class RenderShotVm : INotifyPropertyChanged
 
     public string SubText =>
         $"{Model.DurationSec:F2}s · " +
-        $"{Step1CutView.FormatTime(Model.StartSec)}–{Step1CutView.FormatTime(Model.EndSec)}";
+        $"{TimeText.Format(Model.StartSec)}–{TimeText.Format(Model.EndSec)}";
 
     private ShotStat _status = ShotStat.Missing;
     public ShotStat Status

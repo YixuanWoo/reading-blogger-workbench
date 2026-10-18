@@ -529,6 +529,29 @@ public partial class EditorView : UserControl
     }
 
     /// <summary>
+    /// 源音频马上要被**原地重建**（V1.17.0：录音台「应用到下游」重写 vo.wav）。
+    ///
+    /// 【为什么只做两件事】
+    ///   ① 停播放 —— 播放线程还在读样本数组，重建期间不该让它继续跑；
+    ///   ② 清样本缓存 —— 缓存只认时间轴指纹，不认磁盘上的文件换没换。
+    ///      不清的话，重铺时间轴之后听到的还是上一版母带，而且完全看不出异常。
+    ///   不清块、不重置撤销：紧接着 `ClearTimeline()` 会做，这里只负责"松手"。
+    /// </summary>
+    public void ReleaseAudio()
+    {
+        try
+        {
+            if (_engine.IsPlaying)
+            {
+                _engine.Stop();
+                PlayButton.Content = "▶ 播放";
+            }
+            _engine.InvalidateCache();
+        }
+        catch { /* 释放失败不该挡住重建母带 —— 后面 Replace 会报真正的原因 */ }
+    }
+
+    /// <summary>
     /// 清空编辑器的时间轴（换了源文件时用）。
     ///
     /// 【为什么不能靠 LoadPreCutProject(path, 空列表) 来清】
