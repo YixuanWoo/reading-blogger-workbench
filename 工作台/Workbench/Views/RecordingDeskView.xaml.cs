@@ -61,6 +61,13 @@ public partial class RecordingDeskView : UserControl, INavPage
         public string TakeId = "";
         public int PrevA, PrevB;
         public bool WasConfirm;
+
+        /// <summary>★ 这一笔是"删除"：把被删的那条整个记下来，撤销 = 原样放回。</summary>
+        public bool WasDelete;
+        public RecordingTake? Deleted;
+        public int DeletedIndex;
+        public string MovedWav = "";       // wav 被挪到 _deleted 后的绝对路径（撤销时搬回来）
+
         public List<string> DeadIds = new();
     }
 
@@ -102,6 +109,13 @@ public partial class RecordingDeskView : UserControl, INavPage
     private readonly Dictionary<int, FrameworkElement> _blocks = new();
 
     private UndoSnap? _undo;
+
+    /// <summary>★ 删除要按两次（防手滑）：第一次只是"上膛"，4 秒不点自动收回。</summary>
+    private string _armDeleteId = "";
+
+    /// <summary>右栏每条的 ✕ 按钮（上膛时只改它自己，不重建列表、不跳滚动）。</summary>
+    private readonly Dictionary<string, Button> _delBtns = new();
+    private readonly DispatcherTimer _armTimer;
 
     // ========================================================
     // 配色
@@ -155,6 +169,9 @@ public partial class RecordingDeskView : UserControl, INavPage
 
         _uiTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(90) };
         _uiTimer.Tick += UiTimer_Tick;
+
+        _armTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(4) };
+        _armTimer.Tick += (_, _) => DisarmDelete();
 
         _engine.PlaybackEnded += (_, _) => Dispatcher.BeginInvoke(new Action(OnPlaybackEnded));
 
@@ -750,6 +767,7 @@ public partial class RecordingDeskView : UserControl, INavPage
         if (TakeList == null || _store == null) return;
 
         TakeList.Children.Clear();
+        _delBtns.Clear();
         var list = OrderedConfirmed();
         TxtTakeCount.Text = list.Count + " 条";
 
@@ -825,8 +843,25 @@ public partial class RecordingDeskView : UserControl, INavPage
                 if (o is Button b && b.Tag is RecordingTake tk) BeginEditBind(tk);
             };
 
+            // ★ 删除：第一次点只是"上膛"（变成「确认删除」），再点一次才真删
+            bool armed = _armDeleteId == t.Id;
+            var del = new Button
+            {
+                Content = armed ? "确认删除？" : "✕",
+                Style = (Style)FindResource("MiniBtnDanger"),
+                Tag = t,
+                Foreground = armed ? Freeze(0xFF, 0x9A, 0x8C) : Freeze(0x8E, 0x82, 0x80),
+                ToolTip = "删掉这条录音（文件挪到 素材\\录音\\_deleted，Ctrl+Z 可找回）",
+            };
+            del.Click += (o, _) =>
+            {
+                if (o is Button b && b.Tag is RecordingTake tk) OnDeleteClicked(tk);
+            };
+            _delBtns[t.Id] = del;
+
             line2.Children.Add(play);
             line2.Children.Add(edit);
+            line2.Children.Add(del);
 
             Grid.SetRow(line1, 0);
             Grid.SetRow(line2, 1);
@@ -866,6 +901,134 @@ public partial class RecordingDeskView : UserControl, INavPage
 
         _activeTake = take;
         PlayActive();
+    }
+
+    // ========================================================
+    // 删除（按两下确认 / Ctrl+Z 能找回）
+    // ========================================================
+
+    private void OnDeleteClicked(RecordingTake take)
+    {
+        if (_mode == Mode.Recording) return;
+        if (ReferenceEquals(take, _pendingTake)) return;     // 待确认的那条走 Esc，不进列表
+
+        if (_armDeleteId == take.Id) { DeleteTake(take); return; }
+        ArmDelete(take);
+    }
+
+    /// <summary>第一次点 = 上膛（按钮字变成「确认删除？」），4 秒不点自己收回。</summary>
+    private void ArmDelete(RecordingTake take)
+    {
+        _armDeleteId = take.Id;
+        PaintDeleteButtons();
+
+        _armTimer.Stop();
+        _armTimer.Start();
+
+        SetVerdict("y", "删掉 " + TakeName(take) + "？",
+            "再点一次 ✕ 就删 · 文件只是挪到 素材\\录音\\_deleted，Ctrl+Z 能找回");
+        DebugLog.Write("record", "删除待确认 " + take.Id, new { take.A, take.B });
+    }
+
+    private void DisarmDelete()
+    {
+        _armTimer.Stop();
+        if (_armDeleteId.Length == 0) return;
+        _armDeleteId = "";
+        PaintDeleteButtons();
+        SetVerdict("", "", "删除已取消");
+    }
+
+    private void PaintDeleteButtons()
+    {
+        foreach (var kv in _delBtns)
+        {
+            bool on = kv.Key == _armDeleteId;
+            kv.Value.Content = on ? "确认删除？" : "✕";
+            kv.Value.Foreground = on ? Freeze(0xFF, 0x9A, 0x8C) : Freeze(0x8E, 0x82, 0x80);
+        }
+    }
+
+    /// <summary>
+    /// 真删：台账里去掉这条，wav **挪进 `素材\录音\_deleted\`**（不真删，撤销要能搬回来）。
+    /// 删完把这段句子选回去 —— 直接空格就能就着重录。
+    /// </summary>
+    private void DeleteTake(RecordingTake take)
+    {
+        if (_store == null) return;
+        if (_mode == Mode.Playing) StopPlayback();
+
+        string name = TakeName(take);                  // 删完就取不到号了，先记下
+        int idx = _store.Data.Takes.IndexOf(take);
+
+        string src = TakePath(take);
+        string moved = "";
+        try
+        {
+            if (File.Exists(src))
+            {
+                string dir = Path.Combine(_store.Dir, "_deleted");
+                Directory.CreateDirectory(dir);
+                string dst = Path.Combine(dir, Path.GetFileName(src));
+                if (File.Exists(dst))
+                    dst = Path.Combine(dir, take.Id + "_" + DateTime.Now.ToString("HHmmss") + ".wav");
+                File.Move(src, dst);
+                moved = dst;
+            }
+        }
+        catch (Exception ex)
+        {
+            DebugLog.Write("record", "删除时挪 wav 失败", new { take.Id, msg = ex.Message });
+        }
+
+        _peakCache.Remove(src);
+        _store.Data.Takes.Remove(take);
+        _store.Save();
+
+        _undo = new UndoSnap
+        {
+            TakeId = take.Id,
+            WasDelete = true,
+            Deleted = take,
+            DeletedIndex = idx,
+            MovedWav = moved,
+        };
+
+        _armTimer.Stop();
+        _armDeleteId = "";
+
+        bool wasEditing = ReferenceEquals(_editTake, take);
+        if (wasEditing) _editTake = null;
+        if (ReferenceEquals(_activeTake, take)) _activeTake = null;
+
+        // 候选 / 改绑各自有选区，删别的条目时别把它们夺走
+        bool keepMode = !wasEditing && _mode is Mode.Candidate or Mode.EditBind;
+
+        if (!keepMode)
+        {
+            // 删掉的地方就地选回去 —— 空格可以直接重录这一段
+            _selA = take.A;
+            _selB = take.B;
+            _cursor = take.A;
+            _rangeWasGuessed = false;
+        }
+
+        RebuildDoneMap();
+        if (!keepMode) SetMode(Mode.Idle);
+        PaintAll();
+
+        if (!keepMode)
+        {
+            ShowEmptyWave();
+            SetVerdict("y", "已删除 " + name,
+                "文件只是挪到 素材\\录音\\_deleted（Ctrl+Z 能找回）· 这段已选回去，空格就地重录");
+        }
+        else
+        {
+            SetVerdict("y", "已删除 " + name, "Ctrl+Z 能找回");
+        }
+
+        DebugLog.Write("record", "删除 " + take.Id, new { take.A, take.B });
     }
 
     // ========================================================
@@ -1441,6 +1604,50 @@ public partial class RecordingDeskView : UserControl, INavPage
     {
         if (_undo == null || _store == null) return;
 
+        // ★ 撤销"删除"：那条整个放回去（wav 从 _deleted 搬回 takes）
+        if (_undo.WasDelete && _undo.Deleted != null)
+        {
+            var dt = _undo.Deleted;
+
+            if (_undo.MovedWav.Length > 0 && File.Exists(_undo.MovedWav))
+            {
+                try
+                {
+                    Directory.CreateDirectory(_store.TakesDir);
+                    File.Move(_undo.MovedWav, TakePath(dt));
+                }
+                catch (Exception ex)
+                {
+                    DebugLog.Write("record", "撤销删除时搬 wav 失败", new { dt.Id, msg = ex.Message });
+                }
+            }
+
+            if (!_store.Data.Takes.Contains(dt))
+            {
+                int at = Math.Clamp(_undo.DeletedIndex, 0, _store.Data.Takes.Count);
+                _store.Data.Takes.Insert(at, dt);
+            }
+            dt.Dead = false;
+
+            _undo = null;
+            _armTimer.Stop();
+            _armDeleteId = "";
+            _store.Save();
+            RebuildDoneMap();
+
+            _activeTake = dt;
+            _selA = dt.A;
+            _selB = dt.B;
+            _cursor = dt.A;
+
+            SetMode(Mode.Idle);
+            PaintAll();
+            ShowTakeWave(dt);
+            SetVerdict("b", "已撤销", TakeName(dt) + " 回来了");
+            DebugLog.Write("record", "撤销删除 " + dt.Id);
+            return;
+        }
+
         var take = _store.Data.Takes.FirstOrDefault(t => t.Id == _undo.TakeId);
         if (take == null) { _undo = null; UpdateButtons(); return; }
 
@@ -1729,6 +1936,7 @@ public partial class RecordingDeskView : UserControl, INavPage
                 break;
 
             case Key.Escape:
+                if (_armDeleteId.Length > 0) { DisarmDelete(); e.Handled = true; break; }
                 if (_mode == Mode.Recording) StopRecording(discard: true);
                 else if (_mode == Mode.Playing) StopPlayback();
                 else DiscardCurrent();
@@ -1737,6 +1945,12 @@ public partial class RecordingDeskView : UserControl, INavPage
 
             case Key.Z when Keyboard.Modifiers == ModifierKeys.Control:
                 UndoLast();
+                e.Handled = true;
+                break;
+
+            // ★ Delete 键 = 删掉当前选中的那条（同样按两下；Esc 可以取消这次删除）
+            case Key.Delete:
+                if (_mode == Mode.Idle && _activeTake != null) OnDeleteClicked(_activeTake);
                 e.Handled = true;
                 break;
 

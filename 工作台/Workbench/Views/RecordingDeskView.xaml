@@ -208,6 +208,12 @@
             </Setter>
         </Style>
 
+        <!-- ===== 删除按钮（✕）：平时灰，悬停变红，确认态红底 ===== -->
+        <Style x:Key="MiniBtnDanger" TargetType="Button" BasedOn="{StaticResource MiniBtn}">
+            <Setter Property="Foreground" Value="#FF8E8280"/>
+            <Setter Property="Margin" Value="4,0,0,0"/>
+        </Style>
+
     </UserControl.Resources>
 
     <Grid>
@@ -386,7 +392,7 @@
                     <Border Grid.Row="2" Padding="11,6" Background="#FF0F1216"
                             BorderBrush="#FF1E232B" BorderThickness="0,1,0,0">
                         <TextBlock FontSize="10.5" Foreground="#FF6E7783" TextWrapping="Wrap" LineHeight="16">
-                            点一条＝选中它（左栏同步高亮）· ▸ 试听 · ✎ 改绑
+                            点一条＝选中它（左栏同步高亮）· ▸ 试听 · ✎ 改绑 · ✕ 删除（删错 Ctrl+Z 找回）
                         </TextBlock>
                     </Border>
                 </Grid>
