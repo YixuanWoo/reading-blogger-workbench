@@ -1,40 +1,31 @@
 // ============================================================
-// RecordingDeskView.xaml.cs - 录音台（V1.16.0）
+// RecordingDeskView.xaml.cs - 录音台（V1.16.2 三栏重构）
 // ============================================================
 //
-// 【这一页只做一件事：把"声音"和"稿子里的哪几句"配上对】
+// 【布局】左：文案选择区 / 中：提词 / 右：已录列表 / 下：录音台
 //
-//   用户要的用法（2026-10-17 亲口）：
-//     "我希望能够手动选择每一段录制哪部分……也有可能，我先录音，
-//      然后录到一整段我觉得合适的位置停，然后我再手工选择我刚才录制的对应文案。"
+// 【一条录音 = 一块】（用户 2026-10-18 拍板）
+//   · 块的标题只写「音频 N · 14.3s」，不写"第几段第几句"
+//   · 块内所有句子同一个底色 —— Shift 只延长/缩短这一块，
+//     不会出现"一段高亮 + 尾巴上一块光标"的怪样子
+//   · 四种状态：绿=已录 / 蓝=选中 / 金=待确认 / 灰=没录
+//   · 块与块之间留空，按"录音绑定的范围"自然隔开
 //
-//   所以这里**没有"段落"这个对象**：
-//     · 录音 = 一次空格到空格（takes\t001.wav）
-//     · 绑定 = 文案里的句子区间（第 12–14 句，可跨自然段）
-//     · 两者当场配对，配错了点一下改过来
-//   程序不预先切片、不规定句数，也不在录音里动刀（不做裁剪、不做拼接）。
+// 【左右联动】点左栏已录块 ⇄ 右栏对应的「音频 N」同时高亮
 //
-// 【状态机】（V1.16.1 改：绑定只在确认那一刻生效）
-//   Idle ──空格──► Recording ──空格──► Candidate（蓝框，可改范围）
+// 【状态机】
+//   Idle ──空格──► Recording ──空格──► Candidate（金色，待确认）
 //                    Esc=扔掉          │
-//         回车 ◄───────────────────────┘   ◄── 绑定在这一刻才生效
-//                                                 （重叠的旧录音此时才作废）
-//   · 候选态按空格 = 这条不要了重录：wav 和台账行一起清掉，不留作废卡
-//   · 候选态按 Esc  = 整条扔掉，旧绑定原封不动
+//         回车 ◄───────────────────────┘  绑定在这一刻才生效
+//   · 候选态 Esc = 整条扔掉（wav+台账行一起清，旧绑定不动）
+//   · 候选态空格 = 这条不要了重录（同上，然后重录）
+//   · 回放只是背景音：回放中可点句子改范围，回车 = 停回放+绑定
+//   · EditBind（✎ 改绑）：范围可调，回车保存 / Esc 取消
 //
-// 【回放不锁界面】（V1.16.1）
-//   录完自动试听只是背景音 —— 回放中照样点句子改范围、照样回车
-//   （回车 = 停回放 + 绑定，一步到位）。
-//
-// 【台账 = 稿子顺序的清单】（V1.16.1）
-//   只排在用的录音（按起始句排序，跟稿子一个方向）；作废的折叠成一个徽章。
-//   点卡片 = 看这条（波形切过去、左栏滚过去），【不碰选区】——
-//   接下来按空格照常录下一条，不会被刚才看的那条带偏。双击 = 试听。
+// 【绑定后自动推进】回车绑完 → 选区自动落到"下一句还没录的"，中栏提词跟着换
 //
 // 【为什么不自动开始下一段】
-//   录完一段要听、要想、要喘口气。自动往下录会把"人决定节奏"变成"机器赶进度"，
-//   而这个工具存在的理由恰恰是"当场听、当场重录"。所以确认之后停在 Idle，
-//   光标已经挪到下一句 —— 想继续，自己按空格。
+//   录完一段要听、要想、要喘口气。光标给你摆好，想继续自己按空格。
 // ============================================================
 
 using System;
@@ -43,29 +34,39 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Shapes;
 using System.Windows.Threading;
 using LiteCut.Workbench.Diagnostics;
 using LiteCut.Workbench.Navigation;
 using LiteCut.Workbench.RecordingDesk;
 
-// ★ 别名：这个文件同时用到 System.IO 和 System.Windows.Shapes，
-//   两边的 Path 会撞名；Shapes 是 XAML 带进来的，这里钉死用 IO 的那个。
 using Path = System.IO.Path;
 
 namespace LiteCut.Workbench.Views;
 
-/// <summary>录音台：左栏选文案、右侧录、录完当场配对。</summary>
+/// <summary>录音台：左选文案、中提词、右已录、下录音台。</summary>
 public partial class RecordingDeskView : UserControl, INavPage
 {
+    private enum Mode { Idle, Recording, Playing, Candidate, EditBind }
+
+    /// <summary>左栏里一段连续相同的状态（渲染成一块）。</summary>
+    private enum RunKind { Plain, Recorded, Selected, SelTake, Pending }
+
+    private sealed record Run(RunKind Kind, int A, int B, RecordingTake? Take);
+
+    /// <summary>一步撤销的快照（只保留最近一次）。</summary>
+    private sealed class UndoSnap
+    {
+        public string TakeId = "";
+        public int PrevA, PrevB;
+        public bool WasConfirm;
+        public List<string> DeadIds = new();
+    }
+
     // ========================================================
     // 状态
     // ========================================================
-
-    private enum Mode { Idle, Recording, Playing, Candidate, Done }
 
     private Mode _mode = Mode.Idle;
 
@@ -74,51 +75,54 @@ public partial class RecordingDeskView : UserControl, INavPage
     private RecordingStore? _store;
     private readonly RecorderEngine _engine = new();
 
-    /// <summary>句子号 → 句子上的超链接（改颜色/背景用）。</summary>
-    private readonly Dictionary<int, Hyperlink> _links = new();
-
-    /// <summary>段落下标 → "第几段"（章节不算，从 1 数）。</summary>
-    private readonly Dictionary<int, int> _paraNo = new();
-
     /// <summary>句子号 → 已采用它的录音编号。</summary>
     private Dictionary<int, string> _done = new();
 
     private int _cursor;
-    private int? _selA, _selB;          // 选区（句子号，含两端）
-    private int? _pendingA, _pendingB;  // 开始录那一刻的选区（决定绑到哪里）
+    private int? _selA, _selB;
+    private int? _pendingA, _pendingB;
     private bool _rangeWasGuessed;
 
-    private RecordingTake? _activeTake;  // 当前这条（刚录完 / 点中的）
+    private RecordingTake? _pendingTake;   // 刚录完、还没确认的那条
+    private RecordingTake? _editTake;      // ✎ 正在改绑定的那条
+    private RecordingTake? _activeTake;    // 当前"看着"的那条（波形/试听用）
+
     private string _recId = "";
     private string _recPath = "";
 
     private Mode _modeBeforePlay = Mode.Idle;
     private bool _suppressPlaybackEnd;
 
-    /// <summary>
-    /// 正在灌数据（读项目 / 填开关 / 选设备）。
-    /// 这期间控件会自己触发 Checked/SelectionChanged —— 那些不是用户操作，
-    /// 不能因为"打开页面"就去写一次 record.json（会平白建出文件夹和台账）。
-    /// </summary>
     private bool _loading;
 
     private readonly DispatcherTimer _uiTimer;
     private readonly Dictionary<string, float[]> _peakCache = new();
 
+    /// <summary>句子号 → 它所在的块（滚动定位用）。</summary>
+    private readonly Dictionary<int, FrameworkElement> _blocks = new();
+
+    private UndoSnap? _undo;
+
     // ========================================================
-    // 配色（和 XAML 里的一致；代码里改状态色要两边一起看）
+    // 配色
     // ========================================================
 
-    private static readonly Brush Transparent = Brushes.Transparent;
     private static readonly Brush InkNormal = Freeze(0xB9, 0xC1, 0xCC);
-    private static readonly Brush InkDoneBg = Freeze(0x15, 0x22, 0x19);
-    private static readonly Brush InkDoneFg = Freeze(0xA9, 0xC9, 0xB6);
-    private static readonly Brush InkSelBg = Freeze(0x1B, 0x33, 0x50);
-    private static readonly Brush InkSelFg = Freeze(0xCF, 0xE4, 0xF8);
-    private static readonly Brush InkCandBg = Freeze(0x1C, 0x30, 0x47);
-    private static readonly Brush InkCandFg = Freeze(0xD5, 0xE7, 0xF7);
-    private static readonly Brush InkCurBg = Freeze(0x2B, 0x24, 0x15);
-    private static readonly Brush InkCurFg = Freeze(0xF6, 0xEC, 0xD6);
+
+    private static readonly Brush RecBg = Freeze(0x15, 0x22, 0x1A);
+    private static readonly Brush RecBorder = Freeze(0x23, 0x3A, 0x2B);
+    private static readonly Brush RecFg = Freeze(0xA9, 0xC9, 0xB6);
+    private static readonly Brush RecHead = Freeze(0x7F, 0xBF, 0x98);
+
+    private static readonly Brush SelBg = Freeze(0x1B, 0x33, 0x50);
+    private static readonly Brush SelBorder = Freeze(0x2F, 0x5B, 0x8C);
+    private static readonly Brush SelFg = Freeze(0xCF, 0xE4, 0xF8);
+    private static readonly Brush SelHead = Freeze(0x9E, 0xC5, 0xF0);
+
+    private static readonly Brush PendBg = Freeze(0x2B, 0x24, 0x15);
+    private static readonly Brush PendBorder = Freeze(0xD4, 0xAF, 0x37);
+    private static readonly Brush PendFg = Freeze(0xF6, 0xEC, 0xD6);
+    private static readonly Brush PendHead = Freeze(0xE8, 0xC4, 0x6A);
 
     private static readonly Brush BarIdle = Freeze(0x39, 0x41, 0x4C);
     private static readonly Brush BarRec = Freeze(0xE0, 0x5A, 0x4E);
@@ -194,7 +198,6 @@ public partial class RecordingDeskView : UserControl, INavPage
         bool sameProject = string.Equals(_projectDir, proj.Dir, StringComparison.OrdinalIgnoreCase);
         string scriptPath = Path.Combine(proj.Dir, "script.md");
 
-        // 同一个项目、稿子没动过 → 不重读（保住光标和选区）
         if (sameProject && _store != null)
         {
             var probe = ScriptDocument.Load(scriptPath);
@@ -209,12 +212,9 @@ public partial class RecordingDeskView : UserControl, INavPage
         _doc = ScriptDocument.Load(scriptPath);
         _store = RecordingStore.Load(proj.Dir);
 
-        // ★ 这段是"灌数据"，控件自己触发的 Checked/SelectionChanged 不算用户操作，
-        //   期间一律不写盘（否则光是打开这一页就会建出 素材\录音\ 和 record.json）
         _loading = true;
         try
         {
-            // 开关状态跟着项目走
             ChkAutoPlay.IsChecked = _store.Data.AutoPlay;
             ChkAutoGuess.IsChecked = _store.Data.AutoGuess;
 
@@ -227,9 +227,6 @@ public partial class RecordingDeskView : UserControl, INavPage
             }
 
             EmptyHost.Visibility = Visibility.Collapsed;
-
-            BuildScriptPanel();
-            RebuildDoneMap();
             RefreshDevices();
         }
         finally
@@ -237,28 +234,35 @@ public partial class RecordingDeskView : UserControl, INavPage
             _loading = false;
         }
 
-        // 光标落在第一句还没录的地方（全部录完就回到开头）
-        _cursor = 0;
-        for (int i = 0; i < _doc.Sentences.Count; i++)
-        {
-            if (!_done.ContainsKey(i)) { _cursor = i; break; }
-        }
+        _pendingTake = null;
+        _editTake = null;
+        _activeTake = null;
+        _undo = null;
+        _rangeWasGuessed = false;
+        _pendingA = _pendingB = null;
 
-        _selA = _selB = null;
-        _activeTake = _store.Data.Takes.LastOrDefault(t => !t.Dead);
+        RebuildDoneMap();
+
+        // 选区落在"下一句还没录的"
+        _selA = _selB = NextUnrecorded(0);
+        _cursor = _selA ?? 0;
+
         SetMode(Mode.Idle);
-
-        if (_activeTake != null) ShowTakeWave(_activeTake);
-        else ShowEmptyWave();
+        PaintAll();
+        ShowEmptyWave();
 
         if (!string.IsNullOrEmpty(_store.Data.ScriptStamp) &&
             _store.Data.ScriptStamp != _doc.Stamp)
         {
             SetVerdict("y", "稿子改过了", "句子可能重排过 —— 老录音的范围对不上，建议检查一下");
         }
+        else if (_done.Count > 0)
+        {
+            SetVerdict("", "", $"已经录好 {_done.Count} / {_doc.Sentences.Count} 句 —— 接着往下念就行");
+        }
         else
         {
-            SetVerdict("", "", "左栏点一句（Shift 点可跨段选）→ 空格开始录");
+            SetVerdict("", "", "左栏点一句 → 空格开始录；录完回车绑定，选区会自动跳到下一句");
         }
 
         ScrollTo(_cursor);
@@ -277,103 +281,70 @@ public partial class RecordingDeskView : UserControl, INavPage
         EmptyHost.Visibility = Visibility.Visible;
         TxtEmptyWhy.Text = why;
         ScriptPanel.Children.Clear();
-        TakeRow.Children.Clear();
+        TakeList.Children.Clear();
     }
 
     // ========================================================
-    // 左栏：稿子
+    // 编号 / 排序
     // ========================================================
 
-    private void BuildScriptPanel()
+    /// <summary>所有活录音，按稿子顺序（起始句 → 结束句 → 录制时间）。</summary>
+    private List<RecordingTake> OrderedAll()
     {
-        ScriptPanel.Children.Clear();
-        _links.Clear();
-        _paraNo.Clear();
-
-        int paraCounter = 0;
-
-        foreach (var para in _doc.Paras)
-        {
-            if (para.IsChapter)
-            {
-                var head = new Border
-                {
-                    BorderBrush = Freeze(0x22, 0x27, 0x2F),
-                    BorderThickness = new Thickness(0, 0, 0, 1),
-                    Padding = new Thickness(3, 0, 3, 6),
-                    Margin = new Thickness(0, 16, 0, 7),
-                    Child = new TextBlock
-                    {
-                        Text = para.Chapter,
-                        FontSize = 13,
-                        FontWeight = FontWeights.Bold,
-                        Foreground = Freeze(0xC5, 0xBC, 0xA6),
-                    },
-                };
-                ScriptPanel.Children.Add(head);
-                continue;
-            }
-
-            paraCounter++;
-            int paraNo = paraCounter;
-            foreach (var s in para.Sentences) _paraNo[s.Para] = paraNo;
-
-            var dot = new Ellipse
-            {
-                Width = 7,
-                Height = 7,
-                Fill = Freeze(0x4A, 0x52, 0x5E),
-                Margin = new Thickness(0, 7, 7, 0),
-                VerticalAlignment = VerticalAlignment.Top,
-                Cursor = Cursors.Hand,
-                Opacity = 0.25,
-                ToolTip = "选中整段（第 " + paraNo + " 段）",
-            };
-            dot.MouseEnter += (o, _) => { if (o is Ellipse el) el.Opacity = 0.95; };
-            dot.MouseLeave += (o, _) => { if (o is Ellipse el) el.Opacity = 0.25; };
-            dot.MouseLeftButtonDown += (_, e) => { SelectParagraph(para); e.Handled = true; };
-
-            var text = new TextBlock
-            {
-                TextWrapping = TextWrapping.Wrap,
-                FontSize = 13,
-                LineHeight = 23,
-                Foreground = InkNormal,
-            };
-
-            foreach (var s in para.Sentences)
-            {
-                var link = new Hyperlink(new Run(s.Text))
-                {
-                    Tag = s.Index,
-                    TextDecorations = null,
-                    Cursor = Cursors.Hand,
-                    Foreground = InkNormal,
-                    Background = Transparent,
-                };
-                link.Click += Sentence_Click;
-                text.Inlines.Add(link);
-                _links[s.Index] = link;
-            }
-
-            var row = new Grid { Margin = new Thickness(0, 0, 0, 9) };
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-
-            Grid.SetColumn(dot, 0);
-            Grid.SetColumn(text, 1);
-            row.Children.Add(dot);
-            row.Children.Add(text);
-
-            ScriptPanel.Children.Add(row);
-        }
-
-        PaintDoc();
+        if (_store == null) return new List<RecordingTake>();
+        return _store.Data.Takes
+            .Where(t => !t.Dead)
+            .OrderBy(t => t.A).ThenBy(t => t.B).ThenBy(t => t.CreatedAt)
+            .ToList();
     }
 
-    /// <summary>按"当前句 / 选区 / 已录"三件事给每句话上色。</summary>
-    private void PaintDoc()
+    /// <summary>已确认的录音（右侧列表用；待确认的不进列表）。</summary>
+    private List<RecordingTake> OrderedConfirmed()
+        => OrderedAll().Where(t => !ReferenceEquals(t, _pendingTake)).ToList();
+
+    /// <summary>「音频 N」的 N —— 只按"已确认"的录音数，待确认的不占号。</summary>
+    private int TakeNumber(RecordingTake? t)
     {
+        if (t == null) return 0;
+        var all = OrderedConfirmed();
+        for (int i = 0; i < all.Count; i++)
+            if (ReferenceEquals(all[i], t)) return i + 1;
+        return 0;
+    }
+
+    private string TakeName(RecordingTake? t)
+    {
+        if (t == null) return "音频 ?";
+        if (ReferenceEquals(t, _pendingTake)) return "新的一条";   // 还没确认，不占号
+        int n = TakeNumber(t);
+        return n <= 0 ? "音频 ?" : "音频 " + n;
+    }
+
+    /// <summary>覆盖这一句的已确认录音（没有 = null）。</summary>
+    private RecordingTake? TakeAt(int index)
+        => OrderedConfirmed().FirstOrDefault(t => t.Covers(index));
+
+    /// <summary>找一条"范围和选区完全一致"的已确认录音（用于把它整块画成蓝色）。</summary>
+    private RecordingTake? TakeForRange(int a, int b)
+        => OrderedConfirmed().FirstOrDefault(t => t.A == a && t.B == b);
+
+    private int? NextUnrecorded(int from)
+    {
+        int n = _doc.Sentences.Count;
+        for (int i = Math.Clamp(from, 0, Math.Max(0, n - 1)); i < n; i++)
+            if (!_done.ContainsKey(i)) return i;
+        for (int i = 0; i < n; i++)
+            if (!_done.ContainsKey(i)) return i;
+        return null;
+    }
+
+    // ========================================================
+    // 左栏：按"块"渲染
+    // ========================================================
+
+    private List<Run> BuildRuns()
+    {
+        int n = _doc.Sentences.Count;
         int lo = 0, hi = -1;
         if (_selA.HasValue && _selB.HasValue)
         {
@@ -381,148 +352,297 @@ public partial class RecordingDeskView : UserControl, INavPage
             hi = Math.Max(_selA.Value, _selB.Value);
         }
 
-        foreach (var kv in _links)
+        var selTake = hi >= lo ? TakeForRange(lo, hi) : null;
+
+        var runs = new List<Run>();
+        for (int i = 0; i < n; i++)
         {
-            int idx = kv.Key;
-            var link = kv.Value;
+            RunKind kind;
+            RecordingTake? take = null;
 
-            bool isCur = idx == _cursor && (_mode == Mode.Idle || _mode == Mode.Recording);
-            bool inSel = hi >= lo && idx >= lo && idx <= hi;
+            if (_pendingTake != null && _pendingTake.Covers(i))
+            {
+                kind = RunKind.Pending;
+                take = _pendingTake;
+            }
+            else if (hi >= lo && i >= lo && i <= hi)
+            {
+                if (selTake != null) { kind = RunKind.SelTake; take = selTake; }
+                else kind = RunKind.Selected;
+            }
+            else if (_done.TryGetValue(i, out var id))
+            {
+                take = _store?.Data.Takes.FirstOrDefault(t => t.Id == id);
+                kind = take != null ? RunKind.Recorded : RunKind.Plain;
+            }
+            else kind = RunKind.Plain;
 
-            link.FontWeight = FontWeights.Normal;
-            link.Background = Transparent;
-            link.Foreground = InkNormal;
+            if (runs.Count > 0 && runs[^1].Kind == kind
+                && ReferenceEquals(runs[^1].Take, take) && runs[^1].B == i - 1)
+            {
+                runs[^1] = runs[^1] with { B = i };
+            }
+            else runs.Add(new Run(kind, i, i, take));
+        }
+        return runs;
+    }
 
-            if (isCur)
-            {
-                link.Background = InkCurBg;
-                link.Foreground = InkCurFg;
-                link.FontWeight = FontWeights.SemiBold;
-            }
-            else if (inSel)
-            {
-                link.Background = _mode == Mode.Candidate ? InkCandBg : InkSelBg;
-                link.Foreground = _mode == Mode.Candidate ? InkCandFg : InkSelFg;
-            }
-            else if (_done.ContainsKey(idx))
-            {
-                link.Background = InkDoneBg;
-                link.Foreground = InkDoneFg;
-            }
+    private void BuildScriptPanel()
+    {
+        double offset = ScriptScroll.VerticalOffset;
+        ScriptPanel.Children.Clear();
+        _blocks.Clear();
+
+        foreach (var run in BuildRuns())
+            ScriptPanel.Children.Add(MakeBlock(run));
+
+        ScriptScroll.ScrollToVerticalOffset(offset);
+    }
+
+    private FrameworkElement MakeBlock(Run run)
+    {
+        Brush bg, border, fg, headFg;
+        switch (run.Kind)
+        {
+            case RunKind.Recorded: bg = RecBg; border = RecBorder; fg = RecFg; headFg = RecHead; break;
+            case RunKind.SelTake:
+            case RunKind.Selected: bg = SelBg; border = SelBorder; fg = SelFg; headFg = SelHead; break;
+            case RunKind.Pending: bg = PendBg; border = PendBorder; fg = PendFg; headFg = PendHead; break;
+            default: bg = Brushes.Transparent; border = Brushes.Transparent; fg = InkNormal; headFg = InkNormal; break;
         }
 
-        UpdateDocStat();
-    }
+        var stack = new StackPanel();
 
-    private void UpdateDocStat()
-    {
-        if (TxtDocStat == null) return;
-        TxtDocStat.Text = $"{_done.Count} / {_doc.Sentences.Count} 句";
-    }
-
-    // ========================================================
-    // 选区
-    // ========================================================
-
-    private void Sentence_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is not Hyperlink link || link.Tag is not int idx) return;
-        if (_mode == Mode.Recording) return;    // 录音中不改 —— 这条的范围在开录那一刻就定了
-
-        // 候选态（包括"边听边改"——回放只是背景音，不锁界面）：
-        // 普通点 = 改终点；Shift 点 = 改起点
-        bool candEdit = _mode == Mode.Candidate
-            || (_mode == Mode.Playing && _modeBeforePlay == Mode.Candidate);
-        if (candEdit && _activeTake != null)
+        if (run.Kind != RunKind.Plain)
         {
-            bool shift = (Keyboard.Modifiers & ModifierKeys.Shift) != 0;
-            if (shift && _selA.HasValue) _selA = idx;
-            else _selB = idx;
+            var head = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 4) };
 
+            string title;
+            switch (run.Kind)
+            {
+                case RunKind.Pending:
+                    title = TakeName(run.Take) + " · 待确认";
+                    break;
+                case RunKind.Selected:
+                    title = "选中";
+                    break;
+                default:
+                    title = TakeName(run.Take);
+                    break;
+            }
+
+            head.Children.Add(new TextBlock
+            {
+                Text = title,
+                FontSize = 10.5,
+                FontWeight = FontWeights.Bold,
+                Foreground = headFg,
+                VerticalAlignment = VerticalAlignment.Center,
+            });
+
+            string meta;
+            if (run.Take != null && run.Kind != RunKind.Selected)
+            {
+                meta = run.Take.DurSec.ToString("F1") + "s";
+                if (run.Take.PeakDb < -50) meta += " · 无声音";
+            }
+            else
+            {
+                int chars = _doc.CharsBetween(run.A, run.B);
+                double rate = _store?.LearnedRate(_doc) ?? 4.3;
+                meta = $"{run.B - run.A + 1} 句 · 约 {Math.Max(2, (int)Math.Round(chars / rate))} 秒";
+            }
+
+            head.Children.Add(new TextBlock
+            {
+                Text = meta,
+                FontSize = 10,
+                Foreground = run.Kind == RunKind.Pending ? PendHead : Freeze(0x6E, 0x77, 0x83),
+                Margin = new Thickness(7, 0, 0, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+                FontFamily = new FontFamily("Cascadia Mono, Consolas"),
+            });
+
+            if (run.Take != null)
+            {
+                var play = new TextBlock
+                {
+                    Text = "▸",
+                    FontSize = 12,
+                    Foreground = headFg,
+                    Margin = new Thickness(8, 0, 0, 0),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Cursor = Cursors.Hand,
+                    ToolTip = "试听这一条",
+                };
+                var captured = run.Take;
+                play.MouseLeftButtonDown += (_, e) => { e.Handled = true; PlayTake(captured); };
+                head.Children.Add(play);
+            }
+
+            if (run.Take != null)
+            {
+                var captured = run.Take;
+                head.MouseLeftButtonDown += (_, e) =>
+                {
+                    SelectTake(captured);
+                    e.Handled = true;
+                };
+            }
+
+            stack.Children.Add(head);
+        }
+
+        for (int i = run.A; i <= run.B; i++)
+        {
+            int idx = i;
+            var line = new TextBlock
+            {
+                Text = _doc.Sentences[i].Text,
+                TextWrapping = TextWrapping.Wrap,
+                FontSize = 13,
+                LineHeight = 22,
+                Foreground = fg,
+                Cursor = Cursors.Hand,
+                Tag = i,
+                Margin = new Thickness(0, 0, 0, 2),
+            };
+            line.MouseLeftButtonDown += (_, e) => { Sentence_Click(idx); e.Handled = true; };
+            stack.Children.Add(line);
+        }
+
+        var block = new Border
+        {
+            Background = bg,
+            BorderBrush = border,
+            BorderThickness = run.Kind == RunKind.Plain ? new Thickness(0) : new Thickness(1),
+            CornerRadius = new CornerRadius(7),
+            Padding = run.Kind == RunKind.Plain ? new Thickness(6, 3, 6, 3) : new Thickness(9, 7, 9, 8),
+            Margin = new Thickness(0, 0, 0, run.Kind == RunKind.Plain ? 2 : 7),
+            Child = stack,
+        };
+
+        for (int i = run.A; i <= run.B; i++) _blocks[i] = block;
+        return block;
+    }
+
+    // ========================================================
+    // 选区 / 点击
+    // ========================================================
+
+    private static bool ShiftDown => (Keyboard.Modifiers & ModifierKeys.Shift) != 0;
+
+    private void Sentence_Click(int idx)
+    {
+        if (_mode == Mode.Recording) return;   // 录音中不改：范围在开录那一刻就定了
+
+        // 候选态 / 改绑态（含被回放盖着的候选）：点=改终点，Shift+点=改起点
+        bool rangeEdit = _mode == Mode.Candidate || _mode == Mode.EditBind
+            || (_mode == Mode.Playing && _modeBeforePlay is Mode.Candidate or Mode.EditBind);
+
+        if (rangeEdit && _selA.HasValue)
+        {
+            if (ShiftDown) _selA = idx;
+            else _selB = idx;
+            _selA = Math.Min(_selA!.Value, _selB ?? idx);
+            _selB = Math.Max(_selA.Value, _selB ?? idx);
+            _cursor = _selA.Value;
             _rangeWasGuessed = false;
-            ApplyCandidateRange();
+
+            if (_mode is Mode.Candidate or Mode.EditBind) ApplyRangeLive();
+            else { PaintAll(); ScrollTo(idx); }
             return;
         }
 
-        bool shift2 = (Keyboard.Modifiers & ModifierKeys.Shift) != 0;
-        if (shift2 && _selA.HasValue)
+        // 正常态
+        if (ShiftDown && _selA.HasValue)
         {
             _selB = idx;
-            _cursor = Math.Min(_selA.Value, idx);
+            _selA = Math.Min(_selA!.Value, idx);
+            _selB = Math.Max(_selA.Value, idx);
+            _cursor = _selA.Value;
+            _activeTake = null;
         }
         else
         {
-            _selA = idx;
-            _selB = idx;
-            _cursor = idx;
+            var take = TakeAt(idx);
+            if (take != null)
+            {
+                // 点绿块里任意一句 = 整条选中（接着按空格就是重录这一条）
+                _selA = take.A;
+                _selB = take.B;
+                _cursor = take.A;
+                _activeTake = take;
+            }
+            else
+            {
+                _selA = idx;
+                _selB = idx;
+                _cursor = idx;
+                _activeTake = null;
+            }
         }
 
-        if (_mode == Mode.Done) _mode = Mode.Idle;
-
-        PaintDoc();
-        PaintScript();
-        UpdateButtons();
-        ScrollTo(_cursor);
+        PaintAll();
+        if (_activeTake != null) ShowTakeWave(_activeTake);
+        else ShowEmptyWave();
+        ScrollTo(idx);
     }
 
-    private void SelectParagraph(ScriptPara para)
+    /// <summary>候选态 / 改绑态下改了范围：立即写进这一条（不动别的绑定）。</summary>
+    private void ApplyRangeLive()
     {
-        if (para.Sentences.Count == 0 || _mode == Mode.Recording) return;
+        if (!_selA.HasValue || !_selB.HasValue) return;
 
-        _selA = para.Sentences[0].Index;
-        _selB = para.Sentences[^1].Index;
-        _cursor = _selA.Value;
+        int a = Math.Min(_selA.Value, _selB.Value);
+        int b = Math.Max(_selA.Value, _selB.Value);
 
-        bool candEdit = _mode == Mode.Candidate
-            || (_mode == Mode.Playing && _modeBeforePlay == Mode.Candidate);
-        if (candEdit && _activeTake != null)
+        var target = _mode == Mode.EditBind ? _editTake : _pendingTake;
+        if (target != null)
         {
-            _rangeWasGuessed = false;
-            ApplyCandidateRange();
-            return;
+            target.A = a;
+            target.B = b;
+            _store!.Save();
         }
 
-        if (_mode == Mode.Done) _mode = Mode.Idle;
-
-        PaintDoc();
-        PaintScript();
-        UpdateButtons();
-        ScrollTo(_cursor);
-    }
-
-    /// <summary>候选态下改了范围 → 立刻更新这一条（只改它自己的 A/B，不碰任何已有绑定）。</summary>
-    private void ApplyCandidateRange()
-    {
-        if (_activeTake == null || !_selA.HasValue || !_selB.HasValue) return;
-
-        _activeTake.A = Math.Min(_selA.Value, _selB.Value);
-        _activeTake.B = Math.Max(_selA.Value, _selB.Value);
-        _cursor = _activeTake.A;
-
-        _store!.Save();
-        // 注意：这里【不】解决重叠 —— 等用户按回车确认那一刻才 Activate
-
-        PaintDoc();
-        PaintScript();
-        UpdateButtons();
-        BuildTakeRow();
-        UpdateVerdict(_activeTake);
-        ScrollTo(_cursor);
+        PaintAll();
+        ScrollTo(a);
     }
 
     private void BtnClearSel_Click(object sender, RoutedEventArgs e)
     {
-        if (_mode == Mode.Recording || _mode == Mode.Candidate
-            || (_mode == Mode.Playing && _modeBeforePlay == Mode.Candidate)) return;
+        if (_mode is Mode.Recording or Mode.Candidate or Mode.EditBind) return;
+        if (_mode == Mode.Playing && _modeBeforePlay is Mode.Candidate or Mode.EditBind) return;
+
         _selA = _selB = null;
-        PaintDoc();
-        PaintScript();
-        UpdateButtons();
-        SetVerdict("", "", "已清除选择 —— 直接按空格就录，录完按语速猜范围");
+        _activeTake = null;
+        PaintAll();
+        ShowEmptyWave();
+        SetVerdict("", "", "已清除选择 —— 直接按空格也能录，录完按语速猜范围");
+    }
+
+    private void SelectTake(RecordingTake take)
+    {
+        if (_mode == Mode.Recording) return;
+        if (_mode == Mode.Playing) StopPlayback();
+        if (_mode is Mode.Candidate or Mode.EditBind) return;   // 先把手里这条处理完
+
+        _activeTake = take;
+        _selA = take.A;
+        _selB = take.B;
+        _cursor = take.A;
+
+        SetMode(Mode.Idle);
+        ShowTakeWave(take);
+        PaintAll();
+        ScrollTo(take.A);
+
+        SetVerdict("b", TakeName(take),
+            "空格 = 重录这一条 · P = 试听 · 点右栏 ✎ = 改绑定");
     }
 
     // ========================================================
-    // 提词区
+    // 中栏：提词
     // ========================================================
 
     private void PaintScript()
@@ -545,7 +665,6 @@ public partial class RecordingDeskView : UserControl, INavPage
         }
         else
         {
-            // 没选区：从光标起显示到本段末尾（最多 4 句），念的时候有上下文
             lo = Math.Clamp(_cursor, 0, n - 1);
             int para = _doc.Sentences[lo].Para;
             hi = lo;
@@ -557,24 +676,30 @@ public partial class RecordingDeskView : UserControl, INavPage
         int chars = ScriptDocument.CountChars(text);
 
         TxtCur.Text = text;
-        TxtCur.FontSize = chars <= 60 ? 31 : chars <= 100 ? 28 : chars <= 150 ? 25 : 22;
-        TxtCur.LineHeight = TxtCur.FontSize * 1.75;
+        TxtCur.FontSize = chars <= 60 ? 30 : chars <= 100 ? 27 : chars <= 150 ? 24 : 21;
+        TxtCur.LineHeight = TxtCur.FontSize * 1.7;
 
         TxtPrev.Text = lo > 0 ? _doc.Sentences[lo - 1].Text : "";
         TxtNext.Text = hi < n - 1 ? _doc.Sentences[hi + 1].Text : "";
         TxtPrev.Visibility = TxtPrev.Text.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
         TxtNext.Visibility = TxtNext.Text.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
 
-        // 顶部信息行
-        int paraNo = _paraNo.TryGetValue(_doc.Sentences[lo].Para, out int pn) ? pn : 1;
-        string range = lo == hi ? $"第 {lo + 1} 句" : $"第 {lo + 1}–{hi + 1} 句";
-        TxtSegNow.Text = $"段{paraNo} · {range}";
+        // 信息行：只说"这是哪条音频"，不再报第几段第几句
+        string who;
+        if (_mode == Mode.EditBind && _editTake != null) who = TakeName(_editTake) + " · 改绑定";
+        else if (_mode == Mode.Candidate && _pendingTake != null) who = TakeName(_pendingTake) + " · 待确认";
+        else if (_activeTake != null && _selA.HasValue && _selB.HasValue
+                 && _activeTake.A == Math.Min(_selA.Value, _selB.Value)
+                 && _activeTake.B == Math.Max(_selA.Value, _selB.Value))
+            who = TakeName(_activeTake);
+        else who = "下一段";
+
+        TxtSegNow.Text = who;
 
         double rate = _store?.LearnedRate(_doc) ?? 4.3;
         int est = Math.Max(2, (int)Math.Round(chars / rate));
         TxtSegMeta.Text = $"{chars} 字 · 约 {est} 秒";
 
-        // 状态徽章
         switch (_mode)
         {
             case Mode.Recording:
@@ -586,16 +711,16 @@ public partial class RecordingDeskView : UserControl, INavPage
                 CurBar.Background = BarBlue;
                 break;
             case Mode.Candidate:
-                SetBadge(_rangeWasGuessed ? "猜的范围 · 可改" : "待确认 · 可改范围", TagBlueFg, TagBlueBg);
-                CurBar.Background = BarBlue;
+                SetBadge(_rangeWasGuessed ? "猜的范围 · 可改" : "待确认 · 可改", TagYellowFg, TagYellowBg);
+                CurBar.Background = Freeze(0xD4, 0xAF, 0x37);
                 break;
-            case Mode.Done:
-                SetBadge("已绑定", TagGreenFg, TagGreenBg);
-                CurBar.Background = BarGreen;
+            case Mode.EditBind:
+                SetBadge("✎ 改绑定 · 回车保存", TagBlueFg, TagBlueBg);
+                CurBar.Background = BarBlue;
                 break;
             default:
                 if (_selA.HasValue) SetBadge("已选中 · 待录", TagBlueFg, TagBlueBg);
-                else SetBadge("自动 · 从这句往下念", Freeze(0x8B, 0x93, 0xA1), Freeze(0x23, 0x2A, 0x33));
+                else SetBadge("待录", Freeze(0x8B, 0x93, 0xA1), Freeze(0x23, 0x2A, 0x33));
                 CurBar.Background = _selA.HasValue ? BarBlue : BarIdle;
                 break;
         }
@@ -610,23 +735,225 @@ public partial class RecordingDeskView : UserControl, INavPage
 
     private void ScrollTo(int index)
     {
-        if (_links.TryGetValue(index, out var link))
+        if (_blocks.TryGetValue(index, out var block))
         {
-            try { link.BringIntoView(); } catch { }
+            try { block.BringIntoView(); } catch { }
         }
+    }
+
+    // ========================================================
+    // 右栏：已录列表
+    // ========================================================
+
+    private void BuildTakeList()
+    {
+        if (TakeList == null || _store == null) return;
+
+        TakeList.Children.Clear();
+        var list = OrderedConfirmed();
+        TxtTakeCount.Text = list.Count + " 条";
+
+        if (list.Count == 0)
+        {
+            TakeList.Children.Add(new TextBlock
+            {
+                Text = "还没有录好的\n录完一条、按回车绑定，它就出现在这里",
+                FontSize = 11.5,
+                LineHeight = 20,
+                Foreground = Freeze(0x5F, 0x67, 0x72),
+                Margin = new Thickness(2, 8, 0, 8),
+            });
+            return;
+        }
+
+        int no = 0;
+        foreach (var t in list)
+        {
+            no++;
+            bool active = ReferenceEquals(_activeTake, t) || ReferenceEquals(_editTake, t);
+
+            var grid = new Grid();
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            var line1 = new Grid();
+            line1.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            line1.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var name = new TextBlock
+            {
+                Text = "音频 " + no,
+                FontSize = 12,
+                FontWeight = FontWeights.Bold,
+                Foreground = active ? Freeze(0xF4, 0xE7, 0xB8) : Freeze(0xE6, 0xE9, 0xEF),
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            var dur = new TextBlock
+            {
+                Text = t.DurSec.ToString("F1") + "s" + (t.PeakDb < -50 ? " · 无声音" : ""),
+                FontSize = 10,
+                Foreground = t.PeakDb < -50 ? TagRedFg : Freeze(0x78, 0x82, 0x8F),
+                FontFamily = new FontFamily("Cascadia Mono, Consolas"),
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            Grid.SetColumn(dur, 1);
+            line1.Children.Add(name);
+            line1.Children.Add(dur);
+
+            var line2 = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 3, 0, 0) };
+
+            var play = new Button
+            {
+                Content = "▸ 试听",
+                Style = (Style)FindResource("MiniBtn"),
+                Tag = t,
+                Margin = new Thickness(0, 0, 4, 0),
+            };
+            play.Click += (o, _) =>
+            {
+                if (o is Button b && b.Tag is RecordingTake tk) PlayTake(tk);
+            };
+
+            var edit = new Button
+            {
+                Content = "✎ 改绑",
+                Style = (Style)FindResource("MiniBtn"),
+                Tag = t,
+            };
+            edit.Click += (o, _) =>
+            {
+                if (o is Button b && b.Tag is RecordingTake tk) BeginEditBind(tk);
+            };
+
+            line2.Children.Add(play);
+            line2.Children.Add(edit);
+
+            Grid.SetRow(line1, 0);
+            Grid.SetRow(line2, 1);
+            grid.Children.Add(line1);
+            grid.Children.Add(line2);
+
+            var item = new Border
+            {
+                Background = active ? Freeze(0x1F, 0x1B, 0x10) : Freeze(0x16, 0x1A, 0x20),
+                BorderBrush = active ? Freeze(0xD4, 0xAF, 0x37) : Freeze(0x26, 0x2C, 0x35),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(8),
+                Padding = new Thickness(9, 6, 9, 7),
+                Margin = new Thickness(0, 0, 0, 6),
+                Cursor = Cursors.Hand,
+                Child = grid,
+                Tag = t,
+                ToolTip = "点一下 = 选中这条（左栏同步高亮）",
+            };
+            item.MouseLeftButtonDown += (o, e) =>
+            {
+                if (o is Border bd && bd.Tag is RecordingTake tk)
+                {
+                    SelectTake(tk);
+                    e.Handled = true;
+                }
+            };
+
+            TakeList.Children.Add(item);
+        }
+    }
+
+    private void PlayTake(RecordingTake take)
+    {
+        if (_mode == Mode.Recording) return;
+        if (_mode == Mode.Playing) StopPlayback();
+
+        _activeTake = take;
+        PlayActive();
+    }
+
+    // ========================================================
+    // 改绑定（✎）
+    // ========================================================
+
+    private void BeginEditBind(RecordingTake take)
+    {
+        if (_mode == Mode.Recording) return;
+        if (_mode != Mode.Idle) return;      // 候选/改绑/回放先收尾
+
+        _editTake = take;
+        _activeTake = take;
+        _selA = take.A;
+        _selB = take.B;
+        _cursor = take.A;
+
+        SetMode(Mode.EditBind);
+        PaintAll();
+        ShowTakeWave(take);
+        ScrollTo(take.A);
+
+        SetVerdict("b", TakeName(take) + " · 改绑定",
+            "点句子 / Shift+点 调范围 · 回车保存 · Esc 取消");
+    }
+
+    private void SaveEditBind()
+    {
+        if (_mode != Mode.EditBind || _editTake == null || !_selA.HasValue || !_selB.HasValue) return;
+
+        int a = Math.Min(_selA.Value, _selB.Value);
+        int b = Math.Max(_selA.Value, _selB.Value);
+        var take = _editTake;
+
+        _undo = new UndoSnap
+        {
+            TakeId = take.Id,
+            PrevA = take.A,
+            PrevB = take.B,
+            WasConfirm = false,
+            DeadIds = _store!.Data.Takes
+                .Where(x => !x.Dead && x.Id != take.Id && x.Overlaps(a, b))
+                .Select(x => x.Id).ToList(),
+        };
+
+        take.A = a;
+        take.B = b;
+        _store.Activate(take);
+        _store.Save();
+        RebuildDoneMap();
+
+        _editTake = null;
+        SetMode(Mode.Idle);
+        PaintAll();
+        ShowTakeWave(take);
+        SetVerdict("g", "绑好了", TakeName(take) + " 已改到新的位置（Ctrl+Z 可撤销）");
+
+        DebugLog.Write("record", "改绑定 " + take.Id, new { a, b });
+    }
+
+    private void CancelEditBind()
+    {
+        _editTake = null;
+        _selA = _selB = null;
+        SetMode(Mode.Idle);
+        PaintAll();
+        ShowEmptyWave();
+        SetVerdict("", "", "改绑已取消");
     }
 
     // ========================================================
     // 模式 / 按钮
     // ========================================================
 
+    private void PaintAll()
+    {
+        BuildScriptPanel();
+        BuildTakeList();
+        PaintScript();
+        UpdateButtons();
+        UpdateDocStat();
+    }
+
     private void SetMode(Mode m)
     {
         _mode = m;
         UpdateButtons();
-        PaintDoc();
         PaintScript();
-        BuildTakeRow();
 
         if (m == Mode.Recording)
         {
@@ -651,7 +978,6 @@ public partial class RecordingDeskView : UserControl, INavPage
         bool rec = _mode == Mode.Recording;
         bool play = _mode == Mode.Playing;
 
-        // 主按钮：只有三个身份（开始 / 停止 / 重录这一条）
         if (rec)
         {
             TxtMainDot.Text = "■";
@@ -665,36 +991,34 @@ public partial class RecordingDeskView : UserControl, INavPage
             {
                 Mode.Playing => "停止回放",
                 Mode.Candidate => "重录这条",
+                Mode.EditBind => "改绑定中",
                 _ => "开始录音",
             };
-            BtnMain.Background = _mode == Mode.Playing ? Freeze(0x39, 0x41, 0x4C) : Freeze(0xC7, 0x44, 0x3A);
+            BtnMain.Background = _mode is Mode.Playing or Mode.EditBind
+                ? Freeze(0x39, 0x41, 0x4C)
+                : Freeze(0xC7, 0x44, 0x3A);
         }
 
         bool hasTake = _activeTake != null && File.Exists(TakePath(_activeTake));
 
-        // 候选还在（本态，或正被自动回放盖着）→「就绑这段」随时可按
         bool candPending = _mode == Mode.Candidate
             || (_mode == Mode.Playing && _modeBeforePlay == Mode.Candidate);
 
         BtnPlay.IsEnabled = !rec && hasTake;
-        BtnRedo.IsEnabled = !rec && (hasTake || _selA.HasValue);
-        BtnOk.IsEnabled = candPending && _activeTake != null;
-        BtnClearSel.IsEnabled = !rec && !play && _mode != Mode.Candidate && _selA.HasValue;
+        BtnRedo.IsEnabled = !rec && _mode != Mode.EditBind && (hasTake || _selA.HasValue);
+        BtnOk.IsEnabled = (candPending && _pendingTake != null) || _mode == Mode.EditBind;
+        TxtOkLabel.Text = _mode == Mode.EditBind ? "保存改绑" : "就绑这段";
+        BtnDiscard.IsEnabled = _mode is Mode.Candidate or Mode.EditBind
+            || (_mode == Mode.Playing && _modeBeforePlay is Mode.Candidate or Mode.EditBind);
+        BtnMain.IsEnabled = _mode != Mode.EditBind;
+        BtnClearSel.IsEnabled = !rec && _mode == Mode.Idle && _selA.HasValue;
+        BtnUndo.IsEnabled = _undo != null && !rec;
 
         RecDot.Fill = rec ? BarRec : BarIdle;
 
-        if (rec)
-        {
-            TxtTime.Text = Fmt(_engine.ElapsedSec);
-        }
-        else if (play)
-        {
-            TxtTime.Text = Fmt(_engine.PlayPositionSec);
-        }
-        else
-        {
-            TxtTime.Text = _activeTake != null ? Fmt(_activeTake.DurSec) : "00:00.0";
-        }
+        if (rec) TxtTime.Text = Fmt(_engine.ElapsedSec);
+        else if (play) TxtTime.Text = Fmt(_engine.PlayPositionSec);
+        else TxtTime.Text = _activeTake != null ? Fmt(_activeTake.DurSec) : "00:00.0";
     }
 
     // ========================================================
@@ -704,11 +1028,9 @@ public partial class RecordingDeskView : UserControl, INavPage
     private void StartRecording()
     {
         if (_doc.IsEmpty || _store == null) return;
-        if (_engine.IsRecording) return;
+        if (_engine.IsRecording || _mode == Mode.EditBind) return;
 
-        // 上一条还停在候选态就开新的 = 上一条不要了：wav 和台账行一起清掉
-        // （它从来没被确认过，所以不该留下痕迹，更不该堆出一张"作废卡"）
-        if (_mode == Mode.Candidate) DiscardCandidate();
+        if (_mode == Mode.Candidate) DiscardCandidate();   // 上一条不要了
 
         if (CmbDevice.SelectedItem is not AudioInputDevice dev)
         {
@@ -716,7 +1038,6 @@ public partial class RecordingDeskView : UserControl, INavPage
             return;
         }
 
-        // ★ 有选区 → 就按选区绑；没选区 → 录完按语速猜
         _pendingA = _selA;
         _pendingB = _selB;
 
@@ -759,12 +1080,12 @@ public partial class RecordingDeskView : UserControl, INavPage
             try { if (File.Exists(_recPath)) File.Delete(_recPath); } catch { }
             _pendingA = _pendingB = null;
             SetMode(Mode.Idle);
+            PaintAll();
             if (!quiet) SetVerdict("y", "这条太短", discard ? "已丢弃" : "不到 0.3 秒，已丢弃 —— 按空格重来");
             DebugLog.Write("record", "录音取消 " + _recId, new { dur });
             return;
         }
 
-        // 以文件实际长度为准（设备时钟和 Stopwatch 会有毫秒级差）
         double fileDur = RecorderEngine.DurationOf(_recPath);
         if (fileDur > 0.05) dur = fileDur;
 
@@ -777,7 +1098,6 @@ public partial class RecordingDeskView : UserControl, INavPage
             peakDb = mx <= 1e-5f ? -96 : 20 * Math.Log10(mx);
         }
 
-        // ---- 绑定范围 ----
         int a, b;
         _rangeWasGuessed = false;
 
@@ -793,7 +1113,6 @@ public partial class RecordingDeskView : UserControl, INavPage
         }
         else
         {
-            // 关掉"自动猜"又没有选区 → 只绑光标这一句（宁窄不宽，改起来快）
             a = b = Math.Clamp(_cursor, 0, _doc.Sentences.Count - 1);
         }
 
@@ -812,12 +1131,12 @@ public partial class RecordingDeskView : UserControl, INavPage
             CreatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
         };
 
-        // ★ 还没确认：只挂进台账当"候选"，【不动】任何已有绑定 ——
-        //   重叠的旧录音等回车确认那一刻才作废（绑定只在确认时改变）
+        // 还没确认：挂进台账当"候选"，不动任何已有绑定
         _store!.Data.Takes.Add(take);
         _store.Data.ScriptStamp = _doc.Stamp;
         _store.Save();
 
+        _pendingTake = take;
         _activeTake = take;
         _selA = a;
         _selB = b;
@@ -826,12 +1145,14 @@ public partial class RecordingDeskView : UserControl, INavPage
 
         RebuildDoneMap(take.Id);
         SetMode(Mode.Candidate);
+        PaintAll();
         UpdateVerdict(take);
+
         Wave.Peaks = peaks;
         Wave.Dim = false;
         Wave.Progress = 1;
         Wave.ShowPlayhead = false;
-        WaveLabel.Text = "录好了 · " + dur.ToString("F1") + " 秒";
+        WaveLabel.Text = TakeName(take) + " · 待确认 · " + dur.ToString("F1") + " 秒";
         WaveTime.Text = Fmt(dur);
         ScrollTo(a);
 
@@ -843,16 +1164,11 @@ public partial class RecordingDeskView : UserControl, INavPage
         if (ChkAutoPlay.IsChecked == true) PlayActive();
     }
 
-    /// <summary>
-    /// 没选区时猜范围：按"这条录音多长 × 学到的语速"从光标往后数句子。
-    /// 猜出来的永远只是**初值** —— 界面上看得见，点一下就能改。
-    /// </summary>
     private (int a, int b) GuessRange(double dur)
     {
         int n = _doc.Sentences.Count;
         int start = Math.Clamp(_cursor, 0, n - 1);
 
-        // 光标处已经录过（回头补录）→ 从这一段的下一句没录的地方开始更合理
         if (_done.ContainsKey(start))
         {
             int probe = start;
@@ -881,7 +1197,7 @@ public partial class RecordingDeskView : UserControl, INavPage
 
         if (take.PeakDb < -50)
         {
-            SetVerdict("r", "这一条没声音", $"{take.PeakDb:F0} dB · 检查 WO Mic 客户端是不是连上了");
+            SetVerdict("r", "没声音", $"{take.PeakDb:F0} dB · 检查 WO Mic 客户端是不是连上了");
             return;
         }
 
@@ -966,7 +1282,7 @@ public partial class RecordingDeskView : UserControl, INavPage
         Wave.Dim = false;
         Wave.Progress = 0;
         Wave.ShowPlayhead = true;
-        WaveLabel.Text = "回放中 · " + _activeTake.DurSec.ToString("F1") + " 秒";
+        WaveLabel.Text = TakeName(_activeTake) + " · 回放中 · " + _activeTake.DurSec.ToString("F1") + " 秒";
         _uiTimer.Start();
     }
 
@@ -996,7 +1312,7 @@ public partial class RecordingDeskView : UserControl, INavPage
         Wave.Progress = 1;
         Wave.ShowPlayhead = false;
         WaveLabel.Text = _activeTake != null
-            ? (_modeBeforePlay == Mode.Candidate ? "录好了 · " : "已绑定 · ") + _activeTake.DurSec.ToString("F1") + " 秒"
+            ? TakeName(_activeTake) + " · " + _activeTake.DurSec.ToString("F1") + " 秒"
             : "还没有录";
         UpdateButtons();
     }
@@ -1025,7 +1341,6 @@ public partial class RecordingDeskView : UserControl, INavPage
             Wave.Progress = total > 0.05 ? pos / total : 0;
             Wave.ShowPlayhead = true;
 
-            // 试听时电平表跟着声音跳（比录的时候低一档，别闪瞎眼）
             double db = _engine.LevelDb;
             if (db > -90) PaintMeter(db);
         }
@@ -1041,50 +1356,145 @@ public partial class RecordingDeskView : UserControl, INavPage
 
         double ratio = Math.Clamp((db + 60) / 60, 0, 1);
         MeterFill.Width = Math.Max(0, ratio * MeterHost.Width);
-
-        // 峰值太低 = 没声音 = 红；正常是绿
         MeterFill.Background = db < -45 ? BarRec : BarGreen;
     }
 
     // ========================================================
-    // 确认绑定 / 重录
+    // 确认 / 扔掉 / 撤销
     // ========================================================
 
     private void ConfirmBind()
     {
-        if (_mode != Mode.Candidate || _activeTake == null) return;
+        if (_mode != Mode.Candidate || _pendingTake == null) return;
 
-        int n = _doc.Sentences.Count;
+        var take = _pendingTake;
 
-        // ★ 绑定在这一刻才生效：这条转正，被它盖住的旧录音作废（wav 留底可恢复）
-        _store!.Activate(_activeTake);
+        _undo = new UndoSnap
+        {
+            TakeId = take.Id,
+            PrevA = take.A,
+            PrevB = take.B,
+            WasConfirm = true,
+            DeadIds = _store!.Data.Takes
+                .Where(x => !x.Dead && x.Id != take.Id && x.Overlaps(take.A, take.B))
+                .Select(x => x.Id).ToList(),
+        };
+
+        _store.Activate(take);
         _store.Save();
+
+        _pendingTake = null;
+        _activeTake = take;
+        _rangeWasGuessed = false;
         RebuildDoneMap();
 
-        _cursor = Math.Min(n - 1, _activeTake.B + 1);
-        _selA = _selB = null;
-        _rangeWasGuessed = false;
+        // ★ 绑定后自动推进：选区落到"下一句还没录的"
+        var next = NextUnrecorded(take.B + 1);
+        if (next.HasValue)
+        {
+            _selA = _selB = next.Value;
+            _cursor = next.Value;
+        }
+        else
+        {
+            _selA = _selB = null;
+            _cursor = _doc.Sentences.Count - 1;
+        }
 
         SetMode(Mode.Idle);
-        PaintScript();
-        ScrollTo(_cursor);
+        PaintAll();
+        ShowTakeWave(take);
 
-        if (_activeTake.B >= n - 1)
-            SetVerdict("g", "全部录完了", $"{_done.Count} / {n} 句 —— 都绑好了");
+        if (next.HasValue)
+            SetVerdict("g", "绑好了", TakeName(take) + " · 选区已跳到下一句，按空格接着录");
         else
-            SetVerdict("g", "绑好了", $"光标已跳到第 {_cursor + 1} 句，按空格接着录");
+            SetVerdict("g", "全部录完了", $"{_done.Count} / {_doc.Sentences.Count} 句 —— 都绑好了");
 
-        SaveStore();
-        DebugLog.Write("record", "确认绑定 " + _activeTake.Id, new { _activeTake.A, _activeTake.B, cursor = _cursor });
+        ScrollTo(_cursor);
+        DebugLog.Write("record", "确认绑定 " + take.Id, new { take.A, take.B, cursor = _cursor });
     }
+
+    private void DiscardCandidate()
+    {
+        if (_mode != Mode.Candidate || _pendingTake == null || _store == null) return;
+
+        string wav = TakePath(_pendingTake);
+        _peakCache.Remove(wav);
+        try { if (File.Exists(wav)) File.Delete(wav); } catch { }
+
+        _store.Data.Takes.Remove(_pendingTake);
+        _store.Save();
+
+        _pendingTake = null;
+        _activeTake = null;
+        _rangeWasGuessed = false;
+        _selA = _selB = null;
+        RebuildDoneMap();
+
+        SetMode(Mode.Idle);
+        PaintAll();
+        ShowEmptyWave();
+        DebugLog.Write("record", "扔掉候选录音（未确认，无痕迹）");
+    }
+
+    private void UndoLast()
+    {
+        if (_undo == null || _store == null) return;
+
+        var take = _store.Data.Takes.FirstOrDefault(t => t.Id == _undo.TakeId);
+        if (take == null) { _undo = null; UpdateButtons(); return; }
+
+        foreach (var id in _undo.DeadIds)
+        {
+            var dead = _store.Data.Takes.FirstOrDefault(t => t.Id == id);
+            if (dead != null) dead.Dead = false;
+        }
+
+        if (_undo.WasConfirm)
+        {
+            // 回到"待确认"：这条重新挂起，计数和已录列表都退回去
+            _pendingTake = take;
+            _activeTake = take;
+            _selA = take.A;
+            _selB = take.B;
+            _cursor = take.A;
+            RebuildDoneMap(take.Id);
+            _undo = null;
+            _store.Save();
+
+            SetMode(Mode.Candidate);
+            PaintAll();
+            ShowTakeWave(take);
+            SetVerdict("b", "已撤销", "回到待确认 —— 回车重新绑，或 Esc 扔掉");
+        }
+        else
+        {
+            take.A = _undo.PrevA;
+            take.B = _undo.PrevB;
+            RebuildDoneMap();
+            _undo = null;
+            _store.Save();
+
+            SetMode(Mode.Idle);
+            PaintAll();
+            ShowTakeWave(take);
+            SetVerdict("b", "已撤销", TakeName(take) + " 的绑定已回到上一步");
+        }
+
+        DebugLog.Write("record", "撤销 " + take.Id);
+    }
+
+    // ========================================================
+    // 重录
+    // ========================================================
 
     private void Redo()
     {
-        if (_mode == Mode.Recording) return;
-        if (_mode == Mode.Playing) StopPlayback();   // 边听边嫌不行 → R 直接停下重录
+        if (_mode == Mode.Recording || _mode == Mode.EditBind) return;
+        if (_mode == Mode.Playing) StopPlayback();
 
         int a, b;
-        if (_mode == Mode.Candidate && _activeTake != null) { a = _activeTake.A; b = _activeTake.B; }
+        if (_mode == Mode.Candidate && _pendingTake != null) { a = _pendingTake.A; b = _pendingTake.B; }
         else if (_selA.HasValue && _selB.HasValue) { a = Math.Min(_selA.Value, _selB.Value); b = Math.Max(_selA.Value, _selB.Value); }
         else if (_activeTake != null) { a = _activeTake.A; b = _activeTake.B; }
         else { a = _cursor; b = _cursor; }
@@ -1093,212 +1503,8 @@ public partial class RecordingDeskView : UserControl, INavPage
         _selB = b;
         _cursor = a;
 
-        PaintDoc();
-        PaintScript();
+        PaintAll();
         StartRecording();
-    }
-
-    // ========================================================
-    // 录音台账（右下那条）
-    // ========================================================
-    //
-    // 【V1.16.1 重做】它是一份"按稿子顺序排的清单"，不是时间流水：
-    //   · 只排在用的录音（按起始句排序，跟稿子一个方向）—— 一眼对上"录到哪了"
-    //   · 作废的折叠成一个"作废 N 条"小徽章，点开才展开（不再满屏都是）
-    //   · 点卡片 = 【看】这条：波形切过去、左栏滚过去 —— 不碰选区不碰光标，
-    //     接下来按空格照常录下一条，不会被刚才看的那条带偏
-    //   · 双击 = 试听这条；点作废的 = 恢复它（盖住现在重叠的活录音）
-
-    private bool _showDead;   // 作废区展开没有
-
-    private void BuildTakeRow()
-    {
-        if (TakeRow == null || _store == null) return;
-        TakeRow.Children.Clear();
-
-        var alive = _store.Data.Takes.Where(t => !t.Dead)
-                                     .OrderBy(t => t.A).ThenBy(t => t.B).ToList();
-        var dead = _store.Data.Takes.Where(t => t.Dead)
-                                    .OrderBy(t => t.A).ThenBy(t => t.B).ToList();
-
-        if (alive.Count == 0 && dead.Count == 0)
-        {
-            TakeRow.Children.Add(new TextBlock
-            {
-                Text = "还没录过 —— 选好句子，按空格开始",
-                FontSize = 11.5,
-                Foreground = Freeze(0x5F, 0x67, 0x72),
-                Margin = new Thickness(2, 8, 0, 8),
-            });
-            return;
-        }
-
-        if (dead.Count > 0)
-        {
-            var chip = new Border
-            {
-                Background = Freeze(0x1A, 0x17, 0x12),
-                BorderBrush = Freeze(0x3A, 0x30, 0x1C),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(8),
-                Padding = new Thickness(11, 6, 13, 7),
-                Margin = new Thickness(0, 0, 7, 0),
-                VerticalAlignment = VerticalAlignment.Center,
-                Cursor = Cursors.Hand,
-                Child = new TextBlock
-                {
-                    Text = (_showDead ? "▾" : "▸") + $" 作废 {dead.Count} 条",
-                    FontSize = 11,
-                    Foreground = Freeze(0x9A, 0x82, 0x50),
-                    VerticalAlignment = VerticalAlignment.Center,
-                },
-                ToolTip = "点开 / 收起被换下来的旧录音（wav 都还在，可以恢复）",
-            };
-            chip.MouseLeftButtonDown += (_, e) => { _showDead = !_showDead; BuildTakeRow(); e.Handled = true; };
-            TakeRow.Children.Add(chip);
-        }
-
-        if (_showDead)
-            foreach (var t in dead) TakeRow.Children.Add(MakeTakeCard(t));
-
-        foreach (var t in alive) TakeRow.Children.Add(MakeTakeCard(t));
-    }
-
-    private Border MakeTakeCard(RecordingTake t)
-    {
-        bool active = _activeTake != null && _activeTake.Id == t.Id;
-        bool cand = active && _mode == Mode.Candidate;   // 候选中（还没确认）的那条
-
-        var stack = new StackPanel();
-
-        var line1 = new StackPanel { Orientation = Orientation.Horizontal };
-        line1.Children.Add(new TextBlock
-        {
-            Text = t.A == t.B ? $"第 {t.A + 1} 句" : $"第 {t.A + 1}–{t.B + 1} 句",
-            FontSize = 11.5,
-            FontWeight = FontWeights.Bold,
-            Foreground = Freeze(0xE6, 0xE9, 0xEF),
-            VerticalAlignment = VerticalAlignment.Center,
-        });
-        if (cand)
-        {
-            line1.Children.Add(new TextBlock
-            {
-                Text = "待确认",
-                FontSize = 9.5,
-                Foreground = TagBlueFg,
-                Margin = new Thickness(7, 1, 0, 0),
-                VerticalAlignment = VerticalAlignment.Center,
-            });
-        }
-        else if (t.Dead)
-        {
-            line1.Children.Add(new TextBlock
-            {
-                Text = "已作废",
-                FontSize = 9.5,
-                Foreground = Freeze(0x8A, 0x6A, 0x2A),
-                Margin = new Thickness(7, 1, 0, 0),
-                VerticalAlignment = VerticalAlignment.Center,
-            });
-        }
-        stack.Children.Add(line1);
-
-        stack.Children.Add(new TextBlock
-        {
-            Text = $"{t.SentenceCount} 句 · {t.DurSec:F1}s · {t.Id}" + (t.PeakDb < -50 ? " · 静音" : ""),
-            FontSize = 10.5,
-            Foreground = Freeze(0x78, 0x82, 0x8F),
-            FontFamily = new FontFamily("Cascadia Mono, Consolas"),
-            Margin = new Thickness(0, 3, 0, 0),
-        });
-
-        var card = new Border
-        {
-            Background = Freeze(0x16, 0x1A, 0x20),
-            BorderBrush = active ? Freeze(0xD4, 0xAF, 0x37)
-                        : t.Dead ? Freeze(0x26, 0x24, 0x1C)
-                        : Freeze(0x26, 0x2C, 0x35),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-            Padding = new Thickness(10, 6, 12, 7),
-            Margin = new Thickness(0, 0, 7, 0),
-            MinWidth = 150,
-            Cursor = Cursors.Hand,
-            Opacity = t.Dead ? 0.45 : 1.0,
-            Child = stack,
-            Tag = t,
-            ToolTip = t.Dead
-                ? "点一下 = 恢复这条（现在跟它重叠的录音自动让位）"
-                : "点一下 = 看这条绑的是哪几句（不改你的选择）\n双击 = 试听这一条",
-        };
-        card.MouseLeftButtonDown += TakeCard_Click;
-        return card;
-    }
-
-    private void TakeCard_Click(object sender, MouseButtonEventArgs e)
-    {
-        if (sender is not Border card || card.Tag is not RecordingTake take) return;
-        e.Handled = true;
-
-        if (_mode == Mode.Recording) return;
-        if (_mode == Mode.Playing) StopPlayback();   // 边听边点卡片 = 先停回放，然后照常看
-        if (_mode != Mode.Idle) return;              // 候选态只围着当前这条转，别乱切
-
-        if (e.ClickCount >= 2)
-        {
-            _activeTake = take;
-            BuildTakeRow();
-            PlayActive();
-            return;
-        }
-
-        if (take.Dead)
-        {
-            // 恢复：它盖住的现在那些活录音自动作废（每句只认最新确认的这条）
-            _store!.Activate(take);
-            _store.Save();
-            RebuildDoneMap();
-            DebugLog.Write("record", "恢复作废录音 " + take.Id, new { take.A, take.B });
-        }
-
-        ViewTake(take);
-    }
-
-    /// <summary>
-    /// 看一条录音：波形切过去、左栏滚过去。
-    /// ★ 只"看"—— 不碰选区、不碰光标、不改模式，接下来按空格照常录下一条。
-    /// </summary>
-    private void ViewTake(RecordingTake take)
-    {
-        _activeTake = take;
-        ShowTakeWave(take);
-        BuildTakeRow();
-        ScrollTo(take.A);
-
-        SetVerdict("b", $"第 {take.A + 1}–{take.B + 1} 句",
-            $"{take.DurSec:F1} 秒 · 空格照常录下一条（不动这条）· R 重录这条");
-    }
-
-    /// <summary>
-    /// 扔掉候选这条。它从来没被确认过 → wav 和台账行一起清掉，
-    /// 任何已有绑定都不动（这是"绑定只在确认时改变"的另一半）。
-    /// </summary>
-    private void DiscardCandidate()
-    {
-        if (_mode != Mode.Candidate || _activeTake == null || _store == null) return;
-
-        string wav = TakePath(_activeTake);
-        _peakCache.Remove(wav);
-        try { if (File.Exists(wav)) File.Delete(wav); } catch { }
-
-        _store.Data.Takes.Remove(_activeTake);
-        _store.Save();
-
-        _activeTake = null;
-        _rangeWasGuessed = false;
-        RebuildDoneMap();
-        DebugLog.Write("record", "扔掉候选录音（未确认，无痕迹）");
     }
 
     // ========================================================
@@ -1311,7 +1517,7 @@ public partial class RecordingDeskView : UserControl, INavPage
         Wave.Dim = false;
         Wave.Progress = 1;
         Wave.ShowPlayhead = false;
-        WaveLabel.Text = "这一条 · " + take.DurSec.ToString("F1") + " 秒";
+        WaveLabel.Text = TakeName(take) + " · " + take.DurSec.ToString("F1") + " 秒";
         WaveTime.Text = Fmt(take.DurSec);
         UpdateButtons();
     }
@@ -1341,6 +1547,30 @@ public partial class RecordingDeskView : UserControl, INavPage
         => _store == null ? "" : _store.WavPath(take);
 
     // ========================================================
+    // 映射 / 计数
+    // ========================================================
+
+    private void RebuildDoneMap(string? excludeId = null)
+    {
+        _done = _store?.BuildDoneMap(_doc.Sentences.Count, excludeId) ?? new Dictionary<int, string>();
+        UpdateDocStat();
+    }
+
+    private void UpdateDocStat()
+    {
+        if (TxtDocStat == null) return;
+        TxtDocStat.Text = $"{_done.Count} / {_doc.Sentences.Count} 句";
+    }
+
+    private static string Fmt(double sec)
+    {
+        if (sec < 0) sec = 0;
+        int m = (int)(sec / 60);
+        double s = sec - m * 60;
+        return $"{m:00}:{s:00.0}";
+    }
+
+    // ========================================================
     // 设备 / 开关
     // ========================================================
 
@@ -1367,7 +1597,7 @@ public partial class RecordingDeskView : UserControl, INavPage
 
     private void CmbDevice_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_store == null || CmbDevice.SelectedItem is not AudioInputDevice dev) return;
+        if (_loading || _store == null || CmbDevice.SelectedItem is not AudioInputDevice dev) return;
         if (_store.Data.LastDevice == dev.Name) return;
 
         _store.Data.LastDevice = dev.Name;
@@ -1395,11 +1625,18 @@ public partial class RecordingDeskView : UserControl, INavPage
         SaveStore();
     }
 
+    private void SaveStore()
+    {
+        if (_loading) return;
+        try { _store?.Save(); }
+        catch (Exception ex) { DebugLog.Error("录音台：写 record.json 失败", ex); }
+    }
+
     private void BtnReloadScript_Click(object sender, RoutedEventArgs e)
     {
         if (_mode == Mode.Recording) return;
 
-        _projectDir = "";          // 强制重读
+        _projectDir = "";
         EnsureLoaded();
 
         if (!_doc.IsEmpty)
@@ -1412,13 +1649,14 @@ public partial class RecordingDeskView : UserControl, INavPage
     }
 
     // ========================================================
-    // 主按钮 / 快捷键
+    // 按钮 / 快捷键
     // ========================================================
 
     private void BtnMain_Click(object sender, RoutedEventArgs e)
     {
         if (_mode == Mode.Recording) StopRecording(false);
         else if (_mode == Mode.Playing) StopPlayback();
+        else if (_mode == Mode.EditBind) return;
         else StartRecording();
     }
 
@@ -1430,30 +1668,48 @@ public partial class RecordingDeskView : UserControl, INavPage
 
     private void BtnRedo_Click(object sender, RoutedEventArgs e) => Redo();
 
-    private void BtnOk_Click(object sender, RoutedEventArgs e) => ConfirmBind();
+    private void BtnOk_Click(object sender, RoutedEventArgs e)
+    {
+        if (_mode == Mode.EditBind) SaveEditBind();
+        else ConfirmBind();
+    }
+
+    private void BtnDiscard_Click(object sender, RoutedEventArgs e) => DiscardCurrent();
+
+    private void BtnUndo_Click(object sender, RoutedEventArgs e) => UndoLast();
+
+    private void DiscardCurrent()
+    {
+        if (_mode == Mode.Recording) { StopRecording(discard: true); return; }
+        if (_mode == Mode.Playing && _modeBeforePlay is Mode.Candidate or Mode.EditBind) StopPlayback();
+
+        if (_mode == Mode.EditBind) { CancelEditBind(); return; }
+
+        if (_mode == Mode.Candidate)
+        {
+            DiscardCandidate();
+            SetVerdict("", "", "这条扔掉了 —— 按空格重录");
+        }
+    }
 
     protected override void OnPreviewKeyDown(KeyEventArgs e)
     {
-        // 焦点在下拉框里时，空格是"打开下拉"，别抢
-        if (Keyboard.FocusedElement is ComboBox || Keyboard.FocusedElement is ComboBoxItem)
-        {
-            base.OnPreviewKeyDown(e);
-            return;
-        }
+        if (_doc.IsEmpty) { base.OnPreviewKeyDown(e); return; }
 
         switch (e.Key)
         {
             case Key.Space:
                 if (_mode == Mode.Recording) StopRecording(false);
                 else if (_mode == Mode.Playing) StopPlayback();
+                else if (_mode == Mode.EditBind) { /* 改绑中不录 */ }
                 else StartRecording();
                 e.Handled = true;
                 break;
 
             case Key.Enter:
-                // 回放中也能确认：回车 = 停回放 + 绑定，一步到位
                 if (_mode == Mode.Candidate) ConfirmBind();
-                else if (_mode == Mode.Playing && _modeBeforePlay == Mode.Candidate && _activeTake != null)
+                else if (_mode == Mode.EditBind) SaveEditBind();
+                else if (_mode == Mode.Playing && _modeBeforePlay == Mode.Candidate && _pendingTake != null)
                 {
                     StopPlayback();
                     ConfirmBind();
@@ -1475,73 +1731,47 @@ public partial class RecordingDeskView : UserControl, INavPage
             case Key.Escape:
                 if (_mode == Mode.Recording) StopRecording(discard: true);
                 else if (_mode == Mode.Playing) StopPlayback();
-                else if (_mode == Mode.Candidate)
-                {
-                    // 候选没确认就 Esc = 整条扔掉（wav 删掉、台账无痕，旧绑定不动）
-                    DiscardCandidate();
-                    _selA = _selB = null;
-                    SetMode(Mode.Idle);
-                    ShowEmptyWave();
-                    SetVerdict("", "", "这条扔掉了 —— 按空格重录");
-                }
+                else DiscardCurrent();
+                e.Handled = true;
+                break;
+
+            case Key.Z when Keyboard.Modifiers == ModifierKeys.Control:
+                UndoLast();
                 e.Handled = true;
                 break;
 
             case Key.Down:
-                if (_mode != Mode.Recording) MoveCursor(1);
+                if (_mode is Mode.Idle) MoveCursor(1);
                 e.Handled = true;
                 break;
 
             case Key.Up:
-                if (_mode != Mode.Recording) MoveCursor(-1);
+                if (_mode is Mode.Idle) MoveCursor(-1);
                 e.Handled = true;
                 break;
-        }
 
-        base.OnPreviewKeyDown(e);
+            default:
+                base.OnPreviewKeyDown(e);
+                break;
+        }
     }
 
     private void MoveCursor(int delta)
     {
-        if (_doc.IsEmpty) return;
-
-        // 候选态（含被回放盖着的候选）用鼠标改范围，方向键不掺和
-        if (_mode == Mode.Candidate) return;
-        if (_mode == Mode.Playing && _modeBeforePlay == Mode.Candidate) return;
+        if (_doc.IsEmpty || _mode != Mode.Idle) return;
 
         int n = _doc.Sentences.Count;
-        _cursor = Math.Clamp(_cursor + delta, 0, n - 1);
-        _selA = _cursor;
-        _selB = _cursor;
+        int next = Math.Clamp(_cursor + delta, 0, n - 1);
 
-        PaintDoc();
-        PaintScript();
-        UpdateButtons();
-        ScrollTo(_cursor);
-    }
+        _cursor = next;
+        _selA = _selB = next;
 
-    // ========================================================
-    // 杂项
-    // ========================================================
+        var take = TakeAt(next);
+        _activeTake = take is null ? null : take;
 
-    private void RebuildDoneMap(string? excludeId = null)
-    {
-        _done = _store?.BuildDoneMap(_doc.Sentences.Count, excludeId) ?? new Dictionary<int, string>();
-        UpdateDocStat();
-    }
-
-    private void SaveStore()
-    {
-        if (_loading) return;          // 灌数据期间的"假事件"不落盘
-        try { _store?.Save(); }
-        catch (Exception ex) { DebugLog.Error("录音台：写 record.json 失败", ex); }
-    }
-
-    private static string Fmt(double sec)
-    {
-        if (sec < 0 || double.IsNaN(sec)) sec = 0;
-        int m = (int)(sec / 60);
-        double s = sec - m * 60;
-        return $"{m:00}:{s:00.0}";
+        PaintAll();
+        if (take != null) ShowTakeWave(take);
+        else ShowEmptyWave();
+        ScrollTo(next);
     }
 }
