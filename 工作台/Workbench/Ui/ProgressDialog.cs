@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // ProgressDialog.cs - ★ V1.13.1「搬运中」的锁窗进度条
 // ============================================================
 //
@@ -45,6 +45,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using LiteCut.Workbench.Theming;
 using System.Windows.Threading;
 using LiteCut.Workbench.Project;
 
@@ -56,19 +57,21 @@ namespace LiteCut.Workbench.Ui;
 /// </summary>
 public sealed class ProgressDialog : Window
 {
-    // ---- 配色：跟 App.xaml 的深色主题保持一致。这里写死 hex 而不是走
-    //      {StaticResource}，是因为纯代码建窗时资源查找要靠 FindResource，
-    //      万一资源 key 改了这里会直接崩；写死则最多是颜色不跟主题变。 ----
-    private static readonly Brush BdDeep = New("#FF0E1013");   // 窗体最深底
-    private static readonly Brush BdCard = New("#FF1A1E24");   // 面板底
-    private static readonly Brush BdInput = New("#FF232830");  // 输入/轨道底
-    private static readonly Brush BrBorder = New("#FF2A3038"); // 描边
-    private static readonly Brush BrMain = New("#FFE6E9EF");   // 主文字
-    private static readonly Brush BrDim = New("#FF8B93A1");    // 次要文字
-    private static readonly Brush BrFaint = New("#FF78828F");  // 更淡的文字
-    private static readonly Brush BrAccent = New("#FF3B82F6");
-    private static readonly Brush BrWarn = New("#FFF59E0B");
-    private static readonly Brush BrOk = New("#FF22C55E");
+    // ---- 配色：★ V1.18.0 起统一走主题（Theming/ThemeManager）----
+    //     原来这里写死 hex，注释里给的理由是"资源 key 改了会崩" —— 现在 key 改成常量了，
+    //     而且写死的颜色在白天主题下就是一整块深色弹窗，比"崩"更难看。
+    //     这里用**属性**而不是 static readonly 字段：切主题之后新建的对话框
+    //     才能拿到新颜色（字段只初始化一次，会一直停在第一次的颜色）。
+    private static Brush BdDeep => Theme.Brush("BgDeep");     // 窗体最深底
+    private static Brush BdCard => Theme.Brush("BgCard");     // 面板底
+    private static Brush BdInput => Theme.Brush("BgInput");   // 输入/轨道底
+    private static Brush BrBorder => Theme.Brush("Border");   // 描边
+    private static Brush BrMain => Theme.Brush("TextMain");   // 主文字
+    private static Brush BrDim => Theme.Brush("TextDim");     // 次要文字
+    private static Brush BrFaint => Theme.Brush("TextFaint"); // 更淡的文字
+    private static Brush BrAccent => Theme.Brush("Accent");
+    private static Brush BrWarn => Theme.Brush("Warn");
+    private static Brush BrOk => Theme.Brush("Ok");
 
     private readonly CancellationTokenSource _cts = new();
     private readonly Stopwatch _sw = Stopwatch.StartNew();
@@ -183,8 +186,8 @@ public sealed class ProgressDialog : Window
         {
             CornerRadius = new CornerRadius(6),
             Background = new LinearGradientBrush(
-                (Color)ColorConverter.ConvertFromString("#FF2563EB")!,
-                (Color)ColorConverter.ConvertFromString("#FF3B82F6")!,
+                Theme.ColorOf("AccentHot"),
+                Theme.ColorOf("Accent"),
                 new Point(0, 0), new Point(1, 0)),
         };
         Grid.SetColumn(fill, 0);
@@ -264,7 +267,7 @@ public sealed class ProgressDialog : Window
                 BlurRadius = 26,
                 ShadowDepth = 3,
                 Opacity = 0.55,
-                Color = Colors.Black,
+                Color = Theme.ColorOf("ShadowColorValue"),
             },
         };
 
@@ -500,10 +503,4 @@ public sealed class ProgressDialog : Window
             : new ArchiveResult { Ok = false, Message = "操作没有完成。" };
     }
 
-    private static Brush New(string hex)
-    {
-        var b = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex)!);
-        b.Freeze();
-        return b;
-    }
 }

@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // SettingsWindow.xaml.cs - ★ V1.14.0 设置窗口
 // ============================================================
 //
@@ -18,6 +18,7 @@ using System.Windows.Controls;
 using LiteCut.Core.Media;
 using LiteCut.Workbench.Agent;
 using LiteCut.Workbench.Project;
+using LiteCut.Workbench.Theming;
 
 namespace LiteCut.Workbench.Settings;
 
@@ -50,6 +51,15 @@ public partial class SettingsWindow : Window
 
     private void LoadFromConfig()
     {
+        // ---- 外观（★ V1.18.0）----
+        // 顺序注意：这里只是"把当前状态铺到单选按钮上"，
+        // 而 SetChecked 会触发 Checked → Theme_Checked，
+        // 那时 _uiReady 还是 false，所以不会重复 Apply（也不会闪一下）。
+        bool day = string.Equals(_cfg.ThemeId, Theme.DayId, StringComparison.OrdinalIgnoreCase);
+        RbDay.IsChecked = day;
+        RbNight.IsChecked = !day;
+        RefreshThemeState();
+
         // ---- 大模型 ----
         TxtUrl.Text = _cfg.AgentBaseUrl ?? "";
         TxtKey.Password = _cfg.AgentApiKey ?? "";
@@ -100,12 +110,59 @@ public partial class SettingsWindow : Window
 
         string tag = (sender as FrameworkElement)?.Tag as string ?? "llm";
 
+        PageTheme.Visibility = tag == "theme" ? Visibility.Visible : Visibility.Collapsed;
         PageLlm.Visibility = tag == "llm" ? Visibility.Visible : Visibility.Collapsed;
         PagePaths.Visibility = tag == "paths" ? Visibility.Visible : Visibility.Collapsed;
         PageDebug.Visibility = tag == "debug" ? Visibility.Visible : Visibility.Collapsed;
 
         if (tag == "debug") RefreshDebugStatus();
     }
+
+    // ========================================================
+    // ★ V1.18.0 外观主题
+    // ========================================================
+    //
+    // 【为什么是"点了立刻变"而不是"保存后才变"】
+    //   配色这种东西，看文字描述根本判断不了。必须让他当场看见。
+    //   所以这里是**即时预览**，但遵守本窗口的老规矩「点了保存才写盘」：
+    //     · 保存 → 写进 config.json（下次启动还是这套）
+    //     · 取消 / 直接关窗 → 还原成保存过的那套
+    //   也就是说：预览是临时的，纸面上什么都没变。
+
+    private void Theme_Checked(object sender, RoutedEventArgs e)
+    {
+        // ★ 控件树建到一半时 Checked 会提前触发（本工程老坑，见 skill §5.16）
+        if (!_uiReady) return;
+
+        string id = (sender as FrameworkElement)?.Tag as string ?? Theme.NightId;
+        Theme.Apply(id);
+        RefreshThemeState();
+
+        // 标题栏是 DWM 画的，不跟 WPF 资源走，得单独染一次
+        App.ApplyTitleBarTheme(Owner ?? this);
+    }
+
+    /// <summary>更新"当前是预览还是已保存"的说明文字。</summary>
+    private void RefreshThemeState()
+    {
+        if (TxtThemeState == null) return;
+
+        bool previewing = !string.Equals(Theme.CurrentId, Theme.SavedId, StringComparison.OrdinalIgnoreCase);
+
+        TxtThemeState.Text = previewing
+            ? "正在预览「" + NameOf(Theme.CurrentId) + "」—— 点右下角「保存设置」记住它，点「取消」还原成「" + NameOf(Theme.SavedId) + "」。"
+            : "当前使用：「" + NameOf(Theme.CurrentId) + "」（已保存）";
+    }
+
+    private static string NameOf(string id)
+    {
+        foreach (var t in Theme.Themes)
+            if (string.Equals(t.Id, id, StringComparison.OrdinalIgnoreCase)) return t.Name;
+        return "夜空黑";
+    }
+
+    /// <summary>当前卡片选中的是哪套主题。</summary>
+    private string PickedThemeId => RbDay.IsChecked == true ? Theme.DayId : Theme.NightId;
 
     // ========================================================
     // 大模型：检测连接
@@ -384,6 +441,12 @@ public partial class SettingsWindow : Window
         cfg.ArchiveRoot = ui.TxtArchiveRoot.Text.Trim();
         cfg.TranscriptDir = ui.TxtTranscript.Text.Trim();
 
+        // ★ 外观主题：写进配置并正式生效（SavedId 才是"用户真选过的"那套，
+        //   取消时就是靠它还原）
+        cfg.ThemeId = ui.PickedThemeId;
+        Theme.SavedId = cfg.ThemeId;
+        Theme.Apply(cfg.ThemeId);
+
         cfg.DebugEnabled = ui.ChkDebug.IsChecked == true;
         cfg.DebugLogToFile = ui.ChkDebugFile.IsChecked == true;
         cfg.DebugPort = port;
@@ -392,4 +455,19 @@ public partial class SettingsWindow : Window
     }
 
     private void BtnCancel_Click(object sender, RoutedEventArgs e) => Close();
+
+    /// <summary>
+    /// 没点保存就关窗（含右上角 ×、Esc）→ 把预览过的主题还原回去。
+    /// ★ 一定要挂在 OnClosing 而不是只挂取消按钮：× 是最常用的关法，
+    ///   只处理取消按钮的话，用户点 × 会"莫名其妙被换了配色"。
+    /// </summary>
+    protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+    {
+        if (!Saved)
+        {
+            Theme.Apply(Theme.SavedId);
+            try { App.ApplyTitleBarTheme(Owner ?? this); } catch { }
+        }
+        base.OnClosing(e);
+    }
 }

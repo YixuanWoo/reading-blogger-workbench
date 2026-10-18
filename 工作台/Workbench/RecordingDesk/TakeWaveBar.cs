@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // TakeWaveBar.cs - 录音波形条（一条音频的"长相"）
 // ============================================================
 //
@@ -17,24 +17,30 @@
 using System;
 using System.Windows;
 using System.Windows.Media;
+using LiteCut.Workbench.Theming;
 
 namespace LiteCut.Workbench.RecordingDesk;
 
 /// <summary>一排竖柱组成的波形（中间对称展开）。</summary>
 public sealed class TakeWaveBar : FrameworkElement
 {
-    private static readonly Brush BarIdle = Freeze(Color.FromRgb(0x33, 0x3A, 0x44));
-    private static readonly Brush BarLive = Freeze(Color.FromRgb(0x8A, 0x93, 0xA1));
-    private static readonly Brush BarPlayed = Freeze(Color.FromRgb(0xC9, 0xD2, 0xDE));
-    private static readonly Brush CenterLine = Freeze(Color.FromRgb(0x24, 0x2A, 0x33));
-    private static readonly Brush Head = Freeze(Color.FromRgb(0xE0, 0x5A, 0x4E));
+    // ★ V1.18.0：配色走主题。★★ 这里**不能 Freeze、也不能 static readonly** ——
+    //   Theme.Brush 返回的是全界面共享的那支笔，冻结它等于把主题切换废掉；
+    //   而 static readonly 只在第一次取值时读一遍，切了主题还是老颜色。
+    private static Brush BarIdle => Theme.Brush("BorderStrong");   // 还没播到的柱子
+    private static Brush BarLive => Theme.Brush("TextDim");        // 正在录
+    private static Brush BarPlayed => Theme.Brush("TextSoft");     // 已播过的柱子
+    private static Brush CenterLine => Theme.Brush("HoverBg2");    // 中线
+    private static Brush Head => Theme.Brush("RecRed");            // 播放头红线
 
-    private static Brush Freeze(Color c)
+    public TakeWaveBar()
     {
-        var b = new SolidColorBrush(c);
-        b.Freeze();
-        return b;
+        // ★ 主题切换后重画（OnRender 每次现取主题笔，重画即换色）
+        Loaded += (_, _) => Theme.Changed += OnThemeChanged;
+        Unloaded += (_, _) => Theme.Changed -= OnThemeChanged;
     }
+
+    private void OnThemeChanged() => InvalidateVisual();
 
     private float[] _peaks = Array.Empty<float>();
 

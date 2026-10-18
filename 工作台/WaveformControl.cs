@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // WaveformControl.cs - 时间轴波形控件（块模型）
 //
 // 这个控件负责：
@@ -24,6 +24,7 @@ using System.Windows.Media;
 using LiteCut.Core.Timeline;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
+using LiteCut.Workbench.Theming;
 
 namespace LiteCut;
 
@@ -34,6 +35,20 @@ public class WaveformControl : FrameworkElement
 {
     // ---------- 数据 ----------
     private TimelineProject? _project;
+
+    // ★ V1.18.0 主题切换：时间轴是纯代码画的（OnRender），XAML 资源帮不上忙，
+    //   收到主题变更通知后 InvalidateVisual 重画一遍即可（OnRender 里每次现取主题笔）。
+    private bool _themeHooked;
+
+    private void HookTheme()
+    {
+        if (_themeHooked) return;
+        _themeHooked = true;
+        Loaded += (_, _) => Theme.Changed += OnThemeChanged;
+        Unloaded += (_, _) => Theme.Changed -= OnThemeChanged;
+    }
+
+    private void OnThemeChanged() => InvalidateVisual();
 
     // ---------- 波形峰值缓存：文件路径 → (采样率, 峰值数组) ----------
     // 每个峰值代表一小段时间内的最大振幅，用来画波形
@@ -235,19 +250,21 @@ public class WaveformControl : FrameworkElement
 
     protected override void OnRender(DrawingContext dc)
     {
+        HookTheme();
+
         double w = ActualWidth;
         double h = ActualHeight;
         if (w <= 0 || h <= 0) return;
 
         // 1. 背景
-        dc.DrawRectangle(GetBrush("BrushBackground", Color.FromRgb(0x14, 0x16, 0x1A)),
+        dc.DrawRectangle(GetBrush("BrushBackground", Theme.ColorOf("BrushBackground")),
                          null, new Rect(0, 0, w, h));
 
         if (_project == null)
         {
             // 没项目：画个提示
             var font = new Typeface("Segoe UI");
-            var textBrush = GetBrush("BrushText", Color.FromRgb(0xE8, 0xE6, 0xE3));
+            var textBrush = GetBrush("BrushText", Theme.ColorOf("BrushText"));
             var ft = new FormattedText("从左侧素材库拖素材到这里开始剪辑",
                 System.Globalization.CultureInfo.CurrentCulture,
                 FlowDirection.LeftToRight, font, 14, textBrush, 1.0);
@@ -271,13 +288,14 @@ public class WaveformControl : FrameworkElement
             // 块背景色：正常=蓝色 / 选中=金色 / 拖动落点无效=警告红
             bool dropInvalid = _placement.State == PlacementState.TooNarrow
                                && _dragGroup.Contains(clip);
+            // ★ V1.18.0：块颜色走主题（浅色主题下这三种块色都压暗过一档，白字仍看得清）
             Color blockColor = dropInvalid
-                ? Color.FromRgb(0xB0, 0x33, 0x36)
+                ? Theme.ColorOf("WaveBlockBad")
                 : clip.IsSelected
-                    ? Color.FromRgb(0xD4, 0xAF, 0x37)
-                    : Color.FromRgb(0x3A, 0x6B, 0xA5);
+                    ? Theme.ColorOf("WaveBlockSel")
+                    : Theme.ColorOf("WaveBlockNormal");
             var blockBrush = new SolidColorBrush(blockColor);
-            var borderPen = new Pen(new SolidColorBrush(Color.FromRgb(0x14, 0x16, 0x1A)), 1.5);
+            var borderPen = new Pen(Theme.Brush("WaveBlockBorder"), 1.5);
 
             // 画块矩形
             double left = Math.Max(0, x1);
@@ -298,7 +316,7 @@ public class WaveformControl : FrameworkElement
             if (right - left >= 48 || clip.IsSelected)
             {
                 var font = new Typeface("Segoe UI");
-                var labelBrush = new SolidColorBrush(Color.FromRgb(0xFF, 0xFF, 0xFF));
+                var labelBrush = Theme.Brush("WaveBlockLabel");
                 string label = clip.SourceName;
                 if (label.Length > 20) label = label.Substring(0, 18) + "..";
                 var ft = new FormattedText(label,
@@ -329,11 +347,11 @@ public class WaveformControl : FrameworkElement
         double playheadX = SecToX(_project.PlayheadSec);
 
         {
-            var playPen = new Pen(GetBrush("BrushPlayhead", Color.FromRgb(0xFF, 0x55, 0x66)), 1.5);
+            var playPen = new Pen(GetBrush("BrushPlayhead", Theme.ColorOf("BrushPlayhead")), 1.5);
             dc.DrawLine(playPen, new Point(playheadX, 0), new Point(playheadX, h));
 
             // 顶部小矩形手柄
-            var handleBrush = GetBrush("BrushPlayhead", Color.FromRgb(0xFF, 0x55, 0x66));
+            var handleBrush = GetBrush("BrushPlayhead", Theme.ColorOf("BrushPlayhead"));
             dc.DrawRectangle(handleBrush, null, new Rect(playheadX - 3, 0, 6, 8));
         }
 
@@ -353,8 +371,8 @@ public class WaveformControl : FrameworkElement
             if (c * secPerPixel >= 70) { stepSec = c; break; }
         }
 
-        var textBrush = GetBrush("BrushText", Color.FromRgb(0xE8, 0xE6, 0xE3));
-        var linePen = new Pen(GetBrush("BrushBorder", Color.FromRgb(0x33, 0x3A, 0x45)), 1);
+        var textBrush = GetBrush("BrushText", Theme.ColorOf("BrushText"));
+        var linePen = new Pen(GetBrush("BrushBorder", Theme.ColorOf("BrushBorder")), 1);
         var font = new Typeface("Segoe UI");
 
         double startSec = Math.Floor(_viewStartSec / stepSec) * stepSec;

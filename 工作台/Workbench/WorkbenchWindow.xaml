@@ -9,9 +9,9 @@
         Height="900" Width="1500"
         MinHeight="700" MinWidth="1100"
         WindowStartupLocation="CenterScreen"
-        Background="#FF0E1013"
+        Background="{DynamicResource BgDeep}"
         FontFamily="Microsoft YaHei"
-        Foreground="#FFE6E9EF">
+        Foreground="{DynamicResource TextMain}">
 
     <!-- ============================================================
          顶栏的样式（V1.14.0）
@@ -42,8 +42,8 @@
         <!-- ============================================================
              左侧导航
              ============================================================ -->
-        <Border x:Name="NavPanel" Grid.Column="0" Background="{StaticResource BgNav}"
-                BorderBrush="{StaticResource Border}" BorderThickness="0,0,1,0">
+        <Border x:Name="NavPanel" Grid.Column="0" Background="{DynamicResource BgNav}"
+                BorderBrush="{DynamicResource Border}" BorderThickness="0,0,1,0">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>   <!-- 标题 -->
@@ -55,15 +55,15 @@
 
                 <StackPanel Grid.Row="0" Margin="14,20,14,14">
                     <TextBlock Text="翊瑄的工作台" FontSize="16" FontWeight="SemiBold"
-                               Foreground="White"/>
+                               Foreground="{DynamicResource TextMain}"/>
                     <TextBlock Text="自媒体创作流水线" FontSize="11"
-                               Foreground="{StaticResource TextFaint}" Margin="0,3,0,0"/>
+                               Foreground="{DynamicResource TextFaint}" Margin="0,3,0,0"/>
                 </StackPanel>
 
                 <!-- 当前项目（没打开项目时整块隐藏） -->
                 <Border x:Name="ProjectBox" Grid.Row="1" Margin="10,0,10,12" Padding="11,10"
-                        Background="#FF1A1E24" CornerRadius="8"
-                        BorderBrush="{StaticResource Border}" BorderThickness="1"
+                        Background="{DynamicResource BgCard}" CornerRadius="8"
+                        BorderBrush="{DynamicResource Border}" BorderThickness="1"
                         Visibility="Collapsed">
                     <StackPanel>
                         <Button x:Name="BtnBackToProjects" Content="← 全部项目"
@@ -72,27 +72,27 @@
                                 Padding="8,3" HorizontalAlignment="Left"
                                 ToolTip="回到项目列表（会自动保存当前项目）"/>
                         <TextBlock x:Name="TxtProjectName" FontSize="13" FontWeight="SemiBold"
-                                   Foreground="White" Margin="0,9,0,0"
+                                   Foreground="{DynamicResource TextMain}" Margin="0,9,0,0"
                                    TextTrimming="CharacterEllipsis"/>
                         <TextBlock x:Name="TxtProjectMeta" FontSize="10.5"
-                                   Foreground="{StaticResource TextFaint}" Margin="0,3,0,0"
+                                   Foreground="{DynamicResource TextFaint}" Margin="0,3,0,0"
                                    TextTrimming="CharacterEllipsis"/>
                     </StackPanel>
                 </Border>
 
                 <TextBlock x:Name="TxtNavGroup" Grid.Row="2" Text="工作区" FontSize="10.5"
-                           Foreground="{StaticResource TextFaint}"
+                           Foreground="{DynamicResource TextFaint}"
                            Margin="18,0,0,6"/>
 
                 <!-- NavHost 会往这里铺按钮 -->
                 <StackPanel x:Name="NavList" Grid.Row="3"/>
 
                 <Border Grid.Row="4" Margin="10,0,10,12" Padding="10,8,10,8"
-                        Background="#FF171B21" CornerRadius="6"
-                        BorderBrush="{StaticResource Border}" BorderThickness="1">
+                        Background="{DynamicResource BgNavFoot}" CornerRadius="6"
+                        BorderBrush="{DynamicResource Border}" BorderThickness="1">
                     <StackPanel>
                         <TextBlock x:Name="TxtFfmpegStatus" Text="检测 ffmpeg…"
-                                   FontSize="10.5" Foreground="{StaticResource TextFaint}"
+                                   FontSize="10.5" Foreground="{DynamicResource TextFaint}"
                                    TextWrapping="Wrap"/>
                         <Button Content="指定 ffmpeg 位置" Style="{StaticResource Btn}"
                                 FontSize="10.5" Padding="6,4,6,4" Margin="0,6,0,0"
@@ -113,14 +113,14 @@
             </Grid.RowDefinitions>
 
             <Border x:Name="TopBar" Grid.Row="0" Padding="18,10,16,10"
-                    Background="#FF12151A" BorderBrush="{StaticResource Border}"
+                    Background="{DynamicResource BgShell}" BorderBrush="{DynamicResource Border}"
                     BorderThickness="0,0,0,1">
                 <DockPanel>
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
                                 VerticalAlignment="Center">
                         <TextBlock x:Name="TxtSaveState" FontSize="11.5"
                                    VerticalAlignment="Center" Margin="0,0,10,0"
-                                   Foreground="{StaticResource TextFaint}"/>
+                                   Foreground="{DynamicResource TextFaint}"/>
                         <!-- ★★ V1.10.5 **撤掉**这个「保存」按钮。
                              为什么撤而不是改名：
                                · project.json本来就有定时自动保存（20 秒，见 AutoSaveTick）
@@ -141,7 +141,7 @@
                     <!-- 顶栏常驻：下游此刻按哪一份剪辑决策在走（粗剪/精剪） -->
                     <TextBlock x:Name="TxtDecisionBadge" DockPanel.Dock="Right"
                                FontSize="11.5" VerticalAlignment="Center" Margin="0,0,16,0"
-                               Foreground="{StaticResource TextFaint}"
+                               Foreground="{DynamicResource TextFaint}"
                                TextTrimming="CharacterEllipsis" MaxWidth="320"/>
 
                     <!-- ============================================================
@@ -176,7 +176,7 @@
                     </StackPanel>
 
                     <TextBlock x:Name="TxtBreadcrumb" FontSize="13.5" VerticalAlignment="Center"
-                               Foreground="{StaticResource TextMain}"
+                               Foreground="{DynamicResource TextMain}"
                                TextTrimming="CharacterEllipsis"/>
                 </DockPanel>
             </Border>
@@ -185,14 +185,14 @@
             <Grid x:Name="ContentHost" Grid.Row="1"/>
 
             <!-- 底部状态栏（全屏模式下隐藏） -->
-            <Border x:Name="StatusBar" Grid.Row="2" Padding="14,7,14,7" Background="#FF12151A"
-                    BorderBrush="{StaticResource Border}" BorderThickness="0,1,0,0">
+            <Border x:Name="StatusBar" Grid.Row="2" Padding="14,7,14,7" Background="{DynamicResource BgShell}"
+                    BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0">
                 <Grid>
                     <TextBlock x:Name="TxtStatus" Text="就绪" FontSize="11.5"
-                               Foreground="{StaticResource TextDim}"
+                               Foreground="{DynamicResource TextDim}"
                                VerticalAlignment="Center"/>
                     <TextBlock x:Name="TxtClock" HorizontalAlignment="Right" FontSize="11.5"
-                               Foreground="{StaticResource TextFaint}"
+                               Foreground="{DynamicResource TextFaint}"
                                VerticalAlignment="Center"/>
                 </Grid>
             </Border>

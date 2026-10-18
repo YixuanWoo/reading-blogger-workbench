@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // NavHost.cs - 把 NavNode 列表画成左侧导航按钮
 // ============================================================
 //
@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using LiteCut.Workbench.Theming;
 
 namespace LiteCut.Workbench.Navigation;
 
@@ -154,7 +155,7 @@ public sealed class NavHost
 
         var chip = new Border
         {
-            Background = new SolidColorBrush(Color.FromRgb(0x2A, 0x30, 0x38)),
+            Background = Theme.Brush("Border"),
             CornerRadius = new CornerRadius(4),
             Padding = new Thickness(5, 1, 5, 1),
             Margin = new Thickness(8, 0, 0, 0),
@@ -163,7 +164,7 @@ public sealed class NavHost
             {
                 Text = node.Badge,
                 FontSize = 9,
-                Foreground = new SolidColorBrush(Color.FromRgb(0x5A, 0x62, 0x6E)),
+                Foreground = Theme.Brush("TextMuted"),
             },
         };
 
@@ -190,7 +191,7 @@ public sealed class NavHost
             Text = group,
             FontSize = 11,
             // 字间距拉开一点，视觉上退到背景里，不跟菜单项抢注意力
-            Foreground = new SolidColorBrush(Color.FromRgb(0x5A, 0x61, 0x6E)),
+            Foreground = Theme.Brush("TextMuted"),
         };
         tb.SetValue(TextBlock.MarginProperty, new Thickness(14, 12, 0, 4));
 
@@ -198,7 +199,7 @@ public sealed class NavHost
         {
             Margin = new Thickness(6, 4, 6, 2),
             Padding = new Thickness(8, 0, 0, 0),
-            BorderBrush = new SolidColorBrush(Color.FromRgb(0x25, 0x2A, 0x31)),
+            BorderBrush = Theme.Brush("DividerFaint"),
             BorderThickness = new Thickness(0, 1, 0, 0),   // 上边一条细线 = 分组线
             Child = tb,
         };

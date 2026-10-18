@@ -1,4 +1,4 @@
-<!-- ============================================================
+﻿<!-- ============================================================
      CadenceCard.xaml - ★ V1.15.0 主图卡：更新节奏
      ============================================================
      【它为什么单独做成一个控件（而不是直接写在账号页里）】
@@ -20,8 +20,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ctl="clr-namespace:LiteCut.Workbench.Controls"
              Background="Transparent">
-    <Border Background="{StaticResource BgCard}"
-            BorderBrush="{StaticResource Border}" BorderThickness="1"
+    <Border Background="{DynamicResource BgCard}"
+            BorderBrush="{DynamicResource Border}" BorderThickness="1"
             CornerRadius="10" Padding="16,14,16,12">
         <StackPanel>
 
@@ -30,17 +30,17 @@
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
                             VerticalAlignment="Top" Margin="12,2,0,0">
                     <TextBlock Text="看" FontSize="11" VerticalAlignment="Center"
-                               Foreground="{StaticResource TextDim}" Margin="0,0,5,0"/>
+                               Foreground="{DynamicResource TextDim}" Margin="0,0,5,0"/>
                     <ComboBox x:Name="PickRange" Width="104" FontSize="12"
                               VerticalAlignment="Center"
                               SelectionChanged="PickRange_SelectionChanged"/>
                 </StackPanel>
 
                 <StackPanel>
-                    <TextBlock Text="更新节奏" FontSize="15" FontWeight="SemiBold" Foreground="White"/>
+                    <TextBlock Text="更新节奏" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
                     <TextBlock Text="一天一格 · 颜色越深，当天发得越多 · 全自动，一个字都不用填"
                                FontSize="11" Margin="0,3,0,0"
-                               Foreground="{StaticResource TextFaint}"/>
+                               Foreground="{DynamicResource TextFaint}"/>
                 </StackPanel>
             </DockPanel>
 
@@ -48,34 +48,34 @@
             <ctl:CadenceHeatmap x:Name="Chart" Margin="0,14,0,0"/>
 
             <!-- ============ 三个读数 ============ -->
-            <Border Height="1" Background="{StaticResource Border}" Margin="0,16,0,0"/>
+            <Border Height="1" Background="{DynamicResource Border}" Margin="0,16,0,0"/>
 
             <UniformGrid Columns="3" Margin="0,12,0,0">
                 <StackPanel>
                     <TextBlock x:Name="TxtCount" FontSize="22" FontWeight="SemiBold"
-                               Foreground="{StaticResource TextMain}" Text="—"/>
+                               Foreground="{DynamicResource TextMain}" Text="—"/>
                     <TextBlock x:Name="LblCount" FontSize="11" Margin="0,3,0,0"
-                               Foreground="{StaticResource TextFaint}"/>
+                               Foreground="{DynamicResource TextFaint}"/>
                     <TextBlock x:Name="FootCount" FontSize="10.5" Margin="0,2,0,0"
-                               Foreground="#FF5A6169"/>
+                               Foreground="{DynamicResource TextMuted}"/>
                 </StackPanel>
 
                 <StackPanel>
                     <TextBlock x:Name="TxtStreak" FontSize="22" FontWeight="SemiBold"
-                               Foreground="{StaticResource TextMain}" Text="—"/>
+                               Foreground="{DynamicResource TextMain}" Text="—"/>
                     <TextBlock x:Name="LblStreak" FontSize="11" Margin="0,3,0,0"
-                               Foreground="{StaticResource TextFaint}"/>
+                               Foreground="{DynamicResource TextFaint}"/>
                     <TextBlock x:Name="FootStreak" FontSize="10.5" Margin="0,2,0,0"
-                               Foreground="#FF5A6169"/>
+                               Foreground="{DynamicResource TextMuted}"/>
                 </StackPanel>
 
                 <StackPanel>
                     <TextBlock x:Name="TxtGap" FontSize="22" FontWeight="SemiBold"
-                               Foreground="{StaticResource TextMain}" Text="—"/>
+                               Foreground="{DynamicResource TextMain}" Text="—"/>
                     <TextBlock x:Name="LblGap" FontSize="11" Margin="0,3,0,0"
-                               Foreground="{StaticResource TextFaint}"/>
+                               Foreground="{DynamicResource TextFaint}"/>
                     <TextBlock x:Name="FootGap" FontSize="10.5" Margin="0,2,0,0"
-                               Foreground="#FF5A6169"/>
+                               Foreground="{DynamicResource TextMuted}"/>
                 </StackPanel>
             </UniformGrid>
 
@@ -86,13 +86,13 @@
 
                 <TextBlock x:Name="TxtTone" FontSize="11" TextWrapping="Wrap"
                            VerticalAlignment="Center"
-                           Foreground="{StaticResource TextDim}"
+                           Foreground="{DynamicResource TextDim}"
                            Text="它只陈述，不评判 —— 不变红、不弹窗、不催你。"/>
             </DockPanel>
 
             <TextBlock x:Name="TxtHint" FontSize="11" Margin="0,8,0,0"
                        TextWrapping="Wrap" Visibility="Collapsed"
-                       Foreground="#FF8A7A4A"/>
+                       Foreground="{DynamicResource Gold}"/>
         </StackPanel>
     </Border>
 </UserControl>

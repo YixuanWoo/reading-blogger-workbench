@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // App.xaml.cs - 应用程序启动代码
 // ============================================================
 // WPF 程序的启动顺序：Main()（编译器自动生成）→ App → 主窗口。
@@ -30,9 +30,11 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using LiteCut.Workbench.Agent;
+using LiteCut.Workbench.Theming;
 
 namespace LiteCut;
 
@@ -96,6 +98,25 @@ public partial class App : Application
         {
             base.OnStartup(e);
 
+            // ---- 先把主题铺上，再建窗口 ----
+            // ★ 顺序很要紧：WorkbenchWindow 构造时 XAML 就在解析 {StaticResource}，
+            //   那时拿到的笔已经是主题色了，不会先亮一下深色再刷成白色。
+            //   读的是同一份 config.json（跟 WorkbenchState.Config 同一个文件，
+            //   只是这里自己 Load 一次：State 是跟着窗口一起建的，等不了）。
+            try
+            {
+                var cfg = Workbench.AppConfig.Load();
+                // SavedId = 用户存过的偏好（设置里"取消"时用它还原）；
+                // 真正把颜色铺上去的是 Apply，它同时把 CurrentId 记下来。
+                Theme.SavedId = cfg.ThemeId ?? Theme.NightId;
+                Theme.Apply(cfg.ThemeId);
+            }
+            catch (Exception ex)
+            {
+                // 主题读不出来最多是"配色不对"，绝不能挡住启动
+                WriteLog("主题应用失败（已退回夜空黑）", ex);
+            }
+
             // 主窗口在这里手动创建（App.xaml 里故意没写 StartupUri）：
             // 走 StartupUri 的话，窗口由框架在 OnStartup 返回后才建，
             // 上面那个"已经有实例在跑"的分支就拦不住 —— 会闪一个空窗口再消失。
@@ -122,10 +143,11 @@ public partial class App : Application
 
             MainWindow.Show();
 
-            // 标题栏染成和界面一致的深色 —— 界面整体是深色主题，
-            // 系统默认那条亮色标题栏骑在上面非常突兀（用户点名要改的）。
+            // 标题栏染成和界面一致的底色 —— 系统默认那条亮色标题栏骑在上面非常突兀
+            // （深色主题那会儿用户就点名要改）。V1.18.0 起跟着主题走：
+            // 白天主题给浅色标题栏，否则一块深色边框扣在白界面上更难看。
             // 必须在 Show() 之后：那时窗口句柄才存在。
-            ApplyDarkTitleBar(MainWindow);
+            ApplyTitleBarTheme(MainWindow);
 
             // 任务一：拉起 Agent 桥接（若没在跑），**并开看护心跳**。
             //
@@ -254,33 +276,51 @@ public partial class App : Application
     private const int DWMWA_CAPTION_COLOR = 35;
     /// <summary>窗口边框颜色（Win11）</summary>
     private const int DWMWA_BORDER_COLOR = 34;
+    /// <summary>标题栏文字颜色（Win11 22000+）</summary>
+    private const int DWMWA_TEXT_COLOR = 36;
 
     /// <summary>
-    /// 把窗口标题栏染成和界面一致的深色（#0E1013，即 BgDeep）。
+    /// 把窗口标题栏染成当前主题的底色（深色主题 = 深色标题栏，白天主题 = 浅色）。
     /// 在窗口句柄就绪之后调用（Show() 之后即安全）。
+    /// ★ V1.18.0 起改为 public：设置里换主题之后要**立刻**把标题栏也换掉，
+    ///   不然窗口内容已经白了、头上还扣着一条黑的。
     /// </summary>
-    private static void ApplyDarkTitleBar(System.Windows.Window window)
+    public static void ApplyTitleBarTheme(System.Windows.Window window)
     {
         try
         {
             var handle = new System.Windows.Interop.WindowInteropHelper(window).Handle;
             if (handle == IntPtr.Zero) return;
 
-            // COLORREF 的字节序是 0x00BBGGRR —— 和网页的 #RRGGBB 正好相反，别写顺了
-            // #0E1013 → R=0E G=10 B=13 → 0x0013100E
-            int caption = 0x0013_100E;
+            // 底色取当前主题的「窗口最底」（BgDeep）
+            Color c = Theme.ColorOf("BgDeep");
 
-            int on = 1;
-            // 先按 Win11 的路子直接染色；失败（Win10）就退回"深色标题栏"开关
-            if (DwmSetWindowAttribute(handle, DWMWA_CAPTION_COLOR, ref caption, 4) != 0)
-                DwmSetWindowAttribute(handle, DWMWA_USE_IMMERSIVE_DARK_MODE, ref on, 4);
+            // COLORREF 的字节序是 0x00BBGGRR —— 和网页的 #RRGGBB 正好相反，别写顺了
+            int caption = (c.R) | (c.G << 8) | (c.B << 16);
+
+            // 亮底要用亮标题栏（immersive dark mode = 0），暗底用 1
+            double luma = (0.2126 * c.R + 0.7152 * c.G + 0.0722 * c.B) / 255.0;
+            int on = luma < 0.5 ? 1 : 0;
+
+            // 先按 Win11 的路子直接染色；失败（Win10）就退回"深色/浅色标题栏"开关
+            // 两句都调也无害：系统不认某个属性时它只返回错误码，不会崩。
+            DwmSetWindowAttribute(handle, DWMWA_USE_IMMERSIVE_DARK_MODE, ref on, 4);
+            DwmSetWindowAttribute(handle, DWMWA_CAPTION_COLOR, ref caption, 4);
 
             // 边框一并染掉，否则 Win11 会给窗口描一圈亮边，还是扎眼
             DwmSetWindowAttribute(handle, DWMWA_BORDER_COLOR, ref caption, 4);
+
+            // 标题文字颜色（Win11 22000+）。不设的话系统按"深色/浅色"自己猜，
+            // 在浅色标题栏上偶尔会给出浅色字 —— 那就看不见了。
+            if (handle != IntPtr.Zero)
+            {
+                int text = luma < 0.5 ? 0x00EFE9E6 : 0x00201A16;  // 注意 BGR 序
+                DwmSetWindowAttribute(handle, DWMWA_TEXT_COLOR, ref text, 4);
+            }
         }
         catch
         {
-            // 深色标题栏是纯观感优化，任何环境下失败都不值得打断启动
+            // 标题栏染色是纯观感优化，任何环境下失败都不值得打断启动
         }
     }
 

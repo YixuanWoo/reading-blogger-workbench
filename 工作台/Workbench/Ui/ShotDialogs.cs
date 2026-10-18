@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // ShotDialogs.cs - 分镜页的两个确认框（V1.1.0 / T-16）
 // ============================================================
 //
@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using LiteCut.Workbench.Theming;
 
 namespace LiteCut.Workbench.Ui;
 
@@ -45,13 +46,15 @@ public static class ShotDialogs
     private static Brush B(string key, Brush fallback) =>
         Application.Current?.TryFindResource(key) as Brush ?? fallback;
 
-    private static readonly Brush CText = new SolidColorBrush(Color.FromRgb(0xE6, 0xE9, 0xEF));
-    private static readonly Brush CDim = new SolidColorBrush(Color.FromRgb(0x8B, 0x93, 0xA1));
-    private static readonly Brush CBg = new SolidColorBrush(Color.FromRgb(0x1A, 0x1E, 0x24));
-    private static readonly Brush CBgIn = new SolidColorBrush(Color.FromRgb(0x23, 0x28, 0x30));
-    private static readonly Brush CBorder = new SolidColorBrush(Color.FromRgb(0x2A, 0x30, 0x38));
-    private static readonly Brush CWarn = new SolidColorBrush(Color.FromRgb(0xF5, 0x9E, 0x0B));
-    private static readonly Brush CDanger = new SolidColorBrush(Color.FromRgb(0xEF, 0x44, 0x44));
+    // ★ V1.18.0：配色改走主题。用属性而不是 static readonly —— 字段只初始化一次，
+    //   切过主题之后再弹的对话框会一直用第一次那套颜色。
+    private static Brush CText => Theme.Brush("TextMain");
+    private static Brush CDim => Theme.Brush("TextDim");
+    private static Brush CBg => Theme.Brush("BgCard");
+    private static Brush CBgIn => Theme.Brush("BgInput");
+    private static Brush CBorder => Theme.Brush("Border");
+    private static Brush CWarn => Theme.Brush("Warn");
+    private static Brush CDanger => Theme.Brush("Danger");
 
     // ========================================================
     // 框 A：拆 / 合 —— 只问设计
@@ -234,7 +237,7 @@ public static class ShotDialogs
         {
             Content = right, MinWidth = 88, Padding = new Thickness(14, 6, 14, 6),
             Margin = new Thickness(10, 0, 0, 0),
-            Background = B("AccentHot", Brushes.SteelBlue), Foreground = Brushes.White,
+            Background = B("AccentHot", Brushes.SteelBlue), Foreground = Theme.Brush("TextOnAccent"),
             BorderThickness = new Thickness(0), FontWeight = FontWeights.SemiBold,
             Cursor = System.Windows.Input.Cursors.Hand,
         };

@@ -1,4 +1,4 @@
-<!-- ============================================================
+﻿<!-- ============================================================
      InspirationView.xaml - 灵感池
      ============================================================
      一条灵感 = 一个还没成项目的想法。列表形式，一条一行，右侧直接"立项"。
@@ -6,23 +6,23 @@
 <UserControl x:Class="LiteCut.Workbench.Views.InspirationView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             Background="{StaticResource BgDeep}"
-             Foreground="{StaticResource TextMain}">
+             Background="{DynamicResource BgDeep}"
+             Foreground="{DynamicResource TextMain}">
 
     <DockPanel>
 
         <Border DockPanel.Dock="Top" Padding="20,16,20,14"
-                Background="#FF12151A" BorderBrush="{StaticResource Border}"
+                Background="{DynamicResource BgShell}" BorderBrush="{DynamicResource Border}"
                 BorderThickness="0,0,0,1">
             <DockPanel>
                 <Button DockPanel.Dock="Right" Content="＋ 记一条灵感"
                         Click="BtnAdd_Click" VerticalAlignment="Center"
                         Style="{StaticResource BtnPrimary}" FontSize="12.5" Padding="14,6"/>
                 <StackPanel>
-                    <TextBlock Text="灵感" FontSize="17" FontWeight="SemiBold" Foreground="White"/>
+                    <TextBlock Text="灵感" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
                     <TextBlock Text="先记下来，想做了再一键立项 —— 立项后它就是一个正经项目了"
                                FontSize="11.5" Margin="0,4,0,0"
-                               Foreground="{StaticResource TextFaint}"/>
+                               Foreground="{DynamicResource TextFaint}"/>
                 </StackPanel>
             </DockPanel>
         </Border>
@@ -30,7 +30,7 @@
         <TextBlock x:Name="TxtEmpty" Visibility="Collapsed"
                    HorizontalAlignment="Center" VerticalAlignment="Center"
                    TextAlignment="Center" FontSize="13" LineHeight="24"
-                   Foreground="{StaticResource TextFaint}"
+                   Foreground="{DynamicResource TextFaint}"
                    Text="还没有灵感。&#x0a;&#x0a;点右上角「＋ 记一条灵感」开始。"/>
 
         <ScrollViewer x:Name="ScrollList" VerticalScrollBarVisibility="Auto"
@@ -39,8 +39,8 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <Border Margin="0,0,0,10" Padding="14,12,14,12"
-                                Background="{StaticResource BgCard}"
-                                BorderBrush="{StaticResource Border}" BorderThickness="1"
+                                Background="{DynamicResource BgCard}"
+                                BorderBrush="{DynamicResource Border}" BorderThickness="1"
                                 CornerRadius="10">
                             <DockPanel>
                                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
@@ -55,16 +55,16 @@
 
                                 <StackPanel>
                                     <TextBlock Text="{Binding Title}" FontSize="14"
-                                               FontWeight="SemiBold" Foreground="White"
+                                               FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"
                                                TextTrimming="CharacterEllipsis"/>
                                     <TextBlock Text="{Binding Note}" FontSize="12"
                                                Margin="0,5,0,0" TextWrapping="Wrap"
                                                MaxHeight="52"
-                                               Foreground="{StaticResource TextDim}"
+                                               Foreground="{DynamicResource TextDim}"
                                                Visibility="{Binding NoteVisibility}"/>
                                     <TextBlock Text="{Binding Meta}" FontSize="11"
                                                Margin="0,6,0,0"
-                                               Foreground="{StaticResource TextFaint}"/>
+                                               Foreground="{DynamicResource TextFaint}"/>
                                 </StackPanel>
                             </DockPanel>
                         </Border>

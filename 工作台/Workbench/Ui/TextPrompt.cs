@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // TextPrompt.cs - 极简"输入一行字"对话框
 // ============================================================
 //
@@ -15,6 +15,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using LiteCut.Workbench.Theming;
 
 namespace LiteCut.Workbench.Ui;
 
@@ -36,8 +37,8 @@ public static class TextPrompt
                 ? WindowStartupLocation.CenterOwner
                 : WindowStartupLocation.CenterScreen,
             ResizeMode = ResizeMode.NoResize,
-            Background = new SolidColorBrush(Color.FromRgb(0x14, 0x17, 0x1C)),
-            Foreground = new SolidColorBrush(Color.FromRgb(0xE6, 0xE9, 0xEF)),
+            Background = Theme.Brush("BgNav"),
+            Foreground = Theme.Brush("TextMain"),
             FontFamily = new FontFamily("Microsoft YaHei"),
             Owner = owner,
             ShowInTaskbar = false,
@@ -50,7 +51,7 @@ public static class TextPrompt
             Text = label,
             FontSize = 12.5,
             Margin = new Thickness(0, 0, 0, 8),
-            Foreground = new SolidColorBrush(Color.FromRgb(0x8B, 0x93, 0xA1)),
+            Foreground = Theme.Brush("TextDim"),
         });
 
         var box = new TextBox
@@ -58,11 +59,11 @@ public static class TextPrompt
             Text = initial,
             FontSize = 14,
             Padding = new Thickness(9, 7, 9, 7),
-            Background = new SolidColorBrush(Color.FromRgb(0x23, 0x28, 0x30)),
-            Foreground = new SolidColorBrush(Color.FromRgb(0xE6, 0xE9, 0xEF)),
-            BorderBrush = new SolidColorBrush(Color.FromRgb(0x2A, 0x30, 0x38)),
+            Background = Theme.Brush("BgInput"),
+            Foreground = Theme.Brush("TextMain"),
+            BorderBrush = Theme.Brush("Border"),
             BorderThickness = new Thickness(1),
-            CaretBrush = Brushes.White,
+            CaretBrush = Theme.Brush("TextMain"),
         };
         box.SelectAll();
         root.Children.Add(box);
@@ -87,11 +88,10 @@ public static class TextPrompt
                 FontSize = 13,
                 IsDefault = isDefault,
                 Cursor = Cursors.Hand,
-                Foreground = Brushes.White,
+                Foreground = Theme.Brush("TextOnAccent"),
                 Background = primary
-                    ? new SolidColorBrush(Color.FromRgb(0x25, 0x63, 0xEB))
-                    : new SolidColorBrush(Color.FromRgb(0x23, 0x28, 0x30)),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(0x2A, 0x30, 0x38)),
+                    ? Theme.Brush("AccentHot") : Theme.Brush("BgInput"),
+                BorderBrush = Theme.Brush("Border"),
                 BorderThickness = new Thickness(1),
             };
             return b;

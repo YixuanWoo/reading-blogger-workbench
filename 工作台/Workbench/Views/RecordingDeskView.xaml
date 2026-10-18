@@ -1,4 +1,4 @@
-<!-- ============================================================
+﻿<!-- ============================================================
      RecordingDeskView.xaml - 录音台（V1.16.2 三栏 + 底部录音台）
      ============================================================
      【布局】
@@ -15,8 +15,8 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:rd="clr-namespace:LiteCut.Workbench.RecordingDesk"
-             Background="{StaticResource BgDeep}"
-             Foreground="{StaticResource TextMain}"
+             Background="{DynamicResource BgDeep}"
+             Foreground="{DynamicResource TextMain}"
              FontFamily="Microsoft YaHei UI, Microsoft YaHei, Segoe UI"
              Focusable="True" FocusVisualStyle="{x:Null}">
 
@@ -44,7 +44,7 @@
                                     <Thumb>
                                         <Thumb.Template>
                                             <ControlTemplate TargetType="Thumb">
-                                                <Border Background="#FF2A3038" CornerRadius="4" Margin="1,2,1,2"/>
+                                                <Border Background="{DynamicResource Border}" CornerRadius="4" Margin="1,2,1,2"/>
                                             </ControlTemplate>
                                         </Thumb.Template>
                                     </Thumb>
@@ -67,9 +67,9 @@
 
         <!-- ===== 普通按钮 ===== -->
         <Style x:Key="GhostBtn" TargetType="Button">
-            <Setter Property="Background" Value="#FF1B1F26"/>
-            <Setter Property="Foreground" Value="{StaticResource TextMain}"/>
-            <Setter Property="BorderBrush" Value="#FF2A3038"/>
+            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Padding" Value="10,4"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -84,8 +84,8 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="bd" Property="BorderBrush" Value="#FF465263"/>
-                                <Setter TargetName="bd" Property="Background" Value="#FF232A33"/>
+                                <Setter TargetName="bd" Property="BorderBrush" Value="{DynamicResource BorderHover}"/>
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource BgChip}"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.32"/>
@@ -101,20 +101,20 @@
             <Setter Property="Height" Value="36"/>
             <Setter Property="Padding" Value="14,0"/>
             <Setter Property="FontSize" Value="12.5"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextOnAccent}"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Focusable" Value="False"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="bd" Background="{TemplateBinding Background}"
-                                BorderBrush="#22FFFFFF" BorderThickness="1"
+                                BorderBrush="{DynamicResource WhiteHairline}" BorderThickness="1"
                                 CornerRadius="8" Padding="{TemplateBinding Padding}">
                             <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="bd" Property="BorderBrush" Value="#55FFFFFF"/>
+                                <Setter TargetName="bd" Property="BorderBrush" Value="{DynamicResource WhiteHoverBorder}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="bd" Property="Opacity" Value="0.84"/>
@@ -130,8 +130,8 @@
 
         <!-- ===== 键帽 ===== -->
         <Style x:Key="Kbd" TargetType="Border">
-            <Setter Property="Background" Value="#1FFFFFFF"/>
-            <Setter Property="BorderBrush" Value="#2EFFFFFF"/>
+            <Setter Property="Background" Value="{DynamicResource WhiteHairline}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource WhiteSoftBorder}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Padding" Value="5,1"/>
@@ -141,12 +141,12 @@
         <Style x:Key="KbdText" TargetType="TextBlock">
             <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, Microsoft YaHei UI"/>
             <Setter Property="FontSize" Value="10"/>
-            <Setter Property="Foreground" Value="#D9FFFFFF"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextOnDarkSoft}"/>
         </Style>
 
         <!-- ===== 开关 ===== -->
         <Style x:Key="Toggle" TargetType="CheckBox">
-            <Setter Property="Foreground" Value="#FF8B93A1"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextDim}"/>
             <Setter Property="FontSize" Value="11.5"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Focusable" Value="False"/>
@@ -155,9 +155,9 @@
                     <ControlTemplate TargetType="CheckBox">
                         <StackPanel Orientation="Horizontal" Background="Transparent">
                             <Border x:Name="box" Width="14" Height="14" CornerRadius="4"
-                                    Background="#FF1B1F26" BorderBrush="#FF3A424E" BorderThickness="1"
+                                    Background="{DynamicResource BgCardAlt}" BorderBrush="{DynamicResource BorderStrong}" BorderThickness="1"
                                     VerticalAlignment="Center" Margin="0,0,6,0">
-                                <TextBlock x:Name="tick" Text="✓" FontSize="9" Foreground="#FF0E1013"
+                                <TextBlock x:Name="tick" Text="✓" FontSize="9" Foreground="{DynamicResource OnColorDark}"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"
                                            Visibility="Collapsed"/>
                             </Border>
@@ -165,13 +165,13 @@
                         </StackPanel>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="box" Property="Background" Value="#FFC9D2DE"/>
-                                <Setter TargetName="box" Property="BorderBrush" Value="#FFC9D2DE"/>
+                                <Setter TargetName="box" Property="Background" Value="{DynamicResource TextSoft}"/>
+                                <Setter TargetName="box" Property="BorderBrush" Value="{DynamicResource TextSoft}"/>
                                 <Setter TargetName="tick" Property="Visibility" Value="Visible"/>
-                                <Setter Property="Foreground" Value="#FFE6E9EF"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="box" Property="BorderBrush" Value="#FF6B7684"/>
+                                <Setter TargetName="box" Property="BorderBrush" Value="{DynamicResource BorderMid}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -182,7 +182,7 @@
         <!-- ===== 右侧列表里的小动作按钮（▸ / ✎） ===== -->
         <Style x:Key="MiniBtn" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="#FF9AA3B0"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextFaintAlt}"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="Padding" Value="5,1"/>
@@ -198,9 +198,9 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="bd" Property="Background" Value="#FF232A33"/>
-                                <Setter TargetName="bd" Property="BorderBrush" Value="#FF3A424E"/>
-                                <Setter Property="Foreground" Value="#FFE6E9EF"/>
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource BgChip}"/>
+                                <Setter TargetName="bd" Property="BorderBrush" Value="{DynamicResource BorderStrong}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -210,7 +210,7 @@
 
         <!-- ===== 删除按钮（✕）：平时灰，悬停变红，确认态红底 ===== -->
         <Style x:Key="MiniBtnDanger" TargetType="Button" BasedOn="{StaticResource MiniBtn}">
-            <Setter Property="Foreground" Value="#FF8E8280"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextWarm}"/>
             <Setter Property="Margin" Value="4,0,0,0"/>
         </Style>
 
@@ -226,8 +226,8 @@
         <!-- ============================================================
              顶栏（细，一行）
              ============================================================ -->
-        <Border Grid.Row="0" Height="46" Background="#FF11141A"
-                BorderBrush="#FF22272F" BorderThickness="0,0,0,1" Padding="16,0">
+        <Border Grid.Row="0" Height="46" Background="{DynamicResource BgTopStrip}"
+                BorderBrush="{DynamicResource Divider2}" BorderThickness="0,0,0,1" Padding="16,0">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -236,10 +236,10 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="录音台" FontSize="13" FontWeight="Bold" Foreground="#FFE6E9EF"
+                    <TextBlock Text="录音台" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextMain}"
                                VerticalAlignment="Center" Margin="0,0,12,0"/>
-                    <Border Width="1" Height="13" Background="#FF2A3038" Margin="0,0,12,0"/>
-                    <TextBlock Text="麦克风" FontSize="11.5" Foreground="#FF78828F"
+                    <Border Width="1" Height="13" Background="{DynamicResource Border}" Margin="0,0,12,0"/>
+                    <TextBlock Text="麦克风" FontSize="11.5" Foreground="{DynamicResource TextFaint}"
                                VerticalAlignment="Center" Margin="0,0,7,0"/>
                     <ComboBox x:Name="CmbDevice" Width="210" Height="26" FontSize="12"
                               VerticalAlignment="Center" SelectionChanged="CmbDevice_SelectionChanged"/>
@@ -257,10 +257,10 @@
                             Click="BtnReloadScript_Click"
                             ToolTip="稿子改过之后点一下（不会动录音）"/>
 
-                    <Border Width="1" Height="16" Background="#FF2A3038" Margin="12,0,12,0"
+                    <Border Width="1" Height="16" Background="{DynamicResource Border}" Margin="12,0,12,0"
                             VerticalAlignment="Center"/>
                     <Button x:Name="BtnApply" Style="{StaticResource BigBtn}" Height="28"
-                            Padding="12,0" Background="#FF2563EB" Click="BtnApply_Click"
+                            Padding="12,0" Background="{DynamicResource AccentHot}" Click="BtnApply_Click"
                             ToolTip="把录好的音按稿子顺序拼成一条母带，并在精剪里按「一条录音一块」铺好">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock x:Name="TxtApplyLabel" Text="应用到下游" FontSize="12"
@@ -283,8 +283,8 @@
             </Grid.ColumnDefinitions>
 
             <!-- ===== 左：文案选择区 ===== -->
-            <Border Grid.Column="0" Background="#FF12151A"
-                    BorderBrush="#FF22272F" BorderThickness="0,0,1,0">
+            <Border Grid.Column="0" Background="{DynamicResource BgShell}"
+                    BorderBrush="{DynamicResource Divider2}" BorderThickness="0,0,1,0">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -292,14 +292,14 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <Border Grid.Row="0" Padding="13,9,10,8" BorderBrush="#FF1E232B"
+                    <Border Grid.Row="0" Padding="13,9,10,8" BorderBrush="{DynamicResource Divider}"
                             BorderThickness="0,0,0,1">
                         <Grid>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <TextBlock Text="文案" FontSize="12.5" FontWeight="Bold"
-                                           Foreground="#FFE6E9EF" VerticalAlignment="Center"/>
+                                           Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
                                 <TextBlock x:Name="TxtDocStat" Text="0 / 0 句" FontSize="11"
-                                           Foreground="#FF78828F" Margin="9,0,0,0" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource TextFaint}" Margin="9,0,0,0" VerticalAlignment="Center"
                                            FontFamily="Cascadia Mono, Consolas"/>
                             </StackPanel>
                             <Button x:Name="BtnClearSel" Content="清除选择" HorizontalAlignment="Right"
@@ -315,11 +315,11 @@
                         <StackPanel x:Name="ScriptPanel"/>
                     </ScrollViewer>
 
-                    <Border Grid.Row="2" Padding="13,6" Background="#FF0F1216"
-                            BorderBrush="#FF1E232B" BorderThickness="0,1,0,0">
-                        <TextBlock FontSize="10.5" Foreground="#FF6E7783" TextWrapping="Wrap" LineHeight="16">
+                    <Border Grid.Row="2" Padding="13,6" Background="{DynamicResource BgRow}"
+                            BorderBrush="{DynamicResource Divider}" BorderThickness="0,1,0,0">
+                        <TextBlock FontSize="10.5" Foreground="{DynamicResource TextNote}" TextWrapping="Wrap" LineHeight="16">
                             点句子＝从这儿录（点绿块里任意一句＝整块选中，直接重录）·
-                            <Run Foreground="#FFC9D2DE">Shift+点</Run> 延长/缩短
+                            <Run Foreground="{DynamicResource TextSoft}">Shift+点</Run> 延长/缩短
                         </TextBlock>
                     </Border>
                 </Grid>
@@ -334,20 +334,20 @@
 
                 <StackPanel Grid.Row="0" Orientation="Horizontal">
                     <TextBlock x:Name="TxtSegNow" Text="下一段" FontSize="12" FontWeight="Bold"
-                               Foreground="#FFE6E9EF" VerticalAlignment="Center"/>
-                    <TextBlock x:Name="TxtSegMeta" Text="" FontSize="11.5" Foreground="#FF78828F"
+                               Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="TxtSegMeta" Text="" FontSize="11.5" Foreground="{DynamicResource TextFaint}"
                                Margin="10,0,0,0" VerticalAlignment="Center"
                                FontFamily="Cascadia Mono, Consolas"/>
                     <Border x:Name="BadgeHost" CornerRadius="5" Padding="7,2" Margin="10,0,0,0"
-                            Background="#FF232A33" VerticalAlignment="Center">
+                            Background="{DynamicResource BgChip}" VerticalAlignment="Center">
                         <TextBlock x:Name="TxtBadge" Text="待录" FontSize="11"
-                                   Foreground="#FF8B93A1"/>
+                                   Foreground="{DynamicResource TextDim}"/>
                     </Border>
                 </StackPanel>
 
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel VerticalAlignment="Center" Margin="0,10,0,0">
-                        <TextBlock x:Name="TxtPrev" Text="" FontSize="14.5" Foreground="#FF59616C"
+                        <TextBlock x:Name="TxtPrev" Text="" FontSize="14.5" Foreground="{DynamicResource TextMuted2}"
                                    TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxHeight="54"
                                    Margin="3,0,0,12"/>
                         <Grid Margin="0,0,0,10">
@@ -356,12 +356,12 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <Border x:Name="CurBar" Grid.Column="0" Width="3" CornerRadius="2"
-                                    Background="#FF39414C" Margin="0,8,15,8"/>
+                                    Background="{DynamicResource BorderFaint}" Margin="0,8,15,8"/>
                             <TextBlock x:Name="TxtCur" Grid.Column="1" Text=""
                                        FontSize="30" LineHeight="50" TextWrapping="Wrap"
-                                       Foreground="#FFF4F2EC"/>
+                                       Foreground="{DynamicResource TextBright}"/>
                         </Grid>
-                        <TextBlock x:Name="TxtNext" Text="" FontSize="14.5" Foreground="#FF59616C"
+                        <TextBlock x:Name="TxtNext" Text="" FontSize="14.5" Foreground="{DynamicResource TextMuted2}"
                                    TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxHeight="54"
                                    Margin="3,0,0,0"/>
                     </StackPanel>
@@ -369,8 +369,8 @@
             </Grid>
 
             <!-- ===== 右：已录列表 ===== -->
-            <Border Grid.Column="2" Background="#FF12151A"
-                    BorderBrush="#FF22272F" BorderThickness="1,0,0,0">
+            <Border Grid.Column="2" Background="{DynamicResource BgShell}"
+                    BorderBrush="{DynamicResource Divider2}" BorderThickness="1,0,0,0">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -378,14 +378,14 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <Border Grid.Row="0" Padding="11,9,9,8" BorderBrush="#FF1E232B"
+                    <Border Grid.Row="0" Padding="11,9,9,8" BorderBrush="{DynamicResource Divider}"
                             BorderThickness="0,0,0,1">
                         <Grid>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <TextBlock Text="已录" FontSize="12.5" FontWeight="Bold"
-                                           Foreground="#FFE6E9EF" VerticalAlignment="Center"/>
+                                           Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
                                 <TextBlock x:Name="TxtTakeCount" Text="0 条" FontSize="11"
-                                           Foreground="#FF78828F" Margin="8,0,0,0" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource TextFaint}" Margin="8,0,0,0" VerticalAlignment="Center"
                                            FontFamily="Cascadia Mono, Consolas"/>
                             </StackPanel>
                             <Button x:Name="BtnUndo" Content="↶ 撤销" HorizontalAlignment="Right"
@@ -401,9 +401,9 @@
                         <StackPanel x:Name="TakeList"/>
                     </ScrollViewer>
 
-                    <Border Grid.Row="2" Padding="11,6" Background="#FF0F1216"
-                            BorderBrush="#FF1E232B" BorderThickness="0,1,0,0">
-                        <TextBlock FontSize="10.5" Foreground="#FF6E7783" TextWrapping="Wrap" LineHeight="16">
+                    <Border Grid.Row="2" Padding="11,6" Background="{DynamicResource BgRow}"
+                            BorderBrush="{DynamicResource Divider}" BorderThickness="0,1,0,0">
+                        <TextBlock FontSize="10.5" Foreground="{DynamicResource TextNote}" TextWrapping="Wrap" LineHeight="16">
                             点一条＝选中它（左栏同步高亮）· ▸ 试听 · ✎ 改绑 · ✕ 删除（删错 Ctrl+Z 找回）
                         </TextBlock>
                     </Border>
@@ -414,7 +414,7 @@
         <!-- ============================================================
              底部：录音台
              ============================================================ -->
-        <Border Grid.Row="2" Background="#FF0F1216" BorderBrush="#FF1E232B" BorderThickness="0,1,0,0"
+        <Border Grid.Row="2" Background="{DynamicResource BgRow}" BorderBrush="{DynamicResource Divider}" BorderThickness="0,1,0,0"
                 Padding="18,8,18,10">
             <Grid>
                 <Grid.RowDefinitions>
@@ -427,23 +427,23 @@
                 <Grid Grid.Row="0" Margin="2,0,2,5">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <Border x:Name="VerdictTagHost" CornerRadius="5" Padding="7,2" Visibility="Collapsed"
-                                Margin="0,0,8,0" Background="#FF232A33">
+                                Margin="0,0,8,0" Background="{DynamicResource BgChip}">
                             <TextBlock x:Name="TxtVerdictTag" Text="" FontSize="11" FontWeight="Bold"
-                                       Foreground="#FF8B93A1"/>
+                                       Foreground="{DynamicResource TextDim}"/>
                         </Border>
-                        <TextBlock x:Name="TxtVerdict" Text="" FontSize="11.5" Foreground="#FF78828F"
+                        <TextBlock x:Name="TxtVerdict" Text="" FontSize="11.5" Foreground="{DynamicResource TextFaint}"
                                    MaxWidth="620" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                        <TextBlock Text="电平" FontSize="11" Foreground="#FF6E7783" VerticalAlignment="Center"/>
+                        <TextBlock Text="电平" FontSize="11" Foreground="{DynamicResource TextNote}" VerticalAlignment="Center"/>
                         <Border x:Name="MeterHost" Width="90" Height="6" CornerRadius="3"
-                                Background="#FF232A33" Margin="7,0,7,0" VerticalAlignment="Center">
+                                Background="{DynamicResource BgChip}" Margin="7,0,7,0" VerticalAlignment="Center">
                             <Border x:Name="MeterFill" Width="0" HorizontalAlignment="Left" CornerRadius="3"
-                                    Background="#FF22C55E"/>
+                                    Background="{DynamicResource Ok}"/>
                         </Border>
                         <TextBlock x:Name="TxtDb" Text="-96" FontFamily="Cascadia Mono, Consolas"
-                                   FontSize="11" Foreground="#FF78828F" VerticalAlignment="Center"
+                                   FontSize="11" Foreground="{DynamicResource TextFaint}" VerticalAlignment="Center"
                                    Width="32" TextAlignment="Right"/>
                     </StackPanel>
                 </Grid>
@@ -456,9 +456,9 @@
                     </Grid.RowDefinitions>
                     <Grid Grid.Row="0" Margin="2,0,2,2">
                         <TextBlock x:Name="WaveLabel" Text="还没有录" FontSize="10.5"
-                                   Foreground="#FF6E7783"/>
+                                   Foreground="{DynamicResource TextNote}"/>
                         <TextBlock x:Name="WaveTime" Text="00:00.0" FontSize="10.5" HorizontalAlignment="Right"
-                                   Foreground="#FF6E7783" FontFamily="Cascadia Mono, Consolas"/>
+                                   Foreground="{DynamicResource TextNote}" FontFamily="Cascadia Mono, Consolas"/>
                     </Grid>
                     <rd:TakeWaveBar x:Name="Wave" Grid.Row="1" Height="52"/>
                 </Grid>
@@ -467,13 +467,13 @@
                 <Grid Grid.Row="2" Margin="0,4,0,0">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock x:Name="TxtTime" Text="00:00.0" FontFamily="Cascadia Mono, Consolas"
-                                   FontSize="15" Foreground="#FFE6E9EF" Width="86"
+                                   FontSize="15" Foreground="{DynamicResource TextMain}" Width="86"
                                    VerticalAlignment="Center"/>
-                        <Ellipse x:Name="RecDot" Width="8" Height="8" Fill="#FF39414C" Margin="0,0,12,0"
+                        <Ellipse x:Name="RecDot" Width="8" Height="8" Fill="{DynamicResource BorderFaint}" Margin="0,0,12,0"
                                  VerticalAlignment="Center"/>
 
                         <Button x:Name="BtnMain" Style="{StaticResource BigBtn}" Click="BtnMain_Click"
-                                Background="#FFC7443A" Margin="0,0,7,0">
+                                Background="{DynamicResource RecRed}" Margin="0,0,7,0">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock x:Name="TxtMainDot" Text="●" FontSize="10" VerticalAlignment="Center"
                                            Margin="0,0,7,0"/>
@@ -486,31 +486,31 @@
                         </Button>
 
                         <Button x:Name="BtnPlay" Style="{StaticResource BigBtn}" Click="BtnPlay_Click"
-                                Background="#FF1B1F26" Foreground="#FFE6E9EF" Margin="0,0,7,0">
+                                Background="{DynamicResource BgCardAlt}" Foreground="{DynamicResource TextMain}" Margin="0,0,7,0">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="▶" FontSize="10" VerticalAlignment="Center" Margin="0,0,6,0"
-                                           Foreground="#FFC9D2DE"/>
+                                           Foreground="{DynamicResource TextSoft}"/>
                                 <TextBlock Text="试听" FontSize="12" VerticalAlignment="Center"/>
-                                <Border Style="{StaticResource Kbd}" Background="#0FFFFFFF" BorderBrush="#1FFFFFFF">
-                                    <TextBlock Text="P" Style="{StaticResource KbdText}" Foreground="#99FFFFFF"/>
+                                <Border Style="{StaticResource Kbd}" Background="{DynamicResource WhiteSoftBg2}" BorderBrush="{DynamicResource WhiteHairline}">
+                                    <TextBlock Text="P" Style="{StaticResource KbdText}" Foreground="{DynamicResource TextOnDarkDim}"/>
                                 </Border>
                             </StackPanel>
                         </Button>
 
                         <Button x:Name="BtnRedo" Style="{StaticResource BigBtn}" Click="BtnRedo_Click"
-                                Background="#FF1B1F26" Foreground="#FFE6E9EF" Margin="0,0,7,0">
+                                Background="{DynamicResource BgCardAlt}" Foreground="{DynamicResource TextMain}" Margin="0,0,7,0">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="↻" FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0"
-                                           Foreground="#FFC9D2DE"/>
+                                           Foreground="{DynamicResource TextSoft}"/>
                                 <TextBlock Text="重录" FontSize="12" VerticalAlignment="Center"/>
-                                <Border Style="{StaticResource Kbd}" Background="#0FFFFFFF" BorderBrush="#1FFFFFFF">
-                                    <TextBlock Text="R" Style="{StaticResource KbdText}" Foreground="#99FFFFFF"/>
+                                <Border Style="{StaticResource Kbd}" Background="{DynamicResource WhiteSoftBg2}" BorderBrush="{DynamicResource WhiteHairline}">
+                                    <TextBlock Text="R" Style="{StaticResource KbdText}" Foreground="{DynamicResource TextOnDarkDim}"/>
                                 </Border>
                             </StackPanel>
                         </Button>
 
                         <Button x:Name="BtnOk" Style="{StaticResource BigBtn}" Click="BtnOk_Click"
-                                Background="#FF2C6E49" Margin="0,0,7,0">
+                                Background="{DynamicResource KeepGreen}" Margin="0,0,7,0">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="✓" FontSize="11" VerticalAlignment="Center" Margin="0,0,7,0"/>
                                 <TextBlock x:Name="TxtOkLabel" Text="就绑这段" FontSize="12.5" FontWeight="SemiBold"
@@ -522,13 +522,13 @@
                         </Button>
 
                         <Button x:Name="BtnDiscard" Style="{StaticResource BigBtn}" Click="BtnDiscard_Click"
-                                Background="#FF1B1F26" Foreground="#FFE6E9EF">
+                                Background="{DynamicResource BgCardAlt}" Foreground="{DynamicResource TextMain}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="✕" FontSize="10" VerticalAlignment="Center" Margin="0,0,6,0"
-                                           Foreground="#FFC9D2DE"/>
+                                           Foreground="{DynamicResource TextSoft}"/>
                                 <TextBlock Text="不要这条" FontSize="12" VerticalAlignment="Center"/>
-                                <Border Style="{StaticResource Kbd}" Background="#0FFFFFFF" BorderBrush="#1FFFFFFF">
-                                    <TextBlock Text="Esc" Style="{StaticResource KbdText}" Foreground="#99FFFFFF"/>
+                                <Border Style="{StaticResource Kbd}" Background="{DynamicResource WhiteSoftBg2}" BorderBrush="{DynamicResource WhiteHairline}">
+                                    <TextBlock Text="Esc" Style="{StaticResource KbdText}" Foreground="{DynamicResource TextOnDarkDim}"/>
                                 </Border>
                             </StackPanel>
                         </Button>
@@ -538,21 +538,21 @@
         </Border>
 
         <!-- ===== 空状态：这个项目还没有稿子 ===== -->
-        <Grid x:Name="EmptyHost" Grid.RowSpan="3" Background="#FF0E1013" Visibility="Collapsed">
+        <Grid x:Name="EmptyHost" Grid.RowSpan="3" Background="{DynamicResource BgDeep}" Visibility="Collapsed">
             <Border HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="520"
-                    Background="#FF161A20" BorderBrush="#FF2A3038" BorderThickness="1"
+                    Background="{DynamicResource BgPanelDeep}" BorderBrush="{DynamicResource Border}" BorderThickness="1"
                     CornerRadius="12" Padding="30,26">
                 <StackPanel>
                     <TextBlock Text="这个项目还没有稿子" FontSize="17" FontWeight="Bold"
-                               Foreground="#FFE6E9EF" Margin="0,0,0,10"/>
+                               Foreground="{DynamicResource TextMain}" Margin="0,0,0,10"/>
                     <TextBlock x:Name="TxtEmptyWhy" TextWrapping="Wrap" LineHeight="23" FontSize="12.5"
-                               Foreground="#FF8B93A1"
+                               Foreground="{DynamicResource TextDim}"
                                Text="录音台是照着稿子念的。先去写作台写（或者把已有的稿子贴进 script.md 保存），再回来这里。"/>
                     <TextBlock Text="稿子路径：&lt;项目&gt;\script.md" FontSize="11" Margin="0,14,0,0"
-                               Foreground="#FF5F6772" FontFamily="Cascadia Mono, Consolas"/>
+                               Foreground="{DynamicResource TextGhost2}" FontFamily="Cascadia Mono, Consolas"/>
                     <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
                         <Button Content="去写作台" Style="{StaticResource BigBtn}" Height="34"
-                                Background="#FF2563EB" Click="BtnGoScript_Click"/>
+                                Background="{DynamicResource AccentHot}" Click="BtnGoScript_Click"/>
                         <Button Content="重新读一次" Style="{StaticResource GhostBtn}" Margin="10,0,0,0"
                                 Padding="14,6" Click="BtnReloadScript_Click"/>
                     </StackPanel>

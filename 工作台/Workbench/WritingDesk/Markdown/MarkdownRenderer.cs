@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // MarkdownRenderer.cs - markdown → WPF FlowDocument（渲染预览）
 // ============================================================
 //
@@ -27,6 +27,7 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Media;
+using LiteCut.Workbench.Theming;
 
 namespace LiteCut.Workbench.WritingDesk.Markdown;
 
@@ -34,14 +35,15 @@ namespace LiteCut.Workbench.WritingDesk.Markdown;
 public static class MarkdownRenderer
 {
     // ========================================================
-    // 配色（照抄 App.xaml 资源键的色值）
+    // 配色：★ V1.18.0 起走主题（不再照抄 hex）
+    //   用属性而不是 static readonly：渲染每次取当前主题的笔。
     // ========================================================
-    private static readonly Brush Main = Argb("#FFE6E9EF");
-    private static readonly Brush Dim = Argb("#FF8B93A1");
-    private static readonly Brush Faint = Argb("#FF78828F");
-    private static readonly Brush Accent = Argb("#FF3B82F6");
-    private static readonly Brush Border = Argb("#FF2A3038");
-    private static readonly Brush CodeBg = Argb("#FF232830");
+    private static Brush Main => Theme.Brush("TextMain");
+    private static Brush Dim => Theme.Brush("TextDim");
+    private static Brush Faint => Theme.Brush("TextFaint");
+    private static Brush Accent => Theme.Brush("Accent");
+    private static Brush Border => Theme.Brush("Border");
+    private static Brush CodeBg => Theme.Brush("BgInput");
 
     /// <summary>渲染整篇 markdown。空输入返回空文档。</summary>
     public static FlowDocument Render(string markdown)

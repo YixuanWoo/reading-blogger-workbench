@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // CadenceCard.xaml.cs - ★ V1.15.0 主图卡：更新节奏
 // ============================================================
 //
@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using LiteCut.Workbench.Theming;
 using System.Windows.Shapes;
 
 namespace LiteCut.Workbench.Review;
@@ -46,6 +47,16 @@ public partial class CadenceCard : UserControl
 
         BuildLegend();
         Reload();
+
+        // ★ 主题切换后图例的小方块要换色重拼（它们是代码 new 出来的）
+        Loaded += (_, _) => Theme.Changed += OnThemeChanged;
+        Unloaded += (_, _) => Theme.Changed -= OnThemeChanged;
+    }
+
+    private void OnThemeChanged()
+    {
+        Legend.Children.Clear();
+        BuildLegend();
     }
 
     /// <summary>账号页递进来的数据（所有作品的发布日）。</summary>
@@ -103,15 +114,15 @@ public partial class CadenceCard : UserControl
         {
             Text = "少",
             FontSize = 10,
-            Foreground = new SolidColorBrush(Color.FromRgb(0x5A, 0x61, 0x69)),
+            Foreground = Theme.Brush("TextMuted"),
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(0, 0, 5, 0),
         });
 
-        foreach (string hex in new[] { "#FF131820", "#FF8A6A1E", "#FFC99A2E", "#FFE8B54A" })
+        // ★ 图例颜色直接取热力图那四档主题色（别再写死 hex，否则跟格子不是一套）
+        foreach (string key in new[] { "HeatEmpty", "Heat1", "Heat2", "Heat3" })
         {
-            var b = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex));
-            b.Freeze();
+            var b = Theme.Brush(key);
 
             Legend.Children.Add(new Rectangle
             {
@@ -129,7 +140,7 @@ public partial class CadenceCard : UserControl
         {
             Text = "多",
             FontSize = 10,
-            Foreground = new SolidColorBrush(Color.FromRgb(0x5A, 0x61, 0x69)),
+            Foreground = Theme.Brush("TextMuted"),
             VerticalAlignment = VerticalAlignment.Center,
         });
     }

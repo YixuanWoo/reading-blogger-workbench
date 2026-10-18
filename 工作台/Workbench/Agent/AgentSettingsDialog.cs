@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // AgentSettingsDialog.cs - Agent 直连设置 + 一键连通性检测
 // ============================================================
 //
@@ -23,6 +23,7 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using LiteCut.Workbench.Theming;
 
 namespace LiteCut.Workbench.Agent;
 
@@ -55,8 +56,8 @@ public class AgentSettingsDialog : Window
         SizeToContent = SizeToContent.Height;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         ResizeMode = ResizeMode.NoResize;
-        Background = new SolidColorBrush(Color.FromRgb(0x1A, 0x1E, 0x24)); // BgCard
-        Foreground = new SolidColorBrush(Color.FromRgb(0xE6, 0xE9, 0xEF)); // TextMain
+        Background = Theme.Brush("BgCard"); // BgCard
+        Foreground = Theme.Brush("TextMain"); // TextMain
 
         _txtUrl.Text = cfg.AgentBaseUrl ?? "";
         _txtKey.Password = cfg.AgentApiKey ?? "";
@@ -102,7 +103,7 @@ public class AgentSettingsDialog : Window
         {
             Text = "留空则走「任务包通道」：任务写到项目的 stages 目录，等外部 Agent 领取回填 —— 独立运行工作台时没人领取，会一直等。",
             FontSize = 11.5,
-            Foreground = new SolidColorBrush(Color.FromRgb(0x8B, 0x93, 0xA1)),
+            Foreground = Theme.Brush("TextDim"),
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 8, 0, 0),
         });
@@ -115,7 +116,7 @@ public class AgentSettingsDialog : Window
             FontSize = 11.5,
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(8, 0, 0, 0),
-            Foreground = new SolidColorBrush(Color.FromRgb(0x8B, 0x93, 0xA1)),
+            Foreground = Theme.Brush("TextDim"),
         };
         testRow.Children.Add(testHint);
         root.Children.Add(testRow);
@@ -141,9 +142,9 @@ public class AgentSettingsDialog : Window
 
     private static void ApplyInputStyle(Control c)
     {
-        c.Background = new SolidColorBrush(Color.FromRgb(0x23, 0x28, 0x30)); // BgInput
-        c.Foreground = new SolidColorBrush(Color.FromRgb(0xE6, 0xE9, 0xEF));
-        c.BorderBrush = new SolidColorBrush(Color.FromRgb(0x2A, 0x30, 0x38));
+        c.Background = Theme.Brush("BgInput"); // BgInput
+        c.Foreground = Theme.Brush("TextMain");
+        c.BorderBrush = Theme.Brush("Border");
         c.Padding = new Thickness(6, 4, 6, 4);
         c.Margin = new Thickness(0, 3, 0, 0);
     }
@@ -153,7 +154,7 @@ public class AgentSettingsDialog : Window
         Text = text,
         FontSize = 12,
         Margin = new Thickness(0, 10, 0, 0),
-        Foreground = new SolidColorBrush(Color.FromRgb(0x8B, 0x93, 0xA1)),
+        Foreground = Theme.Brush("TextDim"),
     };
 
     private async System.Threading.Tasks.Task TestAsync()
@@ -169,19 +170,19 @@ public class AgentSettingsDialog : Window
 
         _btnTest.IsEnabled = false;
         _txtResult.Text = "检测中…（真的发了一次最小请求）";
-        _txtResult.Foreground = new SolidColorBrush(Color.FromRgb(0x8B, 0x93, 0xA1));
+        _txtResult.Foreground = Theme.Brush("TextDim");
 
         var r = await AgentBridge.TestAsync(probe);
 
         if (r.Ok)
         {
             _txtResult.Text = "✔ Agent 已就绪 —— " + r.Detail + "（模型回音：" + Trim(r.Content, 20) + "）";
-            _txtResult.Foreground = new SolidColorBrush(Color.FromRgb(0x22, 0xC5, 0x5E)); // Ok
+            _txtResult.Foreground = Theme.Brush("Ok"); // Ok
         }
         else
         {
             _txtResult.Text = "✘ 没通：" + r.Error;
-            _txtResult.Foreground = new SolidColorBrush(Color.FromRgb(0xF5, 0x9E, 0x0B)); // Warn
+            _txtResult.Foreground = Theme.Brush("Warn"); // Warn
         }
 
         _btnTest.IsEnabled = true;

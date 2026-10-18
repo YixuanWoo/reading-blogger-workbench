@@ -1,4 +1,4 @@
-<!-- ============================================================
+﻿<!-- ============================================================
      ProjectListView.xaml - 项目卡片墙（"进行中" / "已归档" 共用）
      ============================================================
      同一个页面类、靠构造参数区分看哪一档 —— 因为两者的卡片长得一模一样，
@@ -7,14 +7,14 @@
 <UserControl x:Class="LiteCut.Workbench.Views.ProjectListView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             Background="{StaticResource BgDeep}"
-             Foreground="{StaticResource TextMain}">
+             Background="{DynamicResource BgDeep}"
+             Foreground="{DynamicResource TextMain}">
 
     <DockPanel>
 
         <!-- ============ 顶部：标题 + 操作 ============ -->
         <Border DockPanel.Dock="Top" Padding="20,16,20,14"
-                Background="#FF12151A" BorderBrush="{StaticResource Border}"
+                Background="{DynamicResource BgShell}" BorderBrush="{DynamicResource Border}"
                 BorderThickness="0,0,0,1">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
@@ -28,9 +28,9 @@
 
                 <StackPanel>
                     <TextBlock x:Name="TxtTitle" Text="进行中" FontSize="17"
-                               FontWeight="SemiBold" Foreground="White"/>
+                               FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
                     <TextBlock x:Name="TxtRoot" FontSize="11.5" Margin="0,4,0,0"
-                               Foreground="{StaticResource TextFaint}"
+                               Foreground="{DynamicResource TextFaint}"
                                TextTrimming="CharacterEllipsis"/>
                 </StackPanel>
             </DockPanel>
@@ -40,7 +40,7 @@
         <TextBlock x:Name="TxtEmpty" Visibility="Collapsed"
                    HorizontalAlignment="Center" VerticalAlignment="Center"
                    TextAlignment="Center" FontSize="13" LineHeight="24"
-                   Foreground="{StaticResource TextFaint}"/>
+                   Foreground="{DynamicResource TextFaint}"/>
 
         <!-- ============ 卡片墙 ============ -->
         <ScrollViewer x:Name="ScrollCards" VerticalScrollBarVisibility="Auto"
@@ -55,8 +55,8 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <Border Width="272" Margin="0,0,12,12" Padding="14,13,14,13"
-                                Background="{StaticResource BgCard}"
-                                BorderBrush="{StaticResource Border}" BorderThickness="1"
+                                Background="{DynamicResource BgCard}"
+                                BorderBrush="{DynamicResource Border}" BorderThickness="1"
                                 CornerRadius="10"
                                 MouseLeftButtonDown="Card_MouseLeftButtonDown">
                             <StackPanel>
@@ -64,21 +64,21 @@
                                 <!-- 名字 + 状态角标 -->
                                 <DockPanel>
                                     <Border DockPanel.Dock="Right" x:Name="Badge"
-                                            Background="#FF232830" CornerRadius="4"
+                                            Background="{DynamicResource BgInput}" CornerRadius="4"
                                             Padding="6,2,6,2" VerticalAlignment="Center"
                                             Margin="8,0,0,0">
                                         <TextBlock Text="{Binding StatusText}" FontSize="10"
-                                                   Foreground="{StaticResource TextDim}"/>
+                                                   Foreground="{DynamicResource TextDim}"/>
                                     </Border>
                                     <TextBlock Text="{Binding Name}" FontSize="14.5"
-                                               FontWeight="SemiBold" Foreground="White"
+                                               FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"
                                                TextTrimming="CharacterEllipsis"
                                                VerticalAlignment="Center"/>
                                 </DockPanel>
 
                                 <!-- 备注 -->
                                 <TextBlock Text="{Binding Note}" FontSize="11.5" Margin="0,7,0,0"
-                                           Foreground="{StaticResource TextDim}"
+                                           Foreground="{DynamicResource TextDim}"
                                            TextWrapping="Wrap" MaxHeight="32"
                                            Visibility="{Binding NoteVisibility}"/>
 
@@ -86,10 +86,10 @@
                                 <ProgressBar Height="4" Margin="0,12,0,6"
                                              Minimum="0" Maximum="100"
                                              Value="{Binding Progress, Mode=OneWay}"
-                                             Foreground="{StaticResource Accent}"
-                                             Background="#FF232830" BorderThickness="0"/>
+                                             Foreground="{DynamicResource Accent}"
+                                             Background="{DynamicResource BgInput}" BorderThickness="0"/>
                                 <TextBlock Text="{Binding Meta}" FontSize="11"
-                                           Foreground="{StaticResource TextFaint}"
+                                           Foreground="{DynamicResource TextFaint}"
                                            TextTrimming="CharacterEllipsis"/>
 
                                 <!-- 板载操作 -->

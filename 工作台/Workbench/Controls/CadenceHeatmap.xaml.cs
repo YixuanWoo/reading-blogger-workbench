@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // CadenceHeatmap.xaml.cs - ★ V1.15.0 日打卡热力图（通用控件）
 // ============================================================
 //
@@ -24,23 +24,25 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using LiteCut.Workbench.Theming;
 using System.Windows.Shapes;
 
 namespace LiteCut.Workbench.Controls;
 
 public partial class CadenceHeatmap : UserControl
 {
-    // ---- 配色集中在这里，改主题只改这几行 ----
-    private static readonly Brush FillEmpty = Freeze("#FF131820");
-    private static readonly Brush StrokeEmpty = Freeze("#FF232A33");
-    private static readonly Brush FillOne = Freeze("#FF8A6A1E");
-    private static readonly Brush StrokeOne = Freeze("#FF6B5316");
-    private static readonly Brush FillTwo = Freeze("#FFC99A2E");
-    private static readonly Brush StrokeTwo = Freeze("#FFA87F22");
-    private static readonly Brush FillMany = Freeze("#FFE8B54A");
-    private static readonly Brush StrokeMany = Freeze("#FFC99A2E");
-    private static readonly Brush TodayRing = Freeze("#FF9A9890");
-    private static readonly Brush LabelBrush = Freeze("#FF6E6C66");
+    // ---- 配色：★ V1.18.0 起走主题（HeatEmpty/Heat1/Heat2/Heat3 四档色阶） ----
+    //   ★★ 不能再 Freeze：拿的是全界面共享的笔，冻结了主题就切不动。
+    private static Brush FillEmpty => Theme.Brush("HeatEmpty");
+    private static Brush StrokeEmpty => Theme.Brush("HeatStroke");
+    private static Brush FillOne => Theme.Brush("Heat1");
+    private static Brush StrokeOne => Theme.Brush("Heat1Stroke");
+    private static Brush FillTwo => Theme.Brush("Heat2");
+    private static Brush StrokeTwo => Theme.Brush("Heat2Stroke");
+    private static Brush FillMany => Theme.Brush("Heat3");
+    private static Brush StrokeMany => Theme.Brush("Heat3Stroke");
+    private static Brush TodayRing => Theme.Brush("TodayRing");
+    private static Brush LabelBrush => Theme.Brush("HeatLabel");
 
     private static readonly string[] WeekdayLabels = { "一", "二", "三", "四", "五", "六", "日" };
 
@@ -59,7 +61,13 @@ public partial class CadenceHeatmap : UserControl
     {
         InitializeComponent();
         SizeChanged += (_, _) => Render();
+
+        // ★ 主题切换后格子要换色重画 —— 格子是代码 new 出来的，不重画就一直是老颜色
+        Loaded += (_, _) => Theme.Changed += OnThemeChanged;
+        Unloaded += (_, _) => Theme.Changed -= OnThemeChanged;
     }
+
+    private void OnThemeChanged() => Render();
 
     /// <summary>
     /// 铺数据并重画。
@@ -205,10 +213,4 @@ public partial class CadenceHeatmap : UserControl
         return tb;
     }
 
-    private static Brush Freeze(string hex)
-    {
-        var b = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex));
-        b.Freeze();
-        return b;
-    }
 }
