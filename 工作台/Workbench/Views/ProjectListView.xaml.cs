@@ -23,7 +23,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -45,8 +48,18 @@ public partial class ProjectListView : UserControl, INavPage
     /// <summary>卡片 ↔ 项目 的对应关系（按文件夹路径索引）</summary>
     private readonly Dictionary<string, ProjectRef> _byDir = new();
 
-    /// <summary>当前显示的那批卡片（ItemsControl 的数据源）</summary>
-    private readonly List<ProjectCard> _cards = new();
+    /// <summary>
+    /// 当前显示的那批卡片（ItemsControl 的数据源）。
+    ///
+    /// ★ V1.19.0：从 List 换成 ObservableCollection，**只赋一次 ItemsSource**。
+    ///   改造前每次刷新是 `ItemsSource = null; ItemsSource = _cards;` ——
+    ///   那等于把 9 张卡（约 130 个控件）全销毁再全建一遍，
+    ///   一次点击就是"一整屏内容重新画"。
+    ///   这台机器上，这种"大块重绘"正好会踩到显卡驱动 ——
+    ///   2026-11-05 那几次整机僵住，就是这么被点着的（见 更新日志 V1.19.0）。
+    ///   现在改成按目录做差异：老卡留着只改字，新卡才建，走的卡才删。
+    /// </summary>
+    private readonly ObservableCollection<ProjectCard> _cards = new();
 
     public ProjectListView(Filter filter)
     {
@@ -54,7 +67,7 @@ public partial class ProjectListView : UserControl, INavPage
         InitializeComponent();
 
         TxtTitle.Text = filter == Filter.Active ? "进行中" : "已归档";
-        ListCards.ItemsSource = _cards;
+        ListCards.ItemsSource = _cards;      // ★ 只在这里设一次，之后靠集合自己通知
 
         Loaded += (s, e) => Refresh();
     }
@@ -78,9 +91,6 @@ public partial class ProjectListView : UserControl, INavPage
             ? "项目位置：" + root
             : "归档位置：" + WorkbenchWindow.State.Config.ArchiveRoot + "　（本地只留小桩，工程在移动硬盘上）";
 
-        _byDir.Clear();
-        _cards.Clear();
-
         List<ProjectRef> all;
         try
         {
@@ -95,18 +105,46 @@ public partial class ProjectListView : UserControl, INavPage
 
         bool wantArchived = _filter == Filter.Archived;
 
+        // ---- ① 先算"这一屏该有哪几张卡"（纯数据，不碰界面）----
+        var wanted = new List<ProjectRef>();
         foreach (var r in all)
-        {
-            bool archived = r.IsArchived;
-            if (archived != wantArchived) continue;
+            if (r.IsArchived == wantArchived) wanted.Add(r);
 
+        // ---- ② 按目录做差异：老卡复用、只改字；新卡才建 ----
+        _byDir.Clear();
+        var keep = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var ordered = new List<ProjectCard>(wanted.Count);
+
+        foreach (var r in wanted)
+        {
             _byDir[r.Dir] = r;
-            _cards.Add(BuildCard(r, archived));
+            keep.Add(r.Dir);
+
+            ProjectCard? card = null;
+            for (int i = 0; i < _cards.Count; i++)
+                if (string.Equals(_cards[i].Dir, r.Dir, StringComparison.OrdinalIgnoreCase))
+                { card = _cards[i]; break; }
+
+            if (card == null)
+            {
+                card = new ProjectCard { Dir = r.Dir };
+                _cards.Add(card);
+            }
+
+            card.UpdateFrom(r, wantArchived);
+            ordered.Add(card);
         }
 
-        // ItemsSource 是同一个 List 实例，改内容不会自动刷新 → 手动通知
-        ListCards.ItemsSource = null;
-        ListCards.ItemsSource = _cards;
+        // ---- ③ 已经不在这一屏的，删掉（倒着删，下标不会错位）----
+        for (int i = _cards.Count - 1; i >= 0; i--)
+            if (!keep.Contains(_cards[i].Dir)) _cards.RemoveAt(i);
+
+        // ---- ④ 顺序照磁盘来（项目增减会让顺序变；Move 只是挪位置，不重建）----
+        for (int i = 0; i < ordered.Count; i++)
+        {
+            int cur = _cards.IndexOf(ordered[i]);
+            if (cur >= 0 && cur != i) _cards.Move(cur, i);
+        }
 
         UpdateEmptyState();
     }
@@ -125,36 +163,6 @@ public partial class ProjectListView : UserControl, INavPage
               "归档 = 整包搬到移动硬盘 + 本地只留小桩\n" +
               "（工程档案、脚本、分镜代码、封面小图、复盘数据）。\n" +
               "想接着剪，点卡片上的「取回工程」。";
-    }
-
-    private static ProjectCard BuildCard(ProjectRef r, bool archived)
-    {
-        var m = r.Model;
-        double progress = ProjectStore.EstimateProgress(m);
-
-        string meta;
-        if (archived && m.Archive != null)
-        {
-            var a = m.Archive;
-            meta = $"归档 {a.ArchivedAt}　·　工程在 {a.VolumeLabel}（{ArchivePlan.Human(a.TotalBytes)}）";
-        }
-        else
-        {
-            meta = $"完成 {Math.Round(progress * 100)}%  ·  最后编辑 {FormatTime(m.UpdatedAt)}";
-        }
-
-        return new ProjectCard
-        {
-            Dir = r.Dir,
-            Name = m.Name,
-            Note = string.IsNullOrWhiteSpace(m.Note) ? "" : m.Note,
-            NoteVisibility = string.IsNullOrWhiteSpace(m.Note) ? Visibility.Collapsed : Visibility.Visible,
-            StatusText = archived ? "已归档" : "进行中",
-            Progress = archived ? 100 : Math.Round(progress * 100),
-            Meta = meta,
-            ArchiveButtonText = archived ? "取回工程" : "归档",
-            OpenButtonText = archived ? "看复盘" : "打开",
-        };
     }
 
     private static string FormatTime(DateTime t)
@@ -409,16 +417,74 @@ public partial class ProjectListView : UserControl, INavPage
     // 卡片的数据载体（只用于绑定显示）
     // ========================================================
 
-    public sealed class ProjectCard
+    /// <summary>
+    /// 卡片的数据载体。只用于绑定显示。
+    ///
+    /// ★ V1.19.0：实现 INotifyPropertyChanged。
+    ///   以前刷新 = 整张卡丢了重建，所以属性不需要通知；现在刷新 = 同一张卡就地改字，
+    ///   没有通知的话界面会"数据变了但屏幕不动"。
+    ///   ★ Dir 是身份（卡片的身份证），只在新建时写一次，之后永不改 ——
+    ///     它一变，差异比对就找不到"这还是同一张卡"了。
+    /// </summary>
+    public sealed class ProjectCard : INotifyPropertyChanged
     {
+        private string _name = "";
+        private string _note = "";
+        private Visibility _noteVisibility = Visibility.Collapsed;
+        private string _statusText = "";
+        private double _progress;
+        private string _meta = "";
+        private string _archiveButtonText = "";
+        private string _openButtonText = "打开";
+
+        /// <summary>身份：项目文件夹的绝对路径。创建后不再改。</summary>
         public string Dir { get; set; } = "";
-        public string Name { get; set; } = "";
-        public string Note { get; set; } = "";
-        public Visibility NoteVisibility { get; set; } = Visibility.Collapsed;
-        public string StatusText { get; set; } = "";
-        public double Progress { get; set; }
-        public string Meta { get; set; } = "";
-        public string ArchiveButtonText { get; set; } = "";
-        public string OpenButtonText { get; set; } = "打开";
+
+        public string Name { get => _name; set => Set(ref _name, value); }
+        public string Note { get => _note; set => Set(ref _note, value); }
+        public Visibility NoteVisibility { get => _noteVisibility; set => Set(ref _noteVisibility, value); }
+        public string StatusText { get => _statusText; set => Set(ref _statusText, value); }
+        public double Progress { get => _progress; set => Set(ref _progress, value); }
+        public string Meta { get => _meta; set => Set(ref _meta, value); }
+        public string ArchiveButtonText { get => _archiveButtonText; set => Set(ref _archiveButtonText, value); }
+        public string OpenButtonText { get => _openButtonText; set => Set(ref _openButtonText, value); }
+
+        /// <summary>
+        /// 把磁盘上读到的项目刷进这张卡。
+        /// 字段没变就不发通知（Set 内部会比对），所以"只是刷新一下"不会引起任何重绘。
+        /// </summary>
+        public void UpdateFrom(ProjectRef r, bool archived)
+        {
+            var m = r.Model;
+            double progress = ProjectStore.EstimateProgress(m);
+
+            Name = m.Name ?? "";
+            Note = string.IsNullOrWhiteSpace(m.Note) ? "" : m.Note;
+            NoteVisibility = string.IsNullOrWhiteSpace(m.Note) ? Visibility.Collapsed : Visibility.Visible;
+            StatusText = archived ? "已归档" : "进行中";
+            Progress = archived ? 100 : Math.Round(progress * 100);
+
+            if (archived && m.Archive != null)
+            {
+                var a = m.Archive;
+                Meta = $"归档 {a.ArchivedAt}　·　工程在 {a.VolumeLabel}（{ArchivePlan.Human(a.TotalBytes)}）";
+            }
+            else
+            {
+                Meta = $"完成 {Math.Round(progress * 100)}%  ·  最后编辑 {FormatTime(m.UpdatedAt)}";
+            }
+
+            ArchiveButtonText = archived ? "取回工程" : "归档";
+            OpenButtonText = archived ? "看复盘" : "打开";
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        private void Set<T>(ref T field, T value, [CallerMemberName] string? prop = null)
+        {
+            if (EqualityComparer<T>.Default.Equals(field, value)) return;
+            field = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
+        }
     }
 }

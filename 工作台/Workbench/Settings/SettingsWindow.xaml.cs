@@ -81,6 +81,10 @@ public partial class SettingsWindow : Window
         ChkDebug.IsChecked = _cfg.DebugEnabled;
         ChkDebugFile.IsChecked = _cfg.DebugLogToFile;
         TxtDebugPort.Text = _cfg.DebugPort.ToString();
+
+        // ---- 画面渲染 ----
+        ChkSoftwareRender.IsChecked = _cfg.SoftwareRender;
+        RefreshRenderState();
     }
 
     /// <summary>把"这一项实际会用哪"标在输入框旁边（留空时尤其重要）。</summary>
@@ -381,6 +385,38 @@ public partial class SettingsWindow : Window
         }
     }
 
+    private void ChkSoftwareRender_Changed(object sender, RoutedEventArgs e) => RefreshRenderState();
+
+    /// <summary>
+    /// 显示"这次实际跑的是哪种渲染"。
+    /// ★ 关键在"分清**配置**和**实际生效**"：
+    ///   勾上了但没重启 → 配置是软件渲染、实际还在硬件加速。
+    ///   用户看不到这个差别，就会觉得"我开了它照样卡，这开关没用"。
+    /// </summary>
+    private void RefreshRenderState()
+    {
+        if (TxtRenderState == null) return;
+
+        bool want = ChkSoftwareRender.IsChecked == true;
+        bool live = App.SoftwareRenderActive;
+
+        if (live)
+        {
+            TxtRenderState.Text = "● 本次运行：软件渲染（不占显卡）。";
+            TxtRenderState.Foreground = (System.Windows.Media.Brush)FindResource("Ok");
+        }
+        else if (want)
+        {
+            TxtRenderState.Text = "○ 已勾选，但要**重启工作台**才生效 —— 现在这次跑的还是硬件加速。";
+            TxtRenderState.Foreground = (System.Windows.Media.Brush)FindResource("Warn");
+        }
+        else
+        {
+            TxtRenderState.Text = "○ 本次运行：硬件加速（默认）。";
+            TxtRenderState.Foreground = (System.Windows.Media.Brush)FindResource("TextDim");
+        }
+    }
+
     private void OpenLogFolder_Click(object sender, RoutedEventArgs e)
     {
         try
@@ -450,6 +486,11 @@ public partial class SettingsWindow : Window
         cfg.DebugEnabled = ui.ChkDebug.IsChecked == true;
         cfg.DebugLogToFile = ui.ChkDebugFile.IsChecked == true;
         cfg.DebugPort = port;
+
+        // ★ 兼容渲染：只写配置，不在这里改 —— WPF 的渲染模式一旦开始出画面
+        //   就锁死了，运行中改没有任何效果，只会让人以为"开了没用"。
+        //   界面上那句状态提示会告诉用户"要重启才生效"。
+        cfg.SoftwareRender = ui.ChkSoftwareRender.IsChecked == true;
 
         cfg.Save();
     }

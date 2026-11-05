@@ -54,6 +54,18 @@ public partial class App : Application
     public static long StartupTick { get; private set; } = Environment.TickCount64;
 
     // ============================================================
+    // 本次运行的渲染模式（V1.19.0）
+    // ============================================================
+
+    /// <summary>
+    /// 本次运行是不是"兼容渲染"（软件渲染、不占显卡）。
+    /// ★ 为什么要留这个只读标记：设置页要显示"当前实际生效的是哪种" ——
+    ///   配置里写了 true、但这次没重启，实际跑的还是硬件加速，
+    ///   用户看不到这个区别就会以为"开了没用"。所以只认启动时真的设上的结果。
+    /// </summary>
+    public static bool SoftwareRenderActive { get; private set; }
+
+    // ============================================================
     // 单实例锁
     // ============================================================
 
@@ -71,6 +83,28 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         StartupTick = Environment.TickCount64;
+
+        // ---- 兼容渲染：把工作台从显卡那条链上摘下来（V1.19.0）----
+        // ★ 位置极其要紧：必须在**任何窗口 / 视觉对象创建之前**设。
+        //   WPF 一旦开始出画面，渲染模式就锁死了，再设只会在调试输出里
+        //   留一句"ProcessRenderMode 已被忽略"，界面纹丝不动 —— 白折腾。
+        //   所以放在 OnStartup 的第一件事，比单实例检查还早（那个分支只是退出，
+        //   设了也不影响）。
+        // ★ 读配置失败就当没开：这是排障开关，绝不能因为一个 json 读不出来
+        //   把工作台挡在门外。
+        try
+        {
+            if (Workbench.AppConfig.Load().SoftwareRender)
+            {
+                System.Windows.Media.RenderOptions.ProcessRenderMode =
+                    System.Windows.Interop.RenderMode.SoftwareOnly;
+                SoftwareRenderActive = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            WriteLog("兼容渲染开关读取失败（已按硬件加速启动）", ex);
+        }
 
         // ---- 单实例：已经有工作台在跑 → 把那个叫到最前面，自己安静退出 ----
         // 例外：设了 LITECUT_ALLOW_MULTI_INSTANCE=1 时放行 —— 给无头验证工程用，
