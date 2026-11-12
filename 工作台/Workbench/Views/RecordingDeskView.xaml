@@ -319,7 +319,8 @@
                             BorderBrush="{DynamicResource Divider}" BorderThickness="0,1,0,0">
                         <TextBlock FontSize="10.5" Foreground="{DynamicResource TextNote}" TextWrapping="Wrap" LineHeight="16">
                             点句子＝从这儿录（点绿块里任意一句＝整块选中，直接重录）·
-                            <Run Foreground="{DynamicResource TextSoft}">Shift+点</Run> 延长/缩短
+                            <Run Foreground="{DynamicResource TextSoft}">Shift+点</Run> 延长/缩短 ·
+                            重录沿用原来那几句，不会自动往后多带一句
                         </TextBlock>
                     </Border>
                 </Grid>

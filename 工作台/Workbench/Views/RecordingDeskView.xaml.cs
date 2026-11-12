@@ -561,10 +561,12 @@ public partial class RecordingDeskView : UserControl, INavPage
 
         if (rangeEdit && _selA.HasValue)
         {
-            if (ShiftDown) _selA = idx;
-            else _selB = idx;
-            _selA = Math.Min(_selA!.Value, _selB ?? idx);
-            _selB = Math.Max(_selA.Value, _selB ?? idx);
+            // ★ V1.19.1：先记住"没动的那一端"当锚点，再算 min/max。
+            //   旧版先把 _selA 改了，又拿改过后的 _selA 去算 max —— 往回点一下
+            //   整段范围会被压成一句（改绑定 / 待确认时改范围的隐形错）。
+            int anchor = ShiftDown ? (_selB ?? _selA.Value) : _selA.Value;
+            _selA = Math.Min(anchor, idx);
+            _selB = Math.Max(anchor, idx);
             _cursor = _selA.Value;
             _rangeWasGuessed = false;
 
@@ -576,9 +578,12 @@ public partial class RecordingDeskView : UserControl, INavPage
         // 正常态
         if (ShiftDown && _selA.HasValue)
         {
-            _selB = idx;
-            _selA = Math.Min(_selA!.Value, idx);
-            _selB = Math.Max(_selA.Value, idx);
+            // ★ V1.19.1：以原来的起点为锚改终点。
+            //   旧版先把 _selA 改成 min，再拿它算 max —— 往起点之前 Shift+点，
+            //   选区会缩成光秃秃一句，而不是往前延长。
+            int anchor = _selA.Value;
+            _selA = Math.Min(anchor, idx);
+            _selB = Math.Max(anchor, idx);
             _cursor = _selA.Value;
             _activeTake = null;
         }
@@ -684,11 +689,12 @@ public partial class RecordingDeskView : UserControl, INavPage
         }
         else
         {
+            // ★ V1.19.1：没有选区就只提词当前这一句，不再"默认多带一句"。
+            //   旧版会顺着同段落把后面几句拼进主提词（至少多带一句，最多四句），
+            //   用户会以为系统帮他多选了台词，照着念就多录、多绑一句。
+            //   下一句本来就在 TxtNext 里单独预览，不需要塞进主提词。
             lo = Math.Clamp(_cursor, 0, n - 1);
-            int para = _doc.Sentences[lo].Para;
             hi = lo;
-            while (hi + 1 < n && _doc.Sentences[hi + 1].Para == para && hi - lo < 3) hi++;
-            if (hi == lo && hi + 1 < n) hi++;
         }
 
         string text = _doc.TextBetween(lo, hi);
@@ -1378,16 +1384,36 @@ public partial class RecordingDeskView : UserControl, INavPage
         if (_doc.IsEmpty || _store == null) return;
         if (_engine.IsRecording || _mode == Mode.EditBind) return;
 
-        if (_mode == Mode.Candidate) DiscardCandidate();   // 上一条不要了
+        // ★★ V1.19.1：重录 bug 的根子在这一刻 —— 先把"这一条要绑哪几句"锁死。
+        //   旧版在候选态先 DiscardCandidate()（它顺手把 _selA/_selB 清成 null），
+        //   再把清空的选区抄进 _pendingA/_pendingB。于是"重录这条"表面上还选着
+        //   原来那几句，实际已经没有范围了：录完只能按语速猜，猜出来常常多一句，
+        //   台词就这么越绑越多（用户 2026-11-13 报）。
+        //   锁范围要放在所有可能改选区的动作之前，且候选态优先用那条自己的 A/B。
+        int? lockA = _selA, lockB = _selB;
+        if (_mode == Mode.Candidate && _pendingTake != null)
+        {
+            lockA = _pendingTake.A;
+            lockB = _pendingTake.B;
+        }
 
         if (CmbDevice.SelectedItem is not AudioInputDevice dev)
         {
             SetVerdict("r", "没有麦克风", "先连上手机 / 插上麦克风，再点右上角「刷新」");
-            return;
+            return;                       // ★ 没麦克风就直接退出，别把手里那条候选扔了
         }
 
-        _pendingA = _selA;
-        _pendingB = _selB;
+        if (_mode == Mode.Candidate)
+        {
+            DiscardCandidate();           // 上一条不要了（现在它会把范围留下来）
+            _selA = lockA;               // 再摆一次，界面和实际绑定用的是同一份范围
+            _selB = lockB;
+            if (lockA.HasValue) _cursor = lockA.Value;
+            PaintAll();
+        }
+
+        _pendingA = lockA;
+        _pendingB = lockB;
 
         _recId = _store.NextId();
         _recPath = _store.NewWavPath(_recId);
@@ -1453,6 +1479,13 @@ public partial class RecordingDeskView : UserControl, INavPage
         {
             a = Math.Min(_pendingA.Value, _pendingB.Value);
             b = Math.Max(_pendingA.Value, _pendingB.Value);
+        }
+        else if (_selA.HasValue && _selB.HasValue)
+        {
+            // ★ V1.19.1 兜底：开录那一刻界面上选中的范围不许被"猜"顶掉。
+            //   万一以后又有一条路径把 _pendingA/B 弄丢了，也先认看得见的选区。
+            a = Math.Min(_selA.Value, _selB.Value);
+            b = Math.Max(_selA.Value, _selB.Value);
         }
         else if (ChkAutoGuess.IsChecked == true)
         {
@@ -1531,7 +1564,15 @@ public partial class RecordingDeskView : UserControl, INavPage
         int end = start;
         for (int i = start; i < n; i++)
         {
-            acc += _doc.Sentences[i].Chars;
+            int c = _doc.Sentences[i].Chars;
+
+            // ★ V1.19.1：只有"加上这一句更接近预算"才把它算进来。
+            //   旧版是"一直累加到超过预算才停"，最后那句常常是被硬塞进来的：
+            //   念了 1 句 20 字、按语速预算 21.5 字 → 第一句还差一点点，
+            //   于是再吞第二句（+15 字）→ 莫名多绑一句。这正是"重录台词变多"的放大器。
+            if (i > start && Math.Abs(acc + c - budget) > Math.Abs(acc - budget)) break;
+
+            acc += c;
             end = i;
             if (acc >= budget) break;
         }
@@ -1766,6 +1807,12 @@ public partial class RecordingDeskView : UserControl, INavPage
     {
         if (_mode != Mode.Candidate || _pendingTake == null || _store == null) return;
 
+        // ★ V1.19.1：扔掉的是"声音"，不是"台词"。
+        //   先把这条原本绑的几句记下来 —— 旧版连选区一起清成 null，
+        //   于是按 Esc 之后「按空格重录」、或候选态直接点「重录这条」，
+        //   都变成没有范围，只能靠猜，猜出来就多绑一句。
+        int keepA = _pendingTake.A, keepB = _pendingTake.B;
+
         string wav = TakePath(_pendingTake);
         _peakCache.Remove(wav);
         try { if (File.Exists(wav)) File.Delete(wav); } catch { }
@@ -1776,13 +1823,15 @@ public partial class RecordingDeskView : UserControl, INavPage
         _pendingTake = null;
         _activeTake = null;
         _rangeWasGuessed = false;
-        _selA = _selB = null;
+        _selA = keepA;
+        _selB = keepB;
+        _cursor = keepA;
         RebuildDoneMap();
 
         SetMode(Mode.Idle);
         PaintAll();
         ShowEmptyWave();
-        DebugLog.Write("record", "扔掉候选录音（未确认，无痕迹）");
+        DebugLog.Write("record", "扔掉候选录音（未确认，无痕迹）", new { keepA, keepB });
     }
 
     private void UndoLast()
@@ -1894,8 +1943,10 @@ public partial class RecordingDeskView : UserControl, INavPage
         _selA = a;
         _selB = b;
         _cursor = a;
+        _rangeWasGuessed = false;     // ★ 重录是明确范围，不再挂"猜的"标记
 
         PaintAll();
+        DebugLog.Write("record", "重录", new { a, b, from = _mode.ToString() });
         StartRecording();
     }
 
