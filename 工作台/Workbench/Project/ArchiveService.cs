@@ -141,8 +141,17 @@ public sealed class ArchivePlan
     public VolumeInfo Disk { get; set; } = new();
     public bool DiskFirstUse { get; set; }
 
-    /// <summary>成片（相对路径）。归档门槛就是"至少有一个"。</summary>
+    /// <summary>
+    /// 项目夹里找到的成片（相对路径）。
+    /// ★ V1.20.0 起**只用于清单展示**，不再是归档门槛 —— 别再拿它卡人。
+    /// </summary>
     public List<string> Films { get; set; } = new();
+
+    /// <summary>
+    /// 登记的外部成片路径（可能在项目夹外，也可能文件已经不在了）。
+    /// ★ 只展示、只留痕，工作台不复制/移动/删除，也不检查它是否存在。
+    /// </summary>
+    public List<string> ExternalFilms { get; set; } = new();
 
     public List<ArchiveEntry> Entries { get; set; } = new();
 
@@ -179,6 +188,8 @@ public sealed class ArchiveManifest
     public int 本地保留文件数 { get; set; }
     public long 本地保留字节 { get; set; }
     public List<string> 成片 { get; set; } = new();
+    public List<string> 外部成片登记 { get; set; } = new();   // ★ V1.20.0 只登记，不搬动
+    public string 项目标签 { get; set; } = "";                 // ★ V1.20.0 归档时这支片标到哪了
     public List<ManifestFile> 文件 { get; set; } = new();
 }
 
@@ -330,13 +341,28 @@ public static class ArchiveService
         var plan = new ArchivePlan();
         var cfg = WorkbenchWindow.State.Config;
 
-        // ---- 门槛一：至少要有成片 ----
+        // ---- 门槛一：这支片算不算交付了（★ V1.20.0：看标签，不看文件）----
+        //
+        // 【改前的毛病】
+        //   原来只认 stages\05-assemble 和 export 两个目录里的视频。
+        //   视频交给外部 Agent 做完、成片放在项目根目录或者干脆在项目夹外，
+        //   这里就判"还没出片"，归档按钮直接拒绝 —— 太死板（用户 2026-11-14）。
+        //
+        // 【现在的口径】
+        //   用户说做完了就是做完了。标签是唯一判据（手动优先，自动只是建议）。
+        //   成片清单照算，但只用来给二次确认清单看，绝不当门槛。
         plan.Films = FindFilms(r);
-        if (plan.Films.Count == 0)
+        plan.ExternalFilms = (r.Model.Label?.ExternalFilms ?? new List<string>())
+                             .Where(p => !string.IsNullOrWhiteSpace(p))
+                             .ToList();
+
+        if (!ProjectLabels.IsDelivered(r))
         {
-            plan.Reason = "这个项目还没有成片（stages\\05-assemble 或 export 里没有视频）。\n\n" +
-                          "归档是不可逆的（本地大件会被搬走删掉），所以至少走到出片这一步才允许归档。\n" +
-                          "先把它做完再来。";
+            plan.Reason = "这个项目的标签还不是「已完成 / 已发布」。\n\n" +
+                          "归档会把本地大件搬走删掉，所以先确认这支片确实做完了：\n" +
+                          "回到「进行中」的卡片上点「标签」，标成「已完成」或「已发布」就行。\n\n" +
+                          "★ 视频交在外面做、成片不在项目夹里，都完全没关系 ——\n" +
+                          "标签窗口里可以只登记路径，工作台不检查文件在不在，也不会动它。";
             return plan;
         }
 
@@ -394,23 +420,11 @@ public static class ArchiveService
         return plan;
     }
 
-    /// <summary>找成片：stages\05-assemble 和 export 里的视频文件。</summary>
-    private static List<string> FindFilms(ProjectRef r)
-    {
-        var list = new List<string>();
-        foreach (string sub in new[] { r.AssembleDir, r.ExportDir })
-        {
-            try
-            {
-                if (!Directory.Exists(sub)) continue;
-                foreach (string f in Directory.EnumerateFiles(sub, "*", SearchOption.AllDirectories))
-                    if (VideoExts.Contains(Path.GetExtension(f)))
-                        list.Add(Path.GetRelativePath(r.Dir, f));
-            }
-            catch { /* 目录读不了就当没有 */ }
-        }
-        return list;
-    }
+    /// <summary>
+    /// 找成片清单（展示用）。★ V1.20.0 起统一走 <see cref="ProjectLabels.LocalFilms"/>：
+    /// 除了两个约定目录，项目根目录随手放的 mp4 也算 —— 一处口径，别再各写一套。
+    /// </summary>
+    private static List<string> FindFilms(ProjectRef r) => ProjectLabels.LocalFilms(r);
 
     /// <summary>遍历项目夹，按上面的分类规则给每个文件定性。</summary>
     private static List<ArchiveEntry> ScanAndClassify(ProjectRef r)
@@ -800,6 +814,8 @@ public static class ArchiveService
             本地保留文件数 = plan.KeepCount,
             本地保留字节 = plan.KeepBytes,
             成片 = plan.Films,
+            外部成片登记 = plan.ExternalFilms,
+            项目标签 = ProjectLabels.Current(r),
         };
 
         foreach (var e in plan.Entries)
@@ -835,7 +851,20 @@ public static class ArchiveService
         sb.AppendLine();
         sb.AppendLine("## 成片");
         sb.AppendLine();
+        sb.AppendLine($"> 归档时的项目标签：**{ProjectLabels.Current(r)}**" +
+                      (ProjectLabels.IsManual(r) ? "（手动设定）" : "（按流程自动）"));
+        sb.AppendLine();
+        if (plan.Films.Count == 0)
+            sb.AppendLine("- 本次清单里没有本地成片（视频可能是在工作台外面做完的）。");
         foreach (string f in plan.Films) sb.AppendLine($"- `{f}`");
+
+        if (plan.ExternalFilms.Count > 0)
+        {
+            sb.AppendLine();
+            sb.AppendLine("### 登记的外部成片（★ 只记路径，工作台没有搬动它们）");
+            sb.AppendLine();
+            foreach (string f in plan.ExternalFilms) sb.AppendLine($"- `{f}`");
+        }
         sb.AppendLine();
         sb.AppendLine("## 怎么取回");
         sb.AppendLine();

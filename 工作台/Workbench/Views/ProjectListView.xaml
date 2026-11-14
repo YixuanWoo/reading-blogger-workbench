@@ -97,6 +97,10 @@
                                     <Button Content="{Binding OpenButtonText}" Click="BtnOpen_Click"
                                             Style="{StaticResource BtnPrimary}"
                                             FontSize="12" Padding="14,4" Margin="0,0,6,0"/>
+                                    <Button Content="标签" Click="BtnLabel_Click"
+                                            Style="{StaticResource Btn}"
+                                            FontSize="12" Padding="10,4" Margin="0,0,6,0"
+                                            Visibility="{Binding LabelButtonVisibility}"/>
                                     <Button Content="{Binding ArchiveButtonText}"
                                             Click="BtnArchive_Click"
                                             Style="{StaticResource Btn}"

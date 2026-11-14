@@ -73,6 +73,20 @@ public sealed class ProjectModel
     public ArchivePart? Archive { get; set; }
 
     /// <summary>
+    /// ★ V1.20.0 项目标签 / 交付声明。null = 老档案，一律按"跟随流程自动"处理。
+    ///
+    /// 【为什么不复用 Status】
+    ///   Status 只有 active / archived，被列表分组、归档、取回逻辑依赖；
+    ///   "做到哪一步、发没发布"是**另一个维度**（已归档的项目当然是已发布过的），
+    ///   塞进 Status 会让两边互相打架。所以另起一段，互不影响。
+    ///
+    /// 【⚠ 加字段之后必须同时改 ProjectSession.Projected()】
+    ///   那个方法每次保存都会新建一个 ProjectModel 再逐个字段搬过去，
+    ///   漏搬 = 用户手动设的标签每存一次盘就被抹一次。
+    /// </summary>
+    public LabelPart? Label { get; set; }
+
+    /// <summary>
     /// 走到哪一步了（0~1），项目卡片墙上的进度条用它。
     /// 不存盘也行（能从各段数据推出来），但存下来列表页读起来更快。
     /// </summary>
@@ -280,5 +294,49 @@ public sealed class ArchivePart
     public long TotalBytes { get; set; }
 
     /// <summary>归档时留下的"页面数"之外的啰嗦话（可空）。</summary>
+    public string Note { get; set; } = "";
+}
+
+// ============================================================
+// ★ V1.20.0 标签 / 交付声明
+// ============================================================
+//
+// 【为什么"手动标签"和"自动标签"只存一个字段】
+//   自动标签是**算出来的**，不存盘 —— 流程往前走它自己会变。
+//   只存用户手动定的那个（Manual，空 = 没手动设过 = 跟随自动）。
+//   要是两个都存，早晚出现"界面显示已完成、盘里还留着录音中"这种
+//   谁也说不清该信谁的状态。
+//
+// 【外部成片只是一条路径】
+//   视频常常是交给 Agent 在外面做完的。这里只记"它在哪"，
+//   工作台不复制、不移动、不删除，也不要求文件此刻一定存在。
+//   归档只搬项目夹里的东西，登记的外部文件天然碰不到。
+// ============================================================
+
+/// <summary>一个项目的标签与交付声明。</summary>
+public sealed class LabelPart
+{
+    /// <summary>
+    /// 用户手动定的标签。★ 空串 = 跟随流程自动。
+    /// 取值见 <see cref="ProjectLabels.All"/>；不认识的值按空处理。
+    /// </summary>
+    public string Manual { get; set; } = "";
+
+    /// <summary>什么时候手动定的（人话，如 "2026-11-14 10:40"），只用于界面显示。</summary>
+    public string ManualSetAt { get; set; } = "";
+
+    /// <summary>这支片是怎么做完的（如「交给 Agent 做的」）。选填，纯备注。</summary>
+    public string Source { get; set; } = "";
+
+    /// <summary>
+    /// 登记的外部成片路径（可以在项目夹外的任何地方）。
+    /// ★ 只登记，不接管：不复制、不移动、不删除、不检查存在性。
+    /// </summary>
+    public List<string> ExternalFilms { get; set; } = new();
+
+    /// <summary>发布链接 / 平台备注。选填。</summary>
+    public string Link { get; set; } = "";
+
+    /// <summary>随便记点什么。选填。</summary>
     public string Note { get; set; } = "";
 }

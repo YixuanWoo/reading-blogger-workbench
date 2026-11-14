@@ -297,8 +297,11 @@ public static class ProjectStore
         m.FineCut.Clips ??= new List<ClipPart>();
         m.Shots ??= new ShotPart();
         m.Shots.Rows ??= new List<ShotRow>();
+        m.Shots.DraftRows ??= new List<ShotRow>();   // ★ V1.20.0 标签推导要读，老档案可能没有
         m.Output ??= new OutputPart();
         m.Ui ??= new UiPart();
+        m.Label ??= new LabelPart();                       // ★ V1.20.0 老档案 = 跟随自动
+        m.Label.ExternalFilms ??= new List<string>();
 
         if (string.IsNullOrWhiteSpace(m.Status)) m.Status = ProjectStatus.Active;
         if (m.FineCut.SecPerPixel <= 0) m.FineCut.SecPerPixel = 0.05;

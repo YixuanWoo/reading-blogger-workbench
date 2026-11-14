@@ -196,6 +196,23 @@ public partial class ProjectListView : UserControl, INavPage
 
     private void BtnOpen_Click(object sender, RoutedEventArgs e) => Open(RefOf(sender));
 
+    /// <summary>
+    /// ★ V1.20.0「标签」：改标签 / 记发布日 / 登记外部成片。
+    /// 只写 project.json 和复盘发布日，绝不碰视频文件；归档是另一个按钮、另一件事。
+    /// </summary>
+    private void BtnLabel_Click(object sender, RoutedEventArgs e)
+    {
+        var r = RefOf(sender);
+        if (r == null) return;
+
+        var dlg = new LabelDialog(r) { Owner = Window.GetWindow(this) };
+        dlg.ShowDialog();
+        if (!dlg.Saved) return;
+
+        Refresh();
+        Shell?.Status($"「{r.Name}」标签：{ProjectLabels.Current(r)}");
+    }
+
     private void Open(ProjectRef? r)
     {
         if (r == null) return;
@@ -238,8 +255,22 @@ public partial class ProjectListView : UserControl, INavPage
         }
 
         // ---- ② 二次确认清单（把"要删什么"明明白白摆出来）----
+        // ★ V1.20.0：成片只是**信息**，不是门槛。没有本地成片照常归档，
+        //   登记的外部路径也只列出来给人看，一件都不搬。
+        string filmLines = plan.Films.Count == 0
+            ? "成片：本次清单里没有本地成片（视频可能在工作台外面做完的，不影响归档）\n"
+            : $"成片（跟着工程留在硬盘）：{plan.Films.Count} 个\n" +
+              "　" + string.Join("\n　", plan.Films.Take(3)) +
+              (plan.Films.Count > 3 ? $"\n　…还有 {plan.Films.Count - 3} 个" : "") + "\n";
+
+        if (plan.ExternalFilms.Count > 0)
+            filmLines += $"登记的外部成片（只记路径，不搬不动）：{plan.ExternalFilms.Count} 条\n" +
+                         "　" + string.Join("\n　", plan.ExternalFilms.Take(3)) +
+                         (plan.ExternalFilms.Count > 3 ? $"\n　…还有 {plan.ExternalFilms.Count - 3} 条" : "") + "\n";
+
         string confirm =
             $"把「{r.Model.Name}」整包搬到移动硬盘？\n\n" +
+            $"项目标签：{ProjectLabels.Current(r)}\n\n" +
             $"【搬到硬盘】{plan.Disk.Describe()}\n" +
             $"　目标：{plan.TargetDir}\n" +
             $"　{plan.MoveCount} 个文件 / {ArchivePlan.Human(plan.MoveBytes)}\n\n" +
@@ -248,9 +279,7 @@ public partial class ProjectListView : UserControl, INavPage
             "　· 历史备份、渲染工作区、成片与其它大件（硬盘上都有）\n\n" +
             $"【本地保留】{plan.KeepCount} 个文件 / {ArchivePlan.Human(plan.KeepBytes)}\n" +
             "　· 工程档案、脚本、分镜稿与镜头代码、封面小图、复盘数据\n\n" +
-            $"成片（跟着工程留在硬盘）：{plan.Films.Count} 个\n" +
-            "　" + string.Join("\n　", plan.Films.Take(3)) +
-            (plan.Films.Count > 3 ? $"\n　…还有 {plan.Films.Count - 3} 个" : "") + "\n\n" +
+            filmLines + "\n" +
             "顺序是死的：先复制 → 逐个校验指纹 → 全部通过才删本地。\n" +
             "中途出错或硬盘掉线 → 立刻中止，本地一个文件都不删。";
 
@@ -436,6 +465,7 @@ public partial class ProjectListView : UserControl, INavPage
         private string _meta = "";
         private string _archiveButtonText = "";
         private string _openButtonText = "打开";
+        private Visibility _labelButtonVisibility = Visibility.Visible;
 
         /// <summary>身份：项目文件夹的绝对路径。创建后不再改。</summary>
         public string Dir { get; set; } = "";
@@ -448,6 +478,7 @@ public partial class ProjectListView : UserControl, INavPage
         public string Meta { get => _meta; set => Set(ref _meta, value); }
         public string ArchiveButtonText { get => _archiveButtonText; set => Set(ref _archiveButtonText, value); }
         public string OpenButtonText { get => _openButtonText; set => Set(ref _openButtonText, value); }
+        public Visibility LabelButtonVisibility { get => _labelButtonVisibility; set => Set(ref _labelButtonVisibility, value); }
 
         /// <summary>
         /// 把磁盘上读到的项目刷进这张卡。
@@ -461,8 +492,14 @@ public partial class ProjectListView : UserControl, INavPage
             Name = m.Name ?? "";
             Note = string.IsNullOrWhiteSpace(m.Note) ? "" : m.Note;
             NoteVisibility = string.IsNullOrWhiteSpace(m.Note) ? Visibility.Collapsed : Visibility.Visible;
-            StatusText = archived ? "已归档" : "进行中";
-            Progress = archived ? 100 : Math.Round(progress * 100);
+            // ★ V1.20.0：角标显示项目标签，不再只有「进行中 / 已归档」两种。
+            //   手动标签优先；已归档是事实状态，由 ProjectLabels.Current 统一决定。
+            string label = ProjectLabels.Current(r);
+            bool manual = ProjectLabels.IsManual(r);
+            bool delivered = ProjectLabels.IsDelivered(r);
+
+            StatusText = label;
+            Progress = (archived || delivered) ? 100 : Math.Round(progress * 100);
 
             if (archived && m.Archive != null)
             {
@@ -471,11 +508,12 @@ public partial class ProjectListView : UserControl, INavPage
             }
             else
             {
-                Meta = $"完成 {Math.Round(progress * 100)}%  ·  最后编辑 {FormatTime(m.UpdatedAt)}";
+                Meta = $"{label}（{(manual ? "手动" : "自动")}）  ·  最后编辑 {FormatTime(m.UpdatedAt)}";
             }
 
             ArchiveButtonText = archived ? "取回工程" : "归档";
             OpenButtonText = archived ? "看复盘" : "打开";
+            LabelButtonVisibility = archived ? Visibility.Collapsed : Visibility.Visible;
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
