@@ -49,7 +49,10 @@ function Add-Log([string]$text) {
 function Add-Check([string]$name, [bool]$ok, [string]$detail, [string]$level) {
     if ([string]::IsNullOrEmpty($level)) { $level = 'gate' }   # gate = 计入失败；info = 只提示
     [void]$checks.Add([pscustomobject]@{ name = $name; ok = $ok; detail = $detail; level = $level })
-    Add-Log (("{0} {1} | {2}" -f ($(if ($ok) { '[过]' } else { '[败]' })), $name, $detail))
+    # 提示项（info）永远不写「[败]」：它不计入失败、也不影响退出码。
+    # 以前日志里统一写 [败]，导致「结论：通过」与日志里的 [败] 互相打脸（2026-11-17 CEO 退单指出）。
+    $mark = if ($ok) { '[过]' } elseif ($level -eq 'gate') { '[败]' } else { '[注意]' }
+    Add-Log (("{0} {1} | {2}" -f $mark, $name, $detail))
 }
 
 # 调用外部程序：拿真实退出码 + 完整输出，不让 stderr 把脚本带走
@@ -176,13 +179,15 @@ Add-Check '仓库工作区是否干净（提示项）' (($git.code -eq 0) -and (
 # ---------- 汇总 ----------
 $gate = @($checks | Where-Object { $_.level -eq 'gate' })
 $gateFail = @($gate | Where-Object { -not $_.ok })
+$info = @($checks | Where-Object { $_.level -ne 'gate' })
 $allOk = ($gateFail.Count -eq 0)
 
 if ([string]::IsNullOrWhiteSpace($LogPath)) {
     $LogPath = Join-Path $env:TEMP ("workbench-health-{0}.log" -f (Get-Date -Format 'yyyyMMdd-HHmmss'))
 }
 Add-Log ''
-Add-Log ("结论：{0}（检查 {1} 项，失败 {2} 项；自检通过 {3} 项、失败 {4} 项）" -f $(if ($allOk) { '通过' } else { '不通过' }), $gate.Count, $gateFail.Count, $passCount, $failCount)
+Add-Log ("结论：{0}（门禁 {1} 项，失败 {2} 项；自检通过 {3} 项、失败 {4} 项）" -f $(if ($allOk) { '通过' } else { '不通过' }), $gate.Count, $gateFail.Count, $passCount, $failCount)
+Add-Log ("判据：门禁项（[过]/[败]）计入失败并决定退出码；提示项（[注意]）共 {0} 项，只提醒，不计入失败、不影响退出码。" -f $info.Count)
 try {
     [System.IO.File]::WriteAllLines($LogPath, $logLines, (New-Object System.Text.UTF8Encoding($true)))
 } catch { }
@@ -200,6 +205,7 @@ if ($Json) {
         build         = [ordered]@{ exitCode = $build.code; warnings = $warnCount; errors = $errCount }
         selftest      = [ordered]@{ exitCode = $self.code; passed = $passCount; failed = $failCount; failures = $failures }
         gates         = [ordered]@{ total = $gate.Count; failed = $gateFail.Count }
+        hints         = [ordered]@{ total = $info.Count; appliesToExitCode = $false }
         checks        = @($checks)
         gitDirtyFiles = $gitLines
         logPath       = $LogPath
@@ -221,9 +227,9 @@ if ($Json) {
     }
     Write-Host ("  编译：警告 {0} 个 / 错误 {1} 个｜自检：通过 {2} 项 / 失败 {3} 项" -f $warnCount, $errCount, $passCount, $failCount) -ForegroundColor Gray
     if ($allOk) {
-        Write-Host ("  结论：通过（{0} 项检查全过）" -f $gate.Count) -ForegroundColor Green
+        Write-Host ("  结论：通过（门禁 {0} 项全过；提示项 {1} 项只提醒、不计入失败）" -f $gate.Count, $info.Count) -ForegroundColor Green
     } else {
-        Write-Host ("  结论：不通过（{0}/{1} 项失败）" -f $gateFail.Count, $gate.Count) -ForegroundColor Red
+        Write-Host ("  结论：不通过（{0}/{1} 项失败；提示项 {2} 项不计入失败）" -f $gateFail.Count, $gate.Count, $info.Count) -ForegroundColor Red
     }
     Write-Host ("  日志：{0}" -f $LogPath) -ForegroundColor DarkGray
     Write-Host '════════════════════════════════' -ForegroundColor Cyan
