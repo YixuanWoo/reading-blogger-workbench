@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>动效风格库 · 可行性评估（huashu-art-motion 对照）</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    background:#0a1428;
+    background-image:
+      linear-gradient(rgba(70,130,200,.16) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(70,130,200,.16) 1px,transparent 1px);
+    background-size:48px 48px;
+    color:#e8eef8;
+    font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;
+    padding:44px 32px 70px;
+    min-height:100vh;
+    line-height:1.75;
+  }
+  .wrap{max-width:1140px;margin:0 auto}
+  h1{font-size:30px;font-weight:800;letter-spacing:.5px;color:#fff;line-height:1.35}
+  h1 .sub{display:block;font-size:15px;font-weight:400;color:#8fb4dd;margin-top:12px;letter-spacing:0;line-height:1.8}
+  .meta{font-size:12.5px;color:#6f8fb5;margin-top:14px}
+  .meta b{color:#9fc4ea;font-weight:600}
+
+  .verdict{
+    margin:26px 0 10px;padding:24px 28px;border-radius:14px;
+    background:rgba(20,44,78,.85);border:1px solid rgba(90,160,240,.35);
+    border-left:5px solid #4ea8ff;
+  }
+  .verdict .big{font-size:20px;font-weight:800;color:#ffd166;line-height:1.7}
+  .verdict p{font-size:15px;color:#cfe1f7;margin-top:12px}
+  .verdict code{font-family:Consolas,monospace;background:rgba(80,140,215,.18);padding:1px 6px;border-radius:5px;color:#a9d4ff;font-size:13.5px}
+
+  .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:24px 0 8px}
+  .metric{background:rgba(18,38,66,.9);border:1px solid rgba(90,150,225,.28);border-radius:14px;padding:18px 20px}
+  .metric .k{font-size:12.5px;color:#8fb4dd;letter-spacing:.5px}
+  .metric .v{font-size:26px;font-weight:800;color:#fff;margin:8px 0 4px;font-variant-numeric:tabular-nums}
+  .metric .v small{font-size:14px;font-weight:600;color:#9fc4ea}
+  .metric .d{font-size:12.5px;color:#a9c2dd;line-height:1.7}
+  .metric.good .v{color:#5ee39a}
+  .metric.warn .v{color:#ffd166}
+
+  h2{font-size:19px;color:#8fc7ff;margin:42px 0 6px;font-weight:700;
+     border-left:4px solid #4ea8ff;padding-left:12px}
+  h2 span{font-size:13px;color:#6f8fb5;font-weight:400;margin-left:10px}
+  h3{font-size:16px;color:#dae8fa;margin:26px 0 12px;font-weight:700}
+  p{font-size:14.5px;color:#c9dcf2;margin:12px 0}
+  p b{color:#fff}
+  p em{color:#ffd166;font-style:normal;font-weight:700}
+  ul{margin:10px 0 10px 22px}
+  li{font-size:14px;color:#c3d6ec;margin:7px 0}
+  li b{color:#fff}
+
+  .card{background:rgba(14,30,54,.9);border:1px solid rgba(80,140,215,.25);
+        border-radius:14px;padding:22px 24px;margin:16px 0}
+  .card.hl{background:rgba(24,54,94,.92);border-color:rgba(120,190,255,.5)}
+
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px}
+  th{background:rgba(28,58,96,.95);color:#a9d4ff;text-align:left;padding:11px 13px;
+     font-weight:700;font-size:13px;border-bottom:1px solid rgba(90,150,225,.35);white-space:nowrap}
+  td{padding:10px 13px;border-bottom:1px solid rgba(80,140,215,.16);color:#cfe1f7;vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  td.num{font-family:Consolas,monospace;font-variant-numeric:tabular-nums;color:#ffd166;white-space:nowrap;font-weight:700}
+  td.num.g{color:#5ee39a}
+  td.num.r{color:#ff9d9d}
+  tfoot td{background:rgba(28,58,96,.7);font-weight:800;color:#fff;border-top:1px solid rgba(90,150,225,.4)}
+  tfoot td.num{color:#ffd166;font-size:14.5px}
+  .tnote{font-size:12.5px;color:#7a99bb;margin-top:-4px;line-height:1.7}
+
+  .layers{display:grid;gap:10px;margin-top:8px}
+  .layer{display:grid;grid-template-columns:158px 1fr;gap:16px;align-items:start;
+         padding:13px 16px;border-radius:11px;
+         background:rgba(20,42,72,.85);border:1px solid rgba(80,140,215,.22)}
+  .layer.new{background:rgba(28,62,104,.95);border-color:rgba(120,190,255,.5)}
+  .layer .who{font-size:13.5px;font-weight:700;color:#9fc4ea}
+  .layer .what{font-size:13.5px;color:#dae8fa}
+  .layer .what em{color:#ffd166;font-style:normal;font-weight:700}
+  .layer .what small{color:#84a3c6;font-size:12.5px}
+
+  .risk{display:grid;grid-template-columns:52px 1fr;gap:14px;align-items:start;
+        padding:15px 18px;border-radius:12px;margin-bottom:11px;
+        background:rgba(18,38,66,.9);border:1px solid rgba(90,150,225,.24)}
+  .risk .lv{font-size:12px;font-weight:800;padding:4px 0;border-radius:8px;text-align:center;
+            background:rgba(255,200,90,.14);color:#ffd166;border:1px solid rgba(255,200,90,.35)}
+  .risk .lv.hi{background:rgba(255,110,110,.15);color:#ff9d9d;border-color:rgba(255,110,110,.4)}
+  .risk .lv.lo{background:rgba(94,227,154,.14);color:#5ee39a;border-color:rgba(94,227,154,.35)}
+  .risk .t{font-size:14.5px;font-weight:700;color:#fff;margin-bottom:5px}
+  .risk .b{font-size:13.5px;color:#c3d6ec}
+  .risk .b em{color:#ffd166;font-style:normal;font-weight:700}
+
+  .phase{display:grid;grid-template-columns:96px 1fr;gap:16px;align-items:start;
+         padding:16px 18px;border-radius:12px;margin-bottom:11px;
+         background:rgba(16,34,60,.88);border:1px solid rgba(80,140,215,.25)}
+  .phase.p1{border-color:rgba(94,227,154,.5);background:rgba(18,48,50,.75)}
+  .phase .tag{font-size:12.5px;font-weight:800;color:#0a1428;background:#8fc7ff;
+              border-radius:8px;padding:5px 0;text-align:center}
+  .phase.p1 .tag{background:#5ee39a}
+  .phase .t{font-size:14.5px;font-weight:700;color:#fff;margin-bottom:6px}
+  .phase .b{font-size:13.5px;color:#c3d6ec}
+  .phase .b em{color:#ffd166;font-style:normal;font-weight:700}
+
+  .ask{background:rgba(38,32,20,.85);border:1px solid rgba(255,200,90,.4);
+       border-radius:14px;padding:22px 24px;margin:16px 0}
+  .ask h3{color:#ffd166;margin-top:0}
+  .ask ol{margin:10px 0 0 22px}
+  .ask li{color:#e8dcbf}
+  .ask li b{color:#fff}
+
+  .src{font-size:12.5px;color:#7a99bb;border-top:1px solid rgba(80,140,215,.2);
+       margin-top:46px;padding-top:16px;line-height:1.9}
+  .src code{font-family:Consolas,monospace;background:rgba(80,140,215,.15);
+            padding:1px 5px;border-radius:4px;color:#a9d4ff}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>把「风格化动效」搬进工作台 · 可行性评估
+    <span class="sub">对照《huashu-art-motion 发布！可能是最有审美的动画 skill》（花叔，2026-10-06）<br>
+    回答一件事：工作台能不能做出那种「画面本身就在画、在动」的效果 —— 且全程由算法计算，不调用任何 AI 生成模型</span>
+  </h1>
+  <div class="meta">评估日期：<b>2026-10-16</b> ｜ 评估对象：<b>翊瑄的工作台（LiteCut）V1.15.0</b> 渲染链路 ｜ 数据来源：工作台实盘项目文件 + 文章原文<br>
+  <b>修订②</b> 2026-10-16 15:25 —— 补入「<b>关于角色：一次生成、永久复用</b>」一节，修正原报告里「角色戏做不到」的结论（用户补充了明确边界）。</div>
+
+  <div class="verdict">
+    <div class="big">结论：可行性「高」。而且你比文章作者更有条件做 —— 因为你已经有那台引擎了。</div>
+    <p>文章用的技术是 <code>HTML/CSS/GSAP → 无头浏览器逐帧录成 MP4</code>。你工作台的渲染链路 <b>一模一样</b>（HyperFrames，同一个思路、同一套前端技术）。所以这不是「要不要引进一个新东西」，而是<b>你手里那台机器一直只开了 10% 的功率</b>：现在每支片子都铺同一张固定底图（<code>grid-bg-deep-blue-grid.jpg</code>），元素全是「浮在底图上的卡片和细线框」。文章做的事，是把<b>整张画布</b>都变成代码画出来的场景。</p>
+    <p>所以真正要补的不是引擎，是<b>两层「配方」</b>：<em>风格卡</em>（这张画长什么样：配色、笔触、质感）和<em>动效配方</em>（画面里的东西怎么动）。这两层建好之后，做一支片子不但画面变丰富，<b>token 还会降到现在的 1/4 ~ 1/5</b> —— 因为你不再让 AI 每次从零写 6000 字代码，而是让它「挑一张卡 + 填几个数」。</p>
+  </div>
+
+  <div class="metrics">
+    <div class="metric"><div class="k">引擎是否要换</div><div class="v">不用</div><div class="d">HTML/CSS/GSAP + 无头浏览器，你已经在用</div></div>
+    <div class="metric warn"><div class="k">现状 · 单支 token</div><div class="v">24~49<small> 万</small></div><div class="d">3.3 分钟片 ≈24 万；6.3 分钟片 ≈49 万</div></div>
+    <div class="metric good"><div class="k">改造后 · 单支 token</div><div class="v">6~10<small> 万</small></div><div class="d">降幅约 75%~80%（估）</div></div>
+    <div class="metric"><div class="k">一次性建库投入</div><div class="v">≈25<small> 万</small></div><div class="d">≈ 一支片子的成本，换一个永久复用的库</div></div>
+  </div>
+
+  <h2>一、先把那篇文章说人话 <span>它到底干了什么</span></h2>
+
+  <div class="card">
+    <p>作者做了两件事，一件是「炫技片」，一件是「干活片」：</p>
+    <ul>
+      <li><b>炫技片</b>：一个卡通形象穿过 23 种画风 —— 洞穴壁画 → 古埃及壁画 → 北斋巨浪 → 莫奈日本桥 → 蒙克《呐喊》→ 8-bit 像素夜……每进一幅画，他就换成那幅画的画风，还跟画里的东西互动（在巨浪底下缩头、在桥上打水漂）。</li>
+      <li><b>干活片</b>：加了 8 种 YouTube 常见的解说风格（白板、Vox、Kurzgesagt、3Blue1Brown、发布会 UI、财经图表、故事、动态文字）。同一段口播，换个风格就是另一种感觉，可以单独配一段插进正在剪的片子里。</li>
+    </ul>
+    <p><b>关键在这句</b>（作者原话的意思）：<em>场景是代码画的，配乐也是代码一个音一个音合成的（没用一个采样）</em>。整支片子里，只有「他自己的卡通形象」是调用生图模型（gpt-image）出的帧 —— 其余全部是代码算出来的。</p>
+    <p>他把它沉淀成了一个 skill（<code>huashu-art-motion</code>），里面有：<b>几十张「艺术风格卡」</b>（洞穴壁画、敦煌、浮世绘、印象派、梵高、蒙克、达利、霍珀、波普、吉卜力、新海诚、蒸汽波……每张卡里写清配色、笔触、动作怎么做、以及这风格目前的短板）+ <b>拆参考视频的方法</b> + <b>配乐怎么跟画面卡节拍</b> + <b>自检程序</b>（跑一遍挑出静止帧、异常跳变，再让一个没参与制作的 agent 只看成片挑毛病）。</p>
+  </div>
+
+  <h2>二、你现在的工作台 vs 它 <span>差在哪，一句话看懂</span></h2>
+
+  <table>
+    <thead><tr><th style="width:150px">对比项</th><th>你现在的工作台（实测）</th><th>文章那套</th></tr></thead>
+    <tbody>
+      <tr><td><b>渲染引擎</b></td><td>HyperFrames：HTML/CSS/GSAP → 无头浏览器逐帧出 MP4</td><td>同一类技术（HTML/CSS/GSAP → 无头浏览器）<br><span style="color:#5ee39a">✅ 没有代差</span></td></tr>
+      <tr><td><b>画布怎么来</b></td><td class="num r">一张固定 jpg（深蓝网格）铺满，26 / 56 个镜头全部共用同一张</td><td class="num g">整帧由代码画：天空、海面、星尘、纸纹、笔触、颗粒</td></tr>
+      <tr><td><b>元素是什么</b></td><td>浮在底图上的卡片、细线框、文字块、简单 SVG 折线</td><td>场景里的一整套「画出来的东西」：人被浪卷、金币弹出、粒子聚成字</td></tr>
+      <tr><td><b>动效来源</b></td><td class="num r">每镜现写：平均 <b>5,928 字符</b> 的 HTML+JS（实测 49 镜共 290,505 字符）</td><td class="num g">从风格卡+动效配方里挑，填参数</td></tr>
+      <tr><td><b>画风数量</b></td><td class="num r">1 种（深蓝网格卡纸）</td><td class="num g">几十种艺术风格 + 8 种解说风格</td></tr>
+      <tr><td><b>音乐音效</b></td><td class="num r">无通路（成片音轨 = 口播重建 + 插片原声）</td><td class="num g">代码合成（骨笛、琵琶、三味线、尺八、方波），随画风换乐器调式</td></tr>
+      <tr><td><b>自检</b></td><td>逐镜抽帧 → 人/模型肉眼看（四条验收判据）</td><td>程序先跑一遍挑静止帧/跳变，再交给另一个 agent 看成片</td></tr>
+      <tr><td><b>角色形象</b></td><td class="num r">没有角色</td><td>生图模型<b>逐帧出画面</b> <span style="color:#ff9d9d">← 一次性、不可复用，你明确不要</span><br><span style="color:#5ee39a">✅ 但「<b>一次生成形象、以后骨骼动画全用代码写</b>」这条路你要（见「补一节」）</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="card hl">
+    <p><b>所以卡点只有一句话</b>：你的引擎能画整帧场景，只是从来没让它画过。现在的「固定底图 + 卡片动效」不是技术上限，是<b>提示词和模板库规定的上限</b> —— 你的《视觉规范.md》第一节白纸黑字写着「底图统一铺 grid-bg-deep-blue-grid.jpg……禁止任何图片铺满全屏」。这条规矩当初是为了防「元素被大色块盖掉」，顺手把「画面本身就是一幅画」这条路也一起封了。</p>
+  </div>
+
+  <h2>三、为什么「算法算出来」这条路对你特别合适 <span>而不是 AI 生成</span></h2>
+
+  <div class="card">
+    <ul>
+      <li><b>符合你已有的规矩</b>：工作台早就明文「动效全部用网页技术实现（HTML/CSS/GSAP）：位移、缩放、描边画出、逐字出现、数字滚动、粒子聚合/消散、Ken Burns」，并且「禁止实拍航拍、真人出镜、三维建模」。用代码画场景，正好是这条规矩的自然延伸 —— <em>不需要破规矩，是规矩本来就想指的方向</em>。</li>
+      <li><b>每一帧都是数学</b>：贝塞尔缓动、SVG 路径、噪声函数、粒子受力、透视变换 —— 全部可推导、可复现。<b>同一个参数，永远得到同一帧</b>。</li>
+      <li><b>和你「内容指纹」判据天生一对</b>：工作台靠「产物认 ID + 内容指纹」判断哪个镜头待重渲。算法动画是确定性的 → 指纹判据继续成立；AI 生成是随机的 → 每次重跑都不一样，你连「这条要不要重渲」都判不了。这一点上，<em>你选的这条路比文章那套更稳</em>。</li>
+      <li><b>零生成费用、零版权风险</b>：不调生图/生视频模型 → 没有图片 token、没有生成额度、没有素材版权，也不存在「审不出是谁画的」。</li>
+      <li><b>代价只有一条</b>：<em>纯算法画不出写实的人和物</em> —— 贝塞尔和噪声函数能画出几何化/线条化的小人（圆头方身、剪影、抽象符号），画不出"像照片里那个人"。<br>
+      <span style="color:#5ee39a">但这一条有解，而且不必向「生图出帧」投降</span>：<b>角色形象一次性生成、之后骨骼动画全用代码写</b> —— 这是你本轮定下的边界，详见下面「<b>补一节 · 关于角色</b>」。信息图、图表、白板、抽象动效完全不需要角色；角色戏走「资产复用」这条路，比生图出帧<b>更稳、更省、可重渲</b>。</li>
+    </ul>
+  </div>
+
+  <h2>补一节 · 关于角色：一次生成、永久复用 <span>2026-10-16 你补充的边界 —— 修正本报告原结论</span></h2>
+
+  <div class="card hl">
+    <p><b>你的原话（这就是规矩）</b>：「我也不是不愿意用生成模型生成角色，但生成的角色要能够复用。就是一次生成，以后骨骼动画都要代码写。我允许 AI 生成复用资产，但不允许生成一次性视频。一次性视频太奢侈了。」</p>
+    <p>这条规矩比「干脆不用 AI」高明 —— 它划出了一条干净的分界线：<br>
+    <em>静态的、可枚举的、能反复调用的 → 允许交给生成模型；动态的、一次性的、逐帧算出来的 → 必须代码写。</em></p>
+    <p class="tnote" style="margin-top:10px">按这条线：<b>可以生成</b> —— 角色形象、贴图、纹理、背景画、图标、音色采样。<br><b>不可以生成</b> —— 任何「这一支片子专用的画面序列」，以及任何「同一句话每次跑出来都不一样」的东西。</p>
+  </div>
+
+  <h3>技术上怎么落地：把「角色」和「动作」拆成两件事</h3>
+  <p>这套管线在 3D 游戏和动画行业是标准做法（建模一次 → 绑定骨骼 → 动画由代码/关键帧驱动），你只是用 HTML/SVG/canvas 把它重写一遍。<b>关键在「资产」与「动作」必须是两个独立文件</b> —— 前者生成一次就冻结，后者每次做片现写。</p>
+
+  <div class="layers">
+    <div class="layer"><div class="who">① 一次生成<br><span style="color:#84a3c6;font-size:12px">AI 生图 · 只需一次</span></div>
+      <div class="what">出一张角色形象（正面站姿、透明底，必要时补侧面/背面）。<small>这一步用生图模型，花一次钱，产出一个可长期持有的「资产」。</small></div></div>
+    <div class="layer"><div class="who">② 一次性拆件<br><span style="color:#84a3c6;font-size:12px">工具/人工 · 只需一次</span></div>
+      <div class="what">切成部件：头 / 躯干 / 上臂 / 前臂 / 手 / 大腿 / 小腿 / 脚（+ 眼、嘴、发）。<em>每个部件一张透明底 PNG</em>。<small>这就是「角色」的最终形态 —— 之后永不再生成。</small></div></div>
+    <div class="layer new"><div class="who">③ 代码绑骨架<br><span style="color:#84a3c6;font-size:12px">写一次 · 所有角色共用</span></div>
+      <div class="what">一份 <code>rig.json</code> 描述骨架：谁是谁的孩子、关节在哪（pivot）、每段多长。<em>本质是自己写一个极简版 Spine</em>。<small>驱动器与角色解耦：换角色只换配置，代码一个字不动。</small></div></div>
+    <div class="layer new"><div class="who">④ 代码写动作<br><span style="color:#84a3c6;font-size:12px">做片时唯一要写的一层</span></div>
+      <div class="what">GSAP 驱动各关节的角度/位移：走路、指、点头、挥手 = 一组参数曲线。<em>同一组参数，永远得到同一帧</em>。<small>这就是「骨骼动画全用代码写」，也是你「内容指纹」判据能继续成立的原因。</small></div></div>
+    <div class="layer"><div class="who">⑤ 逐帧渲染</div>
+      <div class="what">HyperFrames 照旧 seek 截屏。<em>引擎一个字都不用改</em>。<small>现有 <code>bodies\shot_xxx.body.html</code> 里加一层 <code>&lt;image&gt;</code> / <code>&lt;use&gt;</code> 引用部件即可。</small></div></div>
+  </div>
+
+  <h3>「拆件」这一步怎么走 —— 三条路线，代价不同</h3>
+  <table>
+    <thead><tr><th style="width:150px">路线</th><th>怎么做</th><th style="width:230px">代价 / 短板</th></tr></thead>
+    <tbody>
+      <tr><td><b>B · 整图 + 一次性切件</b><br><span style="color:#5ee39a;font-size:12px">★ 建议起步</span></td>
+        <td>生成<b>一张</b>完整形象 → 抠图 + 切成部件。你机器上已有抠图/图像处理能力可用。</td>
+        <td>切件是一次性人工活（几十个部件）；肘/膝/肩要补「关节遮挡圆片」防露缝。<em>但只做一次</em>。</td></tr>
+      <tr><td><b>C · 整图矢量化</b></td>
+        <td>生成整图 → 描摹成 SVG 路径 → 纯矢量部件（无外部图片依赖）。</td>
+        <td>描摹会丢细节，照片级转不了；但缩放不糊、文件极小、与现有 SVG 管线零摩擦。适合扁平/线条风。</td></tr>
+      <tr><td><b>A · 生成时就分部件</b></td>
+        <td>一次生成多张：躯干、头、手臂……各自透明底、各自居中对齐。</td>
+        <td>难在<b>跨部件一致性</b>（比例、画风、光源要对得上），要反复抽卡。只适合极简几何化角色。</td></tr>
+      <tr><td><b>D · 3D 路线</b><br><span style="color:#84a3c6;font-size:12px">可选</span></td>
+        <td>生成 <code>.glb</code> 模型 → Three.js 加载 → GSAP 驱动骨骼。</td>
+        <td>不用拆件、视角自由；但 Three.js 本机未装，管线更长，<b>单帧更慢</b>，性能必须先实测。</td></tr>
+    </tbody>
+  </table>
+
+  <h3>账：为什么「一次性视频」奢侈，「复用资产」便宜</h3>
+  <table>
+    <thead><tr><th style="width:220px">同一个角色，做 10 支片子</th><th>一次性视频（你不允许）</th><th>一次生成资产（你定的规矩）</th></tr></thead>
+    <tbody>
+      <tr><td>第 1 支</td><td>生成一段专属画面</td><td>生成 1 张形象 + 切一次件（一次性）</td></tr>
+      <tr><td>第 2 支</td><td class="num r">再生成一次，和上次完全不同</td><td class="num g">代码调用同一资产（几十行）</td></tr>
+      <tr><td>第 10 支</td><td class="num r">第 10 次生成</td><td class="num g">还是那几十行</td></tr>
+      <tr><td>能不能验内容指纹</td><td class="num r">✗ 每次都不一样，「要不要重渲」判不了</td><td class="num g">✓ 同参数必得同帧</td></tr>
+      <tr><td>改一句台词</td><td class="num r">那一整段作废重来</td><td class="num g">只改台词，角色的形象与动作一点不动</td></tr>
+      <tr><td>版权审查</td><td class="num r">每一段都要单独审</td><td class="num g">审一次，长期持有</td></tr>
+    </tbody>
+    <tfoot><tr><td>本质差别</td><td>买到的是<b>画面</b> —— 只能用一次</td><td>买到的是<b>资产</b> —— 能长出新东西</td></tr></tfoot>
+  </table>
+  <p class="tnote">顺带一句：这条规矩不只适用于角色。背景画、纹理、贴图、图标、甚至音色采样，全都适用同一把尺子 —— <b>静态可复用就允许生成，动态逐帧就必须代码算</b>。</p>
+
+  <h3>动手前必须先实测的三件事（都是真风险，不是吓唬）</h3>
+  <div class="risk"><div class="lv">高</div><div><div class="t">图片加载时序 —— 可能截到空白帧</div>
+    <div class="b">逐帧截图是按毫秒抢的，<code>&lt;image&gt;</code> 从磁盘读的那一瞬可能还没解码完，截出来是空白。<em>挡法</em>：部件 base64 内联进 html（无外部请求），或渲染前等图片 load 完成再启动时间轴。<b>这条不实测不能开工。</b></div></div></div>
+  <div class="risk"><div class="lv">中</div><div><div class="t">单帧性能 —— 比纯矢量慢</div>
+    <div class="b">位图部件比 SVG 路径吃内存，部件多 + 滤镜多的镜头更明显。<em>挡法</em>：重滤镜烘成静态图，动画只动 transform/opacity；先拿一个 5 秒镜头测出「每镜秒数」，再决定允许多少部件。</div></div></div>
+  <div class="risk"><div class="lv lo">低</div><div><div class="t">关节质量 —— 弯到一定角度会露缝</div>
+    <div class="b">这是所有 2D 骨骼动画的固有毛病，不是你的锅。<em>挡法</em>：标准解法 —— 在肘/膝/肩压一个「关节遮挡圆片」，或者拆件时把部件画到略微超出关节一点点。</div></div></div>
+
+  <div class="card">
+    <p><b>对现有体系的影响：新增一层「角色资产库」，不动任何已有机制。</b></p>
+    <ul>
+      <li><b>落点</b>：跟已有的 <code>素材模板\</code> 同一套逻辑（立项时复制进项目），建议每个角色一个文件夹：<code>parts\*.png</code>（部件）+ <code>rig.json</code>（骨架）+ <code>动作\*.json</code>（动作配方）。</li>
+      <li><b>与判据的关系</b>：资产进「ID + 内容指纹」体系 —— 资产变了，用它的镜头自动判「待重渲」。这一步不需要新机制，现在这套已经能装下。</li>
+      <li><b>不需要动的</b>：分镜字段、组接层、渲染任务包结构、<code>gen_shots.py</code> 骨架、<code>VisualStandard.cs</code>。<em>期三（风格卡）之外的额外账，基本为零。</em></li>
+    </ul>
+  </div>
+
+  <div class="card hl">
+    <p><b>一句话收尾</b>：这条路不是"算法不如生图的退让方案"，而是比「生图出帧」<b>更高级的一档</b> —— 生图出帧的人拿到的是<b>一段画面</b>，你拿到的是<b>一个能用十年的角色</b>。前者用一次就没了，后者越用越顺手（动作库、表情库都能往上叠）。</p>
+  </div>
+
+  <h2>四、账本：token 消耗对比 <span>你最关心的部分</span></h2>
+
+  <h3>先给尺子（用的什么估算口径）</h3>
+  <table>
+    <thead><tr><th style="width:210px">口径</th><th style="width:170px">换算</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>中文文本</td><td class="num">≈ 1.4 字 / token</td><td>提示词、分镜稿这类中文为主的文本</td></tr>
+      <tr><td>代码（HTML/CSS/JS）</td><td class="num">≈ 3.0 字 / token</td><td>镜头实现文件，ASCII 为主</td></tr>
+      <tr><td>抽帧图（1920×1080）</td><td class="num">≈ 2,800 token / 张</td><td>模型看图按像素算：宽×高 ÷ 750。这是<b>最贵的一项</b></td></tr>
+      <tr><td>抽帧图（960×540）</td><td class="num g">≈ 690 token / 张</td><td>同一张图降采样后再看，<b>贵的那部分直接省掉 75%</b></td></tr>
+    </tbody>
+  </table>
+  <div class="tnote">※ 字符数是从你磁盘上的真实文件量出来的（49 个镜头实现文件共 290,505 字符，平均 5,928 字符/镜）；token 是按上表换算的推断值，不是账单，但量级可靠。</div>
+
+  <h3>现状：一支片子要花多少 token</h3>
+  <table>
+    <thead><tr><th>环节</th><th style="width:230px">怎么算出来的</th><th style="width:150px">3.3 分钟片<br>（26 镜·粥糊了）</th><th style="width:150px">6.3 分钟片<br>（56 镜·思辨与立场）</th></tr></thead>
+    <tbody>
+      <tr><td><b>写镜头实现代码</b><br><span style="color:#84a3c6;font-size:12.5px">每镜现写 6,000 字 HTML+JS</span></td><td>镜数 × 5,928 字符 ÷ 3.0</td><td class="num r">≈ 52,000</td><td class="num r">≈ 112,000</td></tr>
+      <tr><td><b>抽帧验收（看图）</b><br><span style="color:#84a3c6;font-size:12.5px">每镜抽 2 帧逐元素核对</span></td><td>镜数 × 2 张 × 2,800</td><td class="num r">≈ 146,000</td><td class="num r">≈ 314,000</td></tr>
+      <tr><td><b>任务包 / 规范 / 多轮上下文</b></td><td>提示词 + 规范 + 反复带上下文</td><td class="num r">≈ 40,000</td><td class="num r">≈ 60,000</td></tr>
+    </tbody>
+    <tfoot>
+      <tr><td colspan="2">单支合计（<b>不含</b>历史那两次整批返工）</td><td class="num">≈ 24 万</td><td class="num">≈ 49 万</td></tr>
+    </tfoot>
+  </table>
+  <p><b>最扎眼的一行是「抽帧验收」</b>：它占了总消耗的 <em>六成以上</em>。也就是说，你现在为「确认画面渲对了」付的钱，比「把画面做出来」还多。文章里那套「先跑程序挑静止帧/异常跳变」不是锦上添花，是<b>直接砍掉最大一笔开销</b>。</p>
+
+  <h3>改造后：挑卡 + 填参数</h3>
+  <table>
+    <thead><tr><th>环节</th><th style="width:230px">怎么算出来的</th><th style="width:150px">3.3 分钟片</th><th style="width:150px">6.3 分钟片</th></tr></thead>
+    <tbody>
+      <tr><td><b>写镜头参数</b><br><span style="color:#84a3c6;font-size:12.5px">选风格卡 + 填参数对象（约 70% 可纯套卡，30% 需半定制）</span></td><td>镜数 × 平均 ≈ 300 字符</td><td class="num g">≈ 8,000</td><td class="num g">≈ 18,000</td></tr>
+      <tr><td><b>验收（算法前置 + 降采样看图）</b><br><span style="color:#84a3c6;font-size:12.5px">程序先滤掉明显合格的，只看可疑镜</span></td><td>约 1/3 镜头 × 1 张 × 690，+ 少量全分辨率复查</td><td class="num g">≈ 28,000</td><td class="num g">≈ 55,000</td></tr>
+      <tr><td><b>库文档按需读 + 上下文</b></td><td>只读用到的卡片，不全量灌库</td><td class="num g">≈ 25,000</td><td class="num g">≈ 30,000</td></tr>
+    </tbody>
+    <tfoot>
+      <tr><td colspan="2">单支合计</td><td class="num g">≈ 6 万<br><span style="font-size:13px">降 75%</span></td><td class="num g">≈ 10 万<br><span style="font-size:13px">降 80%</span></td></tr>
+    </tfoot>
+  </table>
+
+  <div class="card hl">
+    <h3 style="margin-top:0">回本点：做一支片子，就够建一次库</h3>
+    <p>一次性把「风格卡 20~30 张 + 动效配方 30 个 + 装订文档」建起来，估 <b>≈ 25 万 token</b>（含反复调试回环）—— 正好等于你现在做<b>一支</b> 3.3 分钟片子的开销。</p>
+    <p>也就是说：<em>第 1 支片子持平，第 2 支开始净赚</em>。按每月 4 支算，一年下来省下的量级是千万 token 级；更重要的不是钱，是<b>画面多样性和「改一处全局生效」</b>（这本来就是你在《一人公司》里定的「标准化 = 后台默认值」那条路线）。</p>
+  </div>
+
+  <h2>五、四个风险，以及怎么挡 <span>诚实列出来</span></h2>
+
+  <div class="risk">
+    <div class="lv hi">最大</div>
+    <div>
+      <div class="t">渲染耗时可能翻几倍</div>
+      <div class="b">HyperFrames 是<b>逐帧截屏</b>（每帧都要让浏览器真渲染一次）。整帧代码画 + 粒子 + 噪点滤镜（<code>feTurbulence</code>）会让单帧变慢，再乘以 30fps × 时长。这是唯一可能「技术可行但用起来痛」的点。<br>
+      <em>挡法</em>：① 重滤镜（纸纹、颗粒、笔触）<b>一次性烘成静态 PNG</b>，动画只动 transform / opacity（GPU 友好）；② 上承下来先拿一个 5 秒镜头实测，出「每镜秒数」的账，再决定风格卡允许多重的滤镜；③ 逐镜渲染本来就是你的规矩，慢也只慢在单镜，不阻塞。</div>
+    </div>
+  </div>
+
+  <div class="risk">
+    <div class="lv">中</div>
+    <div>
+      <div class="t">要动到「分镜 → 任务包 → 组接」三层</div>
+      <div class="b">现在的分镜数据里没有「这一镜用哪种风格」这个字段（字段集实测：Id / Index / 起止秒 / Text / Description / Motion / Image / ImageFile / Edited / DesignStale）。加一个 <code>Style</code> 字段就要按你那条铁律<b>两头一起改</b>：<code>ShotPrompt</code>（分镜提示词要教它选卡）、<code>RenderPrompt</code>（任务包要带上这张卡）、组接层（不改，但指纹要复算）。<br>
+      <em>挡法</em>：把它当一个新的 T 项正规走一遍，别顺手改。而且第一期完全可以<b>不加字段</b>（见下面的路径）—— 先用「整支片子一个风格」跑通，验证清楚了再开逐镜选卡。</div>
+    </div>
+  </div>
+
+  <div class="risk">
+    <div class="lv">中</div>
+    <div>
+      <div class="t">《视觉规范.md》是画面唯一真源，得先改它</div>
+      <div class="b">规范第一节现在写死了「底图统一铺深蓝网格、禁止任何图片铺满全屏」。不先改规范就做新画面，等于<b>每次任务包都自带一条和它打架的指令</b>，Agent 会摇摆。<br>
+      <em>挡法</em>：好消息是改一处就全局生效（规范每次组装任务包时重读、不缓存，这是 V1.11.3 就做好的）。把「深蓝网格」从<b>唯一底图</b>降级为<b>风格族里的第一张卡</b>（品牌识别保留），再写「底图由代码生成，其调性以本节色板为准」。这是好事 —— 等于把「更丰富的动效」<b>制度化</b>，而不是靠我每次临场发挥。</div>
+    </div>
+  </div>
+
+  <div class="risk">
+    <div class="lv lo">低</div>
+    <div>
+      <div class="t">配乐通路要从头开</div>
+      <div class="b">文章里「代码一个音一个音合成」在技术上零难度（正弦/方波/噪声 + 包络，Python 或 ffmpeg 都能做，<b>零 AI、零版权</b>）。但你工作台的音轨通路现在是「口播重建 + 插片原声」，<b>没有 BGM/音效这一路</b>（《视觉规范》§二13 已经把它标成「标准预留、待通路实现」）。<br>
+      <em>挡法</em>：这一段是<b>独立可选的第二期</b>，跟前三期不耦合。先解决画面，音乐最后再说。</div>
+    </div>
+  </div>
+
+  <h2>六、落地路径 <span>四期 + 一期（角色资产），从「马上就能看到差别」到「完整形态」</span></h2>
+
+  <div class="phase p1">
+    <div class="tag">期一</div>
+    <div>
+      <div class="t">背景不再是那张固定图 —— 这一步就能解决你说的「单调」</div>
+      <div class="b">把渲染脚手架骨架里的那一行 <code>background-image: url("bg.jpg")</code> 换成一层<b>可参数化的程序化背景</b>（渐变天空 / 星尘 / 海面细浪 / 纸纹 / 透视网格……一个「背景族」，七八种起步）。同一支片子里，每镜可以换一种背景，深蓝网格作为「品牌卡」保留在其中。<br>
+      <em>为什么先做这个</em>：改动面最小（只动 <code>gen_shots.py</code> 骨架 + 几个背景类），不碰分镜字段、不碰组接层、不碰提示词结构，<b>当天就能渲一镜看效果</b>。而且它直接命中你的抱怨 —— 单调的根源就是「每镜同一张底图」。<br>
+      <span style="color:#ff9d9d">★ 期一必须捆一件事</span>：把「风格标识」写进内容指纹（<code>RenderManifest.FingerprintOf()</code>）—— 否则改了风格界面还报"已就绪"，详见第八节。</div>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="tag">期二</div>
+    <div>
+      <div class="t">动效配方库：把「怎么写」变成「怎么叫」</div>
+      <div class="b">现在的公共库 <code>_lib.js</code> 只有 6 个函数（<code>in / out / draw / seq / dim / tl</code>）。扩到 30 来个可参数化配方：描边生长、粒子聚合、数字滚动、遮罩揭示、视差推拉、故障抖动、逐字弹入、波形律动、路径跟随、光环扩散……<br>
+      <em>效果</em>：Agent 从「写 6,000 字」变成「调 <code>LIB.motion('粒子聚合', {...})</code>」—— 这一步是 token 下降的<b>主要来源</b>。</div>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="tag">期三</div>
+    <div>
+      <div class="t">风格卡库：对照文章的「几十张卡 + 8 种解说风格」</div>
+      <div class="b">每张卡 = 配色板 + 背景族 + 笔触做法 + 默认动效配方 + <b>已知短板</b>（文章最聪明的一笔：每张卡都记下「这个风格现在哪里做不好」，下次接着改）。<br>
+      建议先备 12~15 张就够用一支片子：<b>解说实用向</b>（白板、信息图、财经图表、发布会 UI、时间轴、地图/路径、对比分屏、数字看板）+ <b>审美向</b>（水墨、敦煌、浮世绘、粗粝纸感、蒸汽波、极简几何）。分镜时给每个镜头挂一张卡。<span style="color:#84a3c6">（到这一步才需要加分镜字段）</span></div>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="tag">期三点五</div>
+    <div>
+      <div class="t">角色资产：一次生成、永久复用（本节新增的一期）</div>
+      <div class="b">风格卡库里加一族「<b>角色卡</b>」—— 每张卡 = 一个角色的形象资产（部件 PNG）+ 骨架定义 <code>rig.json</code> + 一组动作配方（走/指/点头/挥手）。<br>
+      顺序上它排在期三<b>之后</b>，但<b>那个 5 秒实测要提前做</b>：拿一个 5 秒镜头，塞进一张位图部件 + 代码驱动关节，量两件事 —— <em>① 会不会截到空白帧（图加载时序）② 单帧多花多少毫秒</em>。这两个数出来，才谈得上选拆件路线（B 整图切件 / C 矢量化 / A 分部件生成 / D 3D）。<br>
+      <em>为什么值得单独开一期</em>：它是唯一能让画面出现「人」的路径，而且一旦建好，之后每一支片子的成本几乎为零 —— 你买到的是资产，不是一个画面。</div>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="tag">伴随项</div>
+    <div>
+      <div class="t">算法质检：这一步省的钱最多</div>
+      <div class="b">纯算法、<b>零 token</b>：用 ffmpeg + Python 逐帧差分，自动挑出①静止帧（画面超 5 秒没动，正是你《视觉规范》§二11 那条规矩）②异常跳变 ③元素越界/塌到角上 ④元素互相遮挡（§二14 那两批返工的理由）。跑完只把可疑镜推给人/模型看，而且抽帧图先降到 960×540 再看。<br>
+      <em>单看这一项，就把现在六成以上的 token 开销砍掉大半</em> —— 而且它是「一支片子不建风格库也能立刻做」的独立收益。</div>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="tag">期四</div>
+    <div>
+      <div class="t">程序化配乐/音效（可选，独立）</div>
+      <div class="b">代码合成 BGM 与音效，随风格卡换乐器/调式；需要新开音轨通路并处理闪避（ducking）。<b>零 AI、零版权。</b>不着急，前面三期跑顺了再做。</div>
+    </div>
+  </div>
+
+  <h2>七、待你拍板 <span>四个选择，一句话就行</span></h2>
+  <div class="ask">
+    <h3>我不动手，等你点头。顺序上我建议 ①→②，③ 单独想清楚，④ 排在期三之后</h3>
+    <ol>
+      <li><b>要不要先做「期一 + 伴随项」？</b>（换掉固定底图 + 算法质检）—— 这两件改动面最小、收益最直接：前者解决你说的单调，后者立刻把 token 降下来。不用碰分镜字段，不用改组接层。</li>
+      <li><b>风格是「整支片子一种」还是「逐镜挑」？</b>我建议<b>先整支一种</b>（零字段改动，先看清效果和耗时），跑顺了再开逐镜选卡。逐镜选卡更丰富，但要动分镜字段 + 三处提示词。</li>
+      <li><b>「深蓝网格」是保留成品牌卡，还是可以退场？</b>我建议保留成风格族里的第一张卡（观众认得出是你的片子），但不再唯一。</li>
+      <li><b>角色资产这条线，什么时候动？</b>（「补一节」新增）我建议<b>排在期三风格卡之后</b>，但<b>先做那个 5 秒实测</b>（图片加载时序 + 单帧耗时）—— 因为实测结论会决定拆件路线的选择（B/C/A/D）。<br><span class="tnote">另需你定一处：角色资产库存哪 —— <code>D:\HyperFrames\assets\</code>（跨项目共享，像模板库）还是 <code>工作台\素材模板\</code>（跟现有立项复制机制统一）？我倾向后者。</span></li>
+    </ol>
+  </div>
+
+  <h2>八、改造后你在工作台里怎么用 <span>你几乎不用学新东西 —— 落点已经存在了</span></h2>
+
+  <div class="card hl">
+    <p><b>先回答最关键的疑问：是的，改造完你在工作台里就能用，而且你日常的操作路径一个字都不用变。</b></p>
+    <p>你现在走的是「<b>分镜 → 生成渲染任务包 → 交给 Agent 渲染</b>」这条链。改造只是换掉这条链的<b>输入</b>：<br>
+    从「一张固定底图 ＋ 每次让 AI 从零写 6,000 字代码」→ 换成「<b>一张风格卡 ＋ 调配方函数</b>」。<em>你点的地方几乎没变。</em></p>
+  </div>
+
+  <h3>落点在哪：分镜页顶部那个「换背景图…」，升级成「画面风格 ▾」</h3>
+  <p>现在分镜页顶部就有一行规格显示 + 两个按钮（<code>换背景图…</code> / <code>打开背景图</code>）。<b>这就是风格选择的天然落点</b> —— 不用新开页面、不用动导航菜单（`NavTree.cs` 一行都不用改）。改造后这一行变成：</p>
+  <div class="card" style="font-family:Consolas,monospace;font-size:13px;color:#a9d4ff">
+    成片规格：1920×1080 · 30fps · 3 帧安全尾　风格：<b style="color:#ffd166">深蓝网格 · 经典</b>　[画面风格 ▾] [预览] [打开风格卡]
+  </div>
+
+  <h3>「是不是得给我添加风格选项？」—— 不是写死几个，是<b>库是文件夹，选项自己长出来</b></h3>
+  <div class="layers">
+    <div class="layer"><div class="who">一张风格卡 = 一个文件</div>
+      <div class="what"><code>D:\HyperFrames\styles\&lt;卡名&gt;.json</code> —— 里面写：配色板 / 背景族 / 笔触做法 / 默认动效配方 / <b>已知短板</b>。</div></div>
+    <div class="layer new"><div class="who">加一张 = 丢个文件</div>
+      <div class="what">往文件夹里丢一个 json，下拉列表里<b>自动多一行</b>。<em>不用改程序、不用重新编译、不用找我</em>。<small>和现有 <code>D:\HyperFrames\templates\</code> 的登记表逻辑完全同族 —— 你已经在用这套了，只是现在那本登记表只有 4 行。</small></div></div>
+  </div>
+
+  <h3>一次完整操作长什么样（五步）</h3>
+  <table>
+    <thead><tr><th style="width:56px">步骤</th><th style="width:190px">在哪</th><th>做什么</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1</td><td>分镜页 · 顶部</td><td>点「画面风格 ▾」，从列表挑一张（列表按项目类型分组，比如解说实用向 / 审美向）</td></tr>
+      <tr><td class="num">2</td><td>分镜页 · 顶部</td><td>点「预览」看一眼效果（可选，跑一个 3 秒样例镜就够了 —— 省 token 的关键）</td></tr>
+      <tr><td class="num">3</td><td>分镜页 · 底部</td><td>点「<b>应用到下游</b>」← <span style="color:#ff9d9d">闸门！不点，下游读的还是旧风格</span></td></tr>
+      <tr><td class="num">4</td><td>渲染页</td><td>「生成渲染任务包」→「交给 Agent 渲染（整批）」</td></tr>
+      <tr><td class="num">5</td><td>渲染页</td><td>看状态灯逐格变绿（这套实时刷新已经有了，8 秒一轮）</td></tr>
+    </tbody>
+  </table>
+  <p class="tnote">第 3 步是这套系统一贯的规矩（「上游改完必须点一次应用到下游」）。<b>风格也必须走这道闸门</b> —— 否则会出现"我明明换了风格，渲染出来还是旧的"这种最难查的错。</p>
+
+  <h3>粒度：你想在哪一层选风格（三选一，我建议先做第一层）</h3>
+  <table>
+    <thead><tr><th style="width:150px">粒度</th><th style="width:210px">在哪选</th><th>代价 / 收益</th></tr></thead>
+    <tbody>
+      <tr><td><b>① 项目级</b><br><span style="color:#5ee39a;font-size:12px">★ 建议先做</span></td><td>分镜页顶部那一个下拉<br>（整支片子一种风格）</td>
+        <td><b>零字段改动</b>：分镜表加一列都不用。回答"这支片子长什么样"。<em>先看清效果和耗时，再谈别的。</em></td></tr>
+      <tr><td><b>② 逐镜级</b></td><td>每张镜头卡片上加一个下拉<br>（一镜一张卡）</td>
+        <td>更丰富（同支片子里白板 → 信息图 → 水墨切换）。要动分镜字段 + 三处提示词（按铁律「两头一起改」）。<br><span style="color:#84a3c6">好消息：结构上已经验证过是通的 —— 每镜的「配图」框就是同一类东西，而且<b>它已经进了内容指纹</b>。</span></td></tr>
+      <tr><td><b>③ 自动挑</b></td><td>你不选，Agent 按内容挑</td>
+        <td>最省事，但<b>不可控</b>（你看不到它为什么挑这张），而且 token 会涨回去（每次都要它判断 + 现在写法）。<em>不建议</em>。</td></tr>
+    </tbody>
+  </table>
+
+  <div class="card" style="border-color:rgba(255,110,110,.5);background:rgba(52,26,26,.55)">
+    <p><b>★ 必须同时补的一件事（本轮翻代码新发现的真漏洞，不改会咬人）</b></p>
+    <p>现在的「待重渲」判据只看镜头内容：<code>文案 / 画面构思 / 动效 / 配图 / 时长</code>（<code>RenderManifest.FingerprintOf()</code>）—— <b>没算底图，也没算任何规格</b>。</p>
+    <p>意思是：<em>你今天点「换背景图」，界面<b>不会</b>把任何镜头标成「待重渲」</em>。底图换了，状态灯却还是绿的。</p>
+    <p>风格一旦变成可选项，这个洞会立刻咬人 —— 你换了风格、界面说"已就绪"、出片还是旧的。<br>
+    <b>所以期一必须同时做：把「风格标识」写进指纹。</b>这跟 R-17 / R-19 那条判据铁律是同一族毛病：<em>判「要不要往下走」要看磁盘事实，不能信内存里那个乐观的绿标记。</em></p>
+    <p class="tnote" style="margin-top:8px">好消息：<code>render-spec.json</code> 里已经有一处写"这次用的到底是哪张图"（<code>Background</code> 字段），把它升级成"哪张风格卡"+ 进指纹，改动面小。</p>
+  </div>
+
+  <h3>改一次风格，代价是多少</h3>
+  <div class="card">
+    <ul>
+      <li><b>改风格 = 全部镜头待重渲</b>（因为底图和笔触进了每一镜的骨架）。这是"换一套视觉重来一版"的代价，<b>一次而已</b> —— 不是说每支片子都付。</li>
+      <li>点「应用到下游」的那一刻，系统会<b>按水位告诉你</b>：改多少文件、多少镜待重渲（这套摊代价的机制已经在跑了，2026-10-01 就有）。</li>
+      <li><b>真正天天省下来的</b>是第二件：因为风格由卡决定、动效由配方库决定，Agent 每镜要写的代码从 6,000 字变成几十行 → 这就是账本里那 75%~80% 的来源。</li>
+    </ul>
+  </div>
+
+  <div class="src">
+    <b>数据来源（都是实盘文件，可复核）：</b><br>
+    镜头实现规模：<code>D:\工作台工程\更新\_备份\思辨与立场-回滚前-20261001-165205\渲染工作区\bodies\</code> — 49 个 <code>shot_*.body.html</code>，合计 290,505 字符，平均 5,928 字符/镜（最小 3,462 / 最大 12,024）。<br>
+    项目规模：粥糊了 26 镜 / 197.5s；思辨与立场 56 镜 / 379.2s（曾为 219 镜稿 → 51 语义块 → 56 镜）；渲染规格 <code>1920×1080 · 30fps · 3 帧安全尾</code>。<br>
+    提示词与规范：<code>Workbench\Agent\RenderPrompt.cs</code>(20,658B) / <code>ShotPrompt.cs</code>(18,189B) / <code>VisualStandard.cs</code>(4,830B)；<code>文档\视觉规范.md</code>；<code>工具\渲染脚手架\gen_shots.py</code> + <code>渲染作业规范.md</code>。<br>
+    对照文章：《huashu-art-motion 发布！可能是最有审美的动画 skill》花叔 · 2026-10-06 · <code>https://mp.weixin.qq.com/s/iViOvBLlH0gfxE2z_GoiCQ</code> ｜ skill 仓库 <code>github.com/alchaincyf/huashu-art-motion</code>。<br>
+    ※ token 为按上表口径的<b>推断估算</b>，用于比较量级与结构，不等于账单数字。
+  </div>
+
+</div>
+</body>
+</html>
