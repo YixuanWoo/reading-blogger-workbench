@@ -113,14 +113,92 @@ public static class ContractJson
         }
     }
 
-    /// <summary>写文件。自动建目录。</summary>
+    /// <summary>
+    /// 写文件（序列化 + 原子落盘）。自动建目录。
+    /// 内部交给 <see cref="WriteTextAtomic"/>，所以写盘语义与它完全一致。
+    /// </summary>
     public static void WriteFile<T>(string path, T value)
     {
-        string? dir = Path.GetDirectoryName(path);
+        WriteTextAtomic(path, Serialize(value));
+    }
+
+    /// <summary>
+    /// 把一段文本**原子地**写到 <paramref name="path"/> —— 全项目唯一的用户数据写入口。
+    ///
+    /// 【为什么必须是「同目录 tmp + 换名」】
+    ///   「原子」在文件系统里只有一个意思：**读的人要么看到完整的旧内容，
+    ///   要么看到完整的新内容，绝看不到半截**。做到这一点的动作只有一个 ——
+    ///   换名（rename / ReplaceFile）。所以判别式就三条：
+    ///     · 出现 <c>File.Replace</c> → 才算原子；
+    ///     · 出现 <c>File.Delete</c> 再 <c>File.Move</c> → 有「原文件已没了、新文件还没到位」
+    ///       的窗口，崩溃/断电就只剩一个 .tmp（V1.21.0 之前 WritingDocumentStore 就是这样，
+    ///       注释写着「原子写」，实现却少了那一半）；
+    ///     · 裸 <c>File.WriteAllText(目标路径)</c> → 一律按「会写出半截/空文件」处理
+    ///       （写入过程中断电就是半截，读者还以为文件是好的）。
+    ///
+    /// 【为什么 tmp 必须固定在同目录、同一个名字】
+    ///   · 同目录 = 同卷，<c>File.Replace</c> 才成立（跨卷的换名其实是拷贝，不原子）；
+    ///   · 固定名字 = 崩溃留下的 .tmp 会被下一次写入覆盖，不会越积越多，
+    ///     而且失败路径能主动把它清掉（见下方 catch）。
+    ///
+    /// 【为什么要 WriteThrough + Flush(flushToDisk)】
+    ///   StreamWriter 的 Flush 只是把缓冲区交给操作系统，内容可能还躺在系统缓存里。
+    ///   断电时缓存里的东西会没，那时换名换来的是一个「名字对、内容是空的」文件。
+    ///   所以先写穿到盘（WriteThrough），再显式 flushToDisk，然后才换名。
+    ///
+    /// 【失败怎么办：抛，不吞】
+    ///   以前这里是 catch {} 吞掉 —— 那正是「账本悄悄变空」的另一半：
+    ///   写失败没人知道，下次读回来是空的，程序还当成正常继续跑。
+    ///   现在一律 <c>throw</c> 原样抛出，由调用方（Store / 界面）决定怎么告诉用户。
+    /// </summary>
+    /// <exception cref="IOException">写不进磁盘（磁盘满、只读、文件被别的程序独占等）</exception>
+    public static void WriteTextAtomic(string path, string content)
+    {
+        string full = Path.GetFullPath(path);
+
+        string? dir = Path.GetDirectoryName(full);
         if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
             Directory.CreateDirectory(dir);
 
-        File.WriteAllText(path, Serialize(value), Utf8NoBom);
+        // 固定同目录同名（见上方注释：同卷 + 残留可被下次写入覆盖）
+        string tmp = full + ".tmp";
+
+        try
+        {
+            using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None,
+                                           64 * 1024, FileOptions.WriteThrough))
+            using (var writer = new StreamWriter(fs, Utf8NoBom))
+            {
+                writer.Write(content);
+                writer.Flush();                      // 先把 StreamWriter 自己的缓冲交出去
+                fs.Flush(flushToDisk: true);         // 再让操作系统真的落盘，下一步才换名
+            }
+
+            if (File.Exists(full))
+            {
+                try
+                {
+                    File.Replace(tmp, full, null);
+                }
+                catch (PlatformNotSupportedException)
+                {
+                    // 个别网络盘 / FAT 不支持 ReplaceFile。
+                    // Move + overwrite 仍然是「换名」，同样不会写出半截，只是没有备份语义。
+                    File.Move(tmp, full, overwrite: true);
+                }
+            }
+            else
+            {
+                File.Move(tmp, full);
+            }
+        }
+        catch
+        {
+            // 尽力清掉自己的残留（固定名字意味着不清就会一直躺在那儿）；
+            // 清不掉也不影响结论 —— 反正异常要原样抛出去。
+            try { if (File.Exists(tmp)) File.Delete(tmp); } catch { }
+            throw;
+        }
     }
 
     /// <summary>读文件。文件不存在或格式错误时返回 null。</summary>

@@ -82,9 +82,19 @@ public partial class WritingDeskView : UserControl, INavPage, IWritingDeskPage
 
     public bool HasUnsavedChanges => DirtyVsDisk();
 
+    /// <summary>
+    /// 上一次保存失败的原因（没失败过 / 已经成功过 = null）。
+    /// 主窗口靠它分辨"没改动"和"写失败"，并统一在状态栏开口。
+    /// </summary>
+    public string? LastSaveError { get; private set; }
+
     /// <summary>存稿子。由主窗口在「保存项目」/ Ctrl+S / 自动保存时调用。</summary>
     public bool Save()
     {
+        // 每次进保存都先当成"这次没失败"：下面任何一条提前返回都不是失败，
+        // 不能把上一次的旧原因留在壳上（否则主窗口会误报一次）。
+        LastSaveError = null;
+
         string md = Host.MdPath;
         if (string.IsNullOrEmpty(md)) return false;
         if (_doc.IsEmpty) return false;
@@ -99,8 +109,9 @@ public partial class WritingDeskView : UserControl, INavPage, IWritingDeskPage
         }
         catch (Exception ex)
         {
-            MessageBox.Show("稿子保存失败：" + ex.Message, "保存稿子",
-                            MessageBoxButton.OK, MessageBoxImage.Warning);
+            // ★ 这里不再自己弹窗：自动保存每 20 秒一次，自己弹窗会变成骚扰。
+            //   把原因交出去，由主窗口统一开口（状态栏红字 + 同类只弹一次窗）。
+            LastSaveError = ex.Message;
             return false;
         }
     }

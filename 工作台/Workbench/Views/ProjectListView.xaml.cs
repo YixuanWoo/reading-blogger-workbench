@@ -34,6 +34,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using LiteCut.Workbench.Navigation;
 using LiteCut.Workbench.Project;
+using LiteCut.Workbench.Settings;
 using LiteCut.Workbench.Ui;
 
 namespace LiteCut.Workbench.Views;
@@ -437,8 +438,33 @@ public partial class ProjectListView : UserControl, INavPage
         if (System.IO.Directory.Exists(cur)) dlg.InitialDirectory = cur;
         if (dlg.ShowDialog() != true) return;
 
-        ProjectStore.RootDir = dlg.FolderName;
-        Shell?.Status("项目位置已改为：" + dlg.FolderName);
+        string picked = dlg.FolderName;
+
+        // ★ V1.20.1：换位置之前必须明确告诉用户「原项目没删、改回来还能看到」。
+        //   用户技术水平不高，他怕的不是路径变了，而是"我的项目是不是全没了" ——
+        //   拦不住他，他就会去回收站乱翻 / 重装软件 / 重新立项，那才是真损失。
+        //   ★ 判据与文案只有一份实现（RootChangeGuard），与设置页同一套。
+        if (RootChangeGuard.IsChange(cur, picked, ProjectStore.FallbackRoot()))
+        {
+            string oldEffective = RootChangeGuard.Effective(cur, ProjectStore.FallbackRoot());
+            string newEffective = RootChangeGuard.Effective(picked, ProjectStore.FallbackRoot());
+
+            // 注意：这里的 this 是 UserControl，不是 Window —— MessageBox 没有"把 UserControl 当 owner"
+            // 的重载（写成 Show(this, …) 会去匹配"正文当字符串"的那个重载，编译不过）。
+            // 本文件其它弹框也是不带 owner 的写法，保持一致。
+            var ok = MessageBox.Show(RootChangeGuard.Prompt(oldEffective, newEffective),
+                                     RootChangeGuard.DialogTitle,
+                                     MessageBoxButton.OKCancel, MessageBoxImage.Warning);
+            if (ok != MessageBoxResult.OK)
+            {
+                // 取消 = 一个字都不改：不写配置、不动项目列表
+                Shell?.Status("没有改项目位置");
+                return;
+            }
+        }
+
+        ProjectStore.RootDir = picked;
+        Shell?.Status("项目位置已改为：" + picked);
         Refresh();
     }
 

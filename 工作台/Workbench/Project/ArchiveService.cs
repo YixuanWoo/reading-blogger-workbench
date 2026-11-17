@@ -398,6 +398,21 @@ public static class ArchiveService
 
         // ---- 扫描 + 分类 ----
         plan.TargetDir = Path.Combine(root.TrimEnd('\\', '/'), ProjectStore.SanitizeFolderName(r.Model.Name));
+
+        // ---- 门槛五：落点已被别的项目占着时，不许静默覆盖（★ T-4d7ea864 / 卡A）----
+        //
+        // 【插在「算完落点」之后、「扫描 + 分类」之前的原因】
+        //   ① 判据只需要落点路径，不需要文件清单 —— 越早判越省（几百 MB 的扫描不必白跑）；
+        //   ② 命中时 plan.Ok 保持 false，界面那条既有分支
+        //      （ProjectListView: if (!plan.Ok) MessageBox.Show(plan.Reason, "暂时没法归档")）
+        //      原样就能用，界面一个字都不用改。
+        string? occupied = TargetCollisionReason(plan.TargetDir, r);
+        if (occupied != null)
+        {
+            plan.Reason = occupied;
+            return plan;
+        }
+
         try
         {
             plan.Entries = ScanAndClassify(r);
@@ -418,6 +433,87 @@ public static class ArchiveService
 
         plan.Ok = true;
         return plan;
+    }
+
+    /// <summary>
+    /// 判「这个落点还落不落得下」：返回 <c>null</c> = 可以落；返回 string = 给人看的拒绝理由。
+    ///
+    /// 【为什么需要它】
+    ///   落点就是 <c>&lt;归档根&gt;\&lt;项目名&gt;</c>，而 <see cref="Execute"/> 里是
+    ///   <c>Directory.CreateDirectory</c>（目录已存在也不报错）+ <c>File.Copy(..., overwrite: true)</c>。
+    ///   于是「同名但不是同一个项目」的第二次归档，会把上一个项目**整包覆盖**。
+    ///   而归档的动作是「复制 → 校验 → **删本地**」：本地那份删掉之后，
+    ///   落点上这一份就是**唯一副本** —— 覆盖 = 不可逆的数据损失。
+    ///
+    /// 【判据为什么只看落点里的「归档清单.json」】
+    ///   <see cref="Execute"/> 会把项目自己的 <c>_归档\</c>（含 <c>归档清单.json</c>）
+    ///   一起送到落点（见下面复制留痕那一步）；那份清单里的 <see cref="ArchiveManifest.项目Id"/>
+    ///   就是「这块地是谁的」的证据。所以**不需要新建任何记账文件**，落点里本来就有身份证。
+    ///
+    /// 【四步顺序不能调（调了就会出"该拒的放行 / 该放行的拒"）】
+    ///   ① 落点不存在 → 放行（新落点，最常见，也不该为了它去多读一个文件）；
+    ///   ② 读落点的 <c>_归档\归档清单.json</c>（走仓库唯一的读法 <see cref="ContractJson.ReadFile{T}"/>）；
+    ///   ③ 清单里的项目 id 与本项目相同 → 放行。
+    ///      ★ **同一个项目重新归档必须仍能覆盖** —— 这是改造前的既有行为，不许改坏：
+    ///        用户改了个文件想重归档、或者上次搬到一半硬盘掉了，都得能重来。
+    ///   ④ 其它一切情况（id 不同 / 文件不存在 / 读不动 / 字段为空）→ 拒绝。
+    ///      ★ **保守口径**：「落点存在但读不到清单」一律**拒绝**。宁可让用户手动处理一次，
+    ///        也不赌「大概是同一个项目」—— 后果不可逆时，这是正确的偏向。
+    /// </summary>
+    /// <param name="target">落点全路径（<see cref="ArchivePlan.TargetDir"/>）</param>
+    /// <param name="r">要归档的那个项目</param>
+    private static string? TargetCollisionReason(string target, ProjectRef r)
+    {
+        const string THREE_WAYS =
+            "三条出路（任选一条，都不影响已经做好的东西）：\n" +
+            "  ① 给这个项目改个名字再归档 —— 名字不同，落点就不同；\n" +
+            "  ② 在「设置 → 路径配置 → 归档落点根目录」里换一个目录；\n" +
+            "  ③ 确认落点上那一份确实不要了，自己先把它挪走（或删掉），然后再点归档。";
+
+        // ① 新落点：直接放行
+        if (!Directory.Exists(target)) return null;
+
+        // ② 读落点里的归档清单（口径跟着仓库走：ContractJson.ReadFile，不另搞一套序列化设置）
+        string manifestPath = Path.Combine(target, "_归档", "归档清单.json");
+        ArchiveManifest? mf = ContractJson.ReadFile<ArchiveManifest>(manifestPath);
+
+        string ownerId = (mf?.项目Id ?? "").Trim();
+        string myId = (r.Model.Id ?? "").Trim();
+
+        // ③ 同一个项目：放行（重新归档照旧覆盖，既有行为不变）
+        if (ownerId.Length > 0 && myId.Length > 0 &&
+            string.Equals(ownerId, myId, StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        // ④ 其它情况：拒绝。文案必须回答三件事 —— 落点在哪、那份是谁的、我该怎么办。
+        if (mf == null)
+        {
+            return "计划归档到这个位置，但那里已经有一个同名目录 —— 不能直接落进去。\n\n" +
+                   $"落点：{target}\n" +
+                   "读不到落点的归档清单，无法确认是不是同一个项目。\n" +
+                   "（目录在，但里面没有 _归档\\归档清单.json，或者那份文件读不动。）\n\n" +
+                   "这种情况按「不是同一个项目」处理：宁可让你手动看一眼，也不赌「大概就是它」——\n" +
+                   "盖错一次就找不回来了。\n\n" +
+                   THREE_WAYS;
+        }
+
+        if (ownerId.Length == 0)
+        {
+            string nameHere = string.IsNullOrWhiteSpace(mf.项目名) ? "(清单里没写项目名)" : mf.项目名;
+            return "计划归档到这个位置，但那里已经有一个同名目录 —— 不能直接落进去。\n\n" +
+                   $"落点：{target}\n" +
+                   $"落点里的归档清单没有项目 id（项目名：{nameHere}），无法确认是不是同一个项目。\n\n" +
+                   "按「不是同一个项目」处理：宁可让你手动看一眼，也不赌「大概就是它」。\n\n" +
+                   THREE_WAYS;
+        }
+
+        string ownerName = string.IsNullOrWhiteSpace(mf.项目名) ? "(清单里没写项目名)" : mf.项目名;
+        return "计划归档到这个位置，但那里已经放着另一个项目 —— 不能直接盖过去。\n\n" +
+               $"落点：{target}\n" +
+               $"已有另一个项目：{ownerName}（id {ownerId}）\n\n" +
+               "继续归档会把那一份整包覆盖。归档的动作是「复制 → 校验 → 删本地」，\n" +
+               "本地那份删掉之后，落点上这一份就是唯一副本，盖了就找不回来。\n\n" +
+               THREE_WAYS;
     }
 
     /// <summary>
@@ -590,6 +686,22 @@ public static class ArchiveService
         if (!plan.Ok) return new ArchiveResult { Ok = false, Message = plan.Reason };
 
         string target = plan.TargetDir;
+
+        // ★ 动手之前再判一次（fail closed）——
+        //   plan 只是「预演」：用户开着确认框那几秒里，可能换过项目、换过盘，
+        //   也可能别人刚往这个落点上归档了一个别的项目。判据必须落在
+        //   **真正动手的那一刻**，不能只信预演结果。
+        //   命中就在这里中止：此刻本地一个文件都还没动过（第一条 rename/copy 都还没发生）。
+        string? occupiedNow = TargetCollisionReason(target, r);
+        if (occupiedNow != null)
+        {
+            return new ArchiveResult
+            {
+                Ok = false,
+                TargetDir = target,
+                Message = "归档已中止（本地一个文件都没动）。\n\n" + occupiedNow,
+            };
+        }
 
         // 阶段权重：复制 0→72、校验 72→96、写留痕 96→97、清理本地 97→100。
         // 为什么这么分：复制最耗时、逐个校验次之，后面两步只是收尾。

@@ -3,10 +3,12 @@
 // ============================================================
 // WPF 程序的启动顺序：Main()（编译器自动生成）→ App → 主窗口。
 //
-// 这里除了启动，还挂了三件额外的事：
+// 这里除了启动，还挂了四件额外的事：
 //   ① 单实例锁     —— 已经有工作台在跑，就把它叫到前面来，自己退出
 //   ② 全局异常捕获 —— 界面上没弹出来的错误，一律记到日志文件
 //   ③ 启动兜底     —— 主窗口万一构造失败，弹个能看懂的提示而不是静默退出
+//   ④ 数据目录隔离 —— 设了 LITECUT_DATA_DIR 就把配置/账本/灵感池/日志搬到指定目录，
+//                     没设就一个字节都不变（开发版别污染用户真实设置）
 //
 // 【为什么①很重要】
 //   工作台的配置(config.json)和项目存档(project.json)都是"整份读、整份写"。
@@ -33,6 +35,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using LiteCut.Core.Paths;
 using LiteCut.Workbench.Agent;
 using LiteCut.Workbench.Theming;
 
@@ -76,13 +79,31 @@ public partial class App : Application
     private static Mutex? _instanceLock;
 
     /// <summary>日志文件路径。出问题让它来背锅。</summary>
-    private static string LogPath =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                     "翊瑄的工作台", "crash.log");
+    /// <remarks>
+    /// 口径在 <see cref="AppDataPaths.ResolveLogDir"/>：
+    ///   未隔离 → %LOCALAPPDATA%\翊瑄的工作台\crash.log（**与改造前逐字相同**，
+    ///            改造前的写法是 SpecialFolder.LocalApplicationData + 翊瑄的工作台 + crash.log）；
+    ///   已隔离 → 隔离目录里的 crash.log（开发版的崩溃日志不该混进用户那份）。
+    /// ★ public 是有意的：工具\隔离验证 要拿"程序自己在用的那个路径"当证据，
+    ///   而不是另抄一份公式再自我印证。
+    /// </remarks>
+    public static string CrashLogPath => Path.Combine(
+        AppDataPaths.ResolveLogDir(
+            Environment.GetEnvironmentVariable(AppDataPaths.DataDirEnvVar),
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)),
+        "crash.log");
 
     protected override void OnStartup(StartupEventArgs e)
     {
         StartupTick = Environment.TickCount64;
+
+        // ---- 数据目录隔离：先把落脚点落地，再干别的（T-4f1f38d8）----
+        // ★ 必须在最前面：下面每一件事（读 config、写 crash.log、抢单实例锁）
+        //   都会先用到数据目录，落点没定下来就干活，等于让它去猜。
+        // ★ 隔离目录不可用时**直接退出**，绝不"算了还是用默认的吧"：
+        //   悄悄退回真实目录，开发版就又去改用户的设置了 —— 那正是本卡要堵的洞。
+        if (!PrepareIsolatedDataDir()) { Shutdown(); return; }
 
         // ---- 兼容渲染：把工作台从显卡那条链上摘下来（V1.19.0）----
         // ★ 位置极其要紧：必须在**任何窗口 / 视觉对象创建之前**设。
@@ -203,7 +224,7 @@ public partial class App : Application
             MessageBox.Show(
                 "工作台启动时出问题了：" + Environment.NewLine + Environment.NewLine +
                 ex.Message + Environment.NewLine + Environment.NewLine +
-                "详细记录在：" + LogPath,
+                "详细记录在：" + CrashLogPath,
                 "启动失败", MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown();
         }
@@ -222,6 +243,53 @@ public partial class App : Application
     }
 
     // ============================================================
+    // 数据目录隔离（T-4f1f38d8）
+    // ============================================================
+
+    /// <summary>
+    /// 没设 LITECUT_DATA_DIR → 什么都不做（返回 true，走的是改造前的老路子）。
+    /// 设了 → 把它指定的目录建出来并验一次可写；不行就报错返回 false（**不启动**）。
+    ///
+    /// 【为什么"用不了就不启动"而不是回退默认目录】
+    ///   回退等于把开发版的写入又送回用户那份真实配置 —— 本卡要堵的就是这个洞。
+    ///   宁可起不来、当场报一句，也不要"以为隔离了、其实在写真实数据"。
+    ///
+    /// 【为什么先验可写】
+    ///   只读目录 / 权限不够这类问题，等到第一次保存设置时才炸就晚了：
+    ///   界面已经起来，用户只会看到"设置没记住"，而开发版的人根本不会想到是权限。
+    /// </summary>
+    private static bool PrepareIsolatedDataDir()
+    {
+        string? env = Environment.GetEnvironmentVariable(AppDataPaths.DataDirEnvVar);
+        if (!AppDataPaths.IsIsolated(env)) return true;
+
+        try
+        {
+            string dir = Workbench.AppConfig.DataDir;     // 与配置/账本/灵感池同一口径
+            Directory.CreateDirectory(dir);
+
+            // 探一次写入（文件落在隔离目录里，跑完自己删）
+            string probe = Path.Combine(dir, ".write-probe-" + Environment.ProcessId);
+            File.WriteAllText(probe, "ok");
+            File.Delete(probe);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            try { WriteLog("数据目录隔离失败（未启动，也没有回退真实目录）", ex); } catch { }
+
+            MessageBox.Show(
+                "开发/测试用的数据目录用不了：" + Environment.NewLine + Environment.NewLine +
+                AppDataPaths.DataDirEnvVar + " = " + (env ?? "").Trim() + Environment.NewLine +
+                ex.Message + Environment.NewLine + Environment.NewLine +
+                "请改成可写的目录，或删掉这个环境变量（删掉就回到默认位置）。" + Environment.NewLine +
+                "工作台这次没有启动 —— 故意不回退默认目录，免得开发版去改真实设置。",
+                "数据目录隔离失败", MessageBoxButton.OK, MessageBoxImage.Error);
+            return false;
+        }
+    }
+
+    // ============================================================
     // 单实例的实现
     // ============================================================
 
@@ -232,9 +300,14 @@ public partial class App : Application
     {
         try
         {
-            // Local\ = 只对当前登录会话生效（同一台电脑换用户登录互不影响）
+            // 名字口径在 Core（AppDataPaths.MutexName）：
+            //   未隔离 = 历史那个写死的名字，一字不改；
+            //   已隔离 = 名字后缀带上隔离目录的短哈希 —— 开发版与正式版互不打架。
+            // ★ Local\ = 只对当前登录会话生效（同一台电脑换用户登录互不影响）
             _instanceLock = new Mutex(initiallyOwned: true,
-                                      @"Local\LiteCut_Workbench_SingleInstance_A7F3",
+                                      AppDataPaths.MutexName(
+                                          Environment.GetEnvironmentVariable(AppDataPaths.DataDirEnvVar),
+                                          Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)),
                                       out bool isFirst);
             return isFirst;
         }
@@ -370,8 +443,8 @@ public partial class App : Application
         if (ex == null) return;
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(LogPath)!);
-            File.AppendAllText(LogPath,
+            Directory.CreateDirectory(Path.GetDirectoryName(CrashLogPath)!);
+            File.AppendAllText(CrashLogPath,
                 $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {title}{Environment.NewLine}" +
                 $"{ex.GetType().Name}: {ex.Message}{Environment.NewLine}" +
                 $"{ex.StackTrace}{Environment.NewLine}{Environment.NewLine}",

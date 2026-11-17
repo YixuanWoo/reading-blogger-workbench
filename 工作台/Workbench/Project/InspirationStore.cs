@@ -64,17 +64,25 @@ public static class InspirationStore
         }
     }
 
-    /// <summary>整体写回。</summary>
-    public static void Save(IEnumerable<InspirationItem> items)
+    /// <summary>
+    /// 整体写回。返回是否真的写进了磁盘。
+    ///
+    /// 【为什么改成 bool】以前这里是 catch {} 吞掉一切：灵感池写失败（磁盘满 / 被网盘占着）
+    /// 界面照样说「已记下这条灵感」，下次打开却是空的 —— 用户以为存住了，其实没存。
+    /// 现在失败返回 false，由界面（InspirationView）说清"没保存成功、清单还在界面上"。
+    /// </summary>
+    public static bool Save(IEnumerable<InspirationItem> items)
     {
         try
         {
             Directory.CreateDirectory(AppConfig.DataDir);
             ContractJson.WriteFile(FilePath, new FileShape { Items = items.ToList() });
+            return true;
         }
         catch
         {
-            // 存不下不该打断用户，下次再说
+            // 写失败不能打断用户手里的活 —— 但要如实告诉调用方，不许当成功
+            return false;
         }
     }
 }

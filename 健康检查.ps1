@@ -6,11 +6,12 @@
 #      .\健康检查.ps1 -Json        # 只输出一段 JSON（给脚本/Agent 读）
 #      .\健康检查.ps1 -LogPath C:\某个\地方.log
 #
-#  它做四件事：
+#  它做五件事：
 #      ① 关键文件在位（工程能编、文档在、视觉规范单一真源在）
 #      ② 编译出货目标（工作台\工作台.csproj，Release）：警告数 / 错误数
 #      ③ 跑自检（工具\自检）：通过几项、失败几项，失败项逐条列出
-#      ④ 仓库状态只看不判（提示今天有哪些改动还没提交）
+#      ④ 跑数据目录隔离探针（工具\隔离验证 --probe）：口径与本次接线对不对
+#      ⑤ 仓库状态只看不判（提示今天有哪些改动还没提交）
 #
 #  ★ 三条红线（改这个脚本之前先读）：
 #      1. 只 build，绝不 publish —— build.ps1 会把产物写进 D:\工作台
@@ -109,7 +110,9 @@ $mustFiles = @(
     '文档\维护说明.md',
     '文档\更新日志.md',
     '文档\视觉规范.md',
-    '工具\自检\SelfCheck.csproj'
+    '工具\自检\SelfCheck.csproj',
+    '工具\隔离验证\IsolationProbe.csproj',
+    '工具\根目录守卫验证\RootGuardVerify.csproj'
 )
 $missing = @()
 foreach ($rel in $mustFiles) {
@@ -164,6 +167,63 @@ foreach ($line in ($self.text -split "`r?`n")) {
     if ($line -match '^\s*\[败\]\s*(.+)$') { $failures += $Matches[1].Trim() }
 }
 
+# ---------- 3b. 数据目录隔离（LITECUT_DATA_DIR，T-4f1f38d8） ----------
+# 只跑 --probe：纯口径 + 本次进程的接线断言，不写文件、不起界面（几十毫秒）。
+# 真落盘那一半（--write）要设环境变量，属于手工验证，不进每次体检。
+Add-Log ''
+Add-Log '== 数据目录隔离（工具\隔离验证 --probe）=='
+$probeProj = Join-Path $root '工具\隔离验证\IsolationProbe.csproj'
+$probe = Invoke-Native $dotnet @('run', '--project', $probeProj, '-c', 'Release', '--', '--probe')
+Add-Log $probe.text
+
+$probePass = -1
+$probeFail = -1
+$pm = [regex]::Match($probe.text, '隔离验证结果：通过\s*(\d+)\s*项，失败\s*(\d+)\s*项')
+if ($pm.Success) {
+    $probePass = [int]$pm.Groups[1].Value
+    $probeFail = [int]$pm.Groups[2].Value
+}
+
+Add-Check '数据目录隔离：探针有结果输出' ($probePass -ge 0) ($(if ($probePass -ge 0) { "通过 $probePass 项" } else { '没看到「隔离验证结果：通过 N 项，失败 M 项」' }))
+Add-Check '数据目录隔离：探针失败 0 项' (($probeFail -eq 0) -and ($probe.code -eq 0)) ("失败 {0} 项（退出码 {1}）" -f $probeFail, $probe.code)
+
+# ---------- 3c. 根目录守卫（改「项目根目录」的提示与取消语义，T-4c84816f） ----------
+# 它**真的会写 config.json**（要断言"取消后文件哈希/mtime 没变"就必须有一份真文件）。
+# 所以必须先把它钉到 %TEMP% 下的临时目录 —— 不设变量就等于写进用户的真实配置。
+# 跑完只删自己建的那一个目录（路径已绑定，不许通配符）。
+Add-Log ''
+Add-Log '== 根目录守卫（工具\根目录守卫验证）=='
+$guardProj = Join-Path $root '工具\根目录守卫验证\RootGuardVerify.csproj'
+$guardDir = Join-Path $env:TEMP ("wb-rootguard-health-{0}" -f (Get-Date -Format 'yyyyMMdd-HHmmss'))
+$prevDataDir = $env:LITECUT_DATA_DIR
+$env:LITECUT_DATA_DIR = $guardDir
+try {
+    $guard = Invoke-Native $dotnet @('run', '--project', $guardProj, '-c', 'Release', '--nologo')
+} finally {
+    if ($null -eq $prevDataDir) {
+        Remove-Item Env:\LITECUT_DATA_DIR -ErrorAction SilentlyContinue
+    } else {
+        $env:LITECUT_DATA_DIR = $prevDataDir
+    }
+}
+Add-Log $guard.text
+
+$guardPass = -1
+$guardFail = -1
+$grd = [regex]::Match($guard.text, '根目录守卫验证结果：通过\s*(\d+)\s*项，失败\s*(\d+)\s*项')
+if ($grd.Success) {
+    $guardPass = [int]$grd.Groups[1].Value
+    $guardFail = [int]$grd.Groups[2].Value
+}
+
+Add-Check '根目录守卫：有结果输出' ($guardPass -ge 0) ($(if ($guardPass -ge 0) { "通过 $guardPass 项" } else { '没看到「根目录守卫验证结果：通过 N 项，失败 M 项」' }))
+Add-Check '根目录守卫：失败 0 项' (($guardFail -eq 0) -and ($guard.code -eq 0)) ("失败 {0} 项（退出码 {1}）" -f $guardFail, $guard.code)
+
+# 清掉本次的临时数据目录（只删这一个已绑定的路径）
+try {
+    if (Test-Path -LiteralPath $guardDir) { Remove-Item -LiteralPath $guardDir -Recurse -Force }
+} catch { }
+
 # ---------- 4. 仓库状态（只看不判） ----------
 Add-Log ''
 Add-Log '== 仓库状态（只提示，不算失败）=='
@@ -186,7 +246,7 @@ if ([string]::IsNullOrWhiteSpace($LogPath)) {
     $LogPath = Join-Path $env:TEMP ("workbench-health-{0}.log" -f (Get-Date -Format 'yyyyMMdd-HHmmss'))
 }
 Add-Log ''
-Add-Log ("结论：{0}（门禁 {1} 项，失败 {2} 项；自检通过 {3} 项、失败 {4} 项）" -f $(if ($allOk) { '通过' } else { '不通过' }), $gate.Count, $gateFail.Count, $passCount, $failCount)
+Add-Log ("结论：{0}（门禁 {1} 项，失败 {2} 项；自检通过 {3} 项、失败 {4} 项；隔离探针通过 {5} 项、失败 {6} 项；根目录守卫通过 {7} 项、失败 {8} 项）" -f $(if ($allOk) { '通过' } else { '不通过' }), $gate.Count, $gateFail.Count, $passCount, $failCount, $probePass, $probeFail, $guardPass, $guardFail)
 Add-Log ("判据：门禁项（[过]/[败]）计入失败并决定退出码；提示项（[注意]）共 {0} 项，只提醒，不计入失败、不影响退出码。" -f $info.Count)
 try {
     [System.IO.File]::WriteAllLines($LogPath, $logLines, (New-Object System.Text.UTF8Encoding($true)))
@@ -204,6 +264,8 @@ if ($Json) {
         dotnet        = $dotnet
         build         = [ordered]@{ exitCode = $build.code; warnings = $warnCount; errors = $errCount }
         selftest      = [ordered]@{ exitCode = $self.code; passed = $passCount; failed = $failCount; failures = $failures }
+        isolation     = [ordered]@{ exitCode = $probe.code; passed = $probePass; failed = $probeFail }
+        rootGuard     = [ordered]@{ exitCode = $guard.code; passed = $guardPass; failed = $guardFail }
         gates         = [ordered]@{ total = $gate.Count; failed = $gateFail.Count }
         hints         = [ordered]@{ total = $info.Count; appliesToExitCode = $false }
         checks        = @($checks)
@@ -225,7 +287,7 @@ if ($Json) {
         foreach ($f in $failures) { Write-Host ("    · {0}" -f $f) -ForegroundColor Red }
         Write-Host ''
     }
-    Write-Host ("  编译：警告 {0} 个 / 错误 {1} 个｜自检：通过 {2} 项 / 失败 {3} 项" -f $warnCount, $errCount, $passCount, $failCount) -ForegroundColor Gray
+    Write-Host ("  编译：警告 {0} 个 / 错误 {1} 个｜自检：通过 {2} 项 / 失败 {3} 项｜隔离探针：通过 {4} 项 / 失败 {5} 项｜根目录守卫：通过 {6} 项 / 失败 {7} 项" -f $warnCount, $errCount, $passCount, $failCount, $probePass, $probeFail, $guardPass, $guardFail) -ForegroundColor Gray
     if ($allOk) {
         Write-Host ("  结论：通过（门禁 {0} 项全过；提示项 {1} 项只提醒、不计入失败）" -f $gate.Count, $info.Count) -ForegroundColor Green
     } else {

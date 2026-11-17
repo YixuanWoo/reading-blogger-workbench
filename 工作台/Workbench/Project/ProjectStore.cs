@@ -181,6 +181,37 @@ public static class ProjectStore
     private static string? _rootOverride;
 
     /// <summary>
+    /// 兜底的项目根目录：exe 在哪，项目就在哪 —— &lt;exe目录&gt;\项目\。
+    ///
+    /// ★ **「留空 = 跟随 exe 旁的「项目」」这条语义的唯一真源就是这个方法。**
+    ///   它以前是 private，只有 <see cref="RootDir"/> 的兜底分支在用；现在提到 public，
+    ///   因为"改根目录"的判据（<c>RootChangeGuard.Effective</c> / <c>IsChange</c>）
+    ///   也必须按同一个兜底值算 —— 两边各写一份字面量迟早改一处漏一处
+    ///   （登记册 R-16 / R-19 就是这种"同一件事两处实现"的病）。
+    ///   要改兜底位置，只改这里；别在别处再写一遍 <c>"项目"</c> 这个文件夹名。
+    ///
+    /// 发布版 = D:\工作台\项目\；开发跑在 bin 下也无妨，是完整自包含的。
+    /// </summary>
+    public static string FallbackRoot()
+    {
+        return Path.Combine(AppContext.BaseDirectory, "项目");
+    }
+
+    /// <summary>
+    /// 把进程内的根目录缓存丢掉（配置里的 ProjectRoot 已经变了之后必须调一下）。
+    ///
+    /// 【为什么要有它】
+    ///   <see cref="RootDir"/> 先看 <c>_rootOverride</c> 再看配置。设置页改的是配置，
+    ///   缓存还在的话读出来仍是老路径 —— 用户点了"保存"却"没生效"，
+    ///   正是这张卡要堵的那类"看起来没反应"。
+    ///   缓存只是"本进程内的即时生效"，配置才是唯一真源；所以配置一变就丢缓存。
+    /// </summary>
+    public static void ForgetRootOverride()
+    {
+        _rootOverride = null;
+    }
+
+    /// <summary>
     /// 项目根目录。用户可以改（顶栏/项目页里能改），改了立刻生效。
     /// 默认放在 exe 同文件夹下的「项目」（2026-10-01 用户拍板：
     /// 软件用到的文件必须在 exe 旁边，项目数据不散落在外部目录）。
@@ -202,13 +233,6 @@ public static class ProjectStore
             WorkbenchWindow.State.Config.ProjectRoot = value;
             WorkbenchWindow.State.SaveConfig();
         }
-    }
-
-    private static string FallbackRoot()
-    {
-        // exe 在哪，项目就在哪：&lt;exe目录&gt;\项目\
-        // （发布版 = D:\工作台\项目\；开发跑在 bin 下也无妨，是完整自包含的）
-        return Path.Combine(AppContext.BaseDirectory, "项目");
     }
 
     /// <summary>确保根目录存在（第一次用时创建，别让用户在资源管理器里手动建）。</summary>

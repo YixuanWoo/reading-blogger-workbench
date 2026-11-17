@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- ============================================================
+       隔离验证（IsolationProbe）- 「开发/测试实例的数据目录真的隔开了吗」
+
+       这是什么：
+         一个控制台小程序，两个模式：
+           probe   只算不写：把 AppDataPaths 的口径 + 本次进程的真实接线
+                   （AppConfig.DataDir / App.CrashLogPath / 单实例锁名）逐条断言。
+                   健康检查.ps1 的门禁项就是跑它（不写文件、不起界面，几十毫秒）。
+           write   必须设了 LITECUT_DATA_DIR 才肯跑：用程序自己的三个 Store
+                   （AppConfig.Save / AccountReviewStore.Save / InspirationStore.Save）
+                   真写一遍，证明 config.json / account-review.json / inspiration.json
+                   确实落在隔离目录，且用户真实 AppData 那份没被动过。
+          （两个模式在命令行上写成带双减号的形式，参数见 Program.cs 文件头。）
+
+       为什么要引用界面层工程（工作台）：
+         隔离这件事的价值全在"程序真正用的那个落点"，不在"我另抄一份公式算出来的落点"。
+         直接引用 LiteCut 才能拿到 AppConfig.DataDir 和 App.CrashLogPath 这两个
+         程序自己在用的值 —— 复制公式就等于自我印证，测不出接线错误。
+
+       为什么不自带测试框架 / 不引第三方包：
+         项目红线（董事会定）：不引入第三方依赖。这里用最朴素的 assert 收集器。
+
+       安全闸：
+         write 模式在没设环境变量时直接拒绝并退出码 2。理由：不设就等于落在
+         %APPDATA%\翊瑄的工作台 —— 那会把虚拟数据写进用户真实配置，正是本卡要堵的洞。
+       ============================================================ -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <!-- 只是为了能引用界面层工程（不会创建任何窗口、不碰任何界面行为） -->
+    <UseWPF>true</UseWPF>
+    <RootNamespace>LiteCut.IsolationProbe</RootNamespace>
+    <AssemblyName>IsolationProbe</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>12.0</LangVersion>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\工作台\工作台.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -157,6 +157,27 @@ C:\Program Files\dotnet\dotnet.exe build 工作台\工作台.csproj -c Release
 # 目标：0 个警告 0 个错误
 ```
 
+### 开发版 / 测试版：别用自己的真实配置跑（LITECUT_DATA_DIR）
+
+`bin\Debug`、`bin\Release` 里跑起来的那个，默认和正式实例**共用** `%APPDATA%\翊瑄的工作台`
+（`config.json` / `account-review.json` / `inspiration.json`）—— 跑一次调试就可能改掉真实设置。
+
+```powershell
+# 隔离跑：三份数据 + crash.log + 单实例锁一起搬到这个目录
+$env:LITECUT_DATA_DIR = "$env:TEMP\wb-dev"                      # 写绝对路径
+& ".\工作台\bin\Release\net8.0-windows\LiteCut.exe"
+
+# 不设（或删掉）就还是老位置 —— 一个字节都不变
+Remove-Item Env:\LITECUT_DATA_DIR
+```
+
+- 隔离之后 **正式版还能同时开**（锁名带隔离目录后缀，两边不互相挡）；不设时锁名与 crash.log 路径与改造前一字未变。
+- ★ **隔离只换"家"不换"门"**：它不拦你手动打开真实项目，开了照样会往真实作品里写素材种子 ——
+  隔离模式下仍然不许开真实项目。
+- 验证：`.\健康检查.ps1`（"隔离探针"是门禁项，只算不写）；要真写一遍用
+  `dotnet run --project .\工具\隔离验证\IsolationProbe.csproj -c Release -- --write`（必须先设环境变量）。
+  详见 `文档/接管说明书.md` §6 ⑤。
+
 ### 打包发布（产物自动进「程序」文件夹）
 
 ```powershell

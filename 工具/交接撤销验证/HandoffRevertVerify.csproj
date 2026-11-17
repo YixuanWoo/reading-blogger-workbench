@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- ============================================================
+       交接撤销验证（HandoffRevertVerify）- 「撤销这次拆合之后，渲染清单跟得上吗」
+
+       这是什么：
+         一个控制台程序，全部在 %TEMP% 下跑虚拟项目。它把
+         ReindexMigration.Plan → Execute（正向交接）→ Rollback（撤销）跑一遍，
+         逐条断言「撤销之后清单里每一条 File 都对得上磁盘上的真文件」。
+
+       为什么必须引用界面层工程（工作台）：
+         要断言的是**程序自己那条撤销路径**（ReindexMigration.Rollback）
+         和**渲染页自己那条过期判据**（RenderManifest.Mp4NameOf + File 逐条对镜号）。
+         自己另写一份"反向映射"的公式来验证，只会自我印证 —— 接线错了照样绿。
+
+       为什么不自带测试框架 / 不引第三方包：
+         项目红线（董事会定）：不引入第三方依赖。这里用最朴素的 assert 收集器。
+
+       为什么不进 工作台.sln：
+         它是一次性验证入口（跟 工具\隔离验证 / 根目录守卫验证 同一性质），
+         出货链只有 工作台\工作台.csproj 一条。
+
+       怎么跑（在工程根 D:\工作台工程\工作台 下。命令行参数见 Program.cs 文件头，
+       注意 XML 注释里不能出现连续双减号，所以这里不抄参数原文）：
+         dotnet run 项目路径 -c Release
+         想把证据落到指定目录就再加两个参数（不给就只打屏幕）。
+
+       输出末尾固定一行「通过 N 项，失败 M 项」（与 工具\自检 同一口径，方便以后接门禁）。
+       退出码：0 = 全过 / 1 = 有失败 / 2 = 用法或环境问题。
+       ============================================================ -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <!-- 只是为了能引用界面层工程（不创建任何窗口、不碰任何界面行为） -->
+    <UseWPF>true</UseWPF>
+    <RootNamespace>LiteCut.HandoffRevertVerify</RootNamespace>
+    <AssemblyName>HandoffRevertVerify</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>12.0</LangVersion>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\工作台\工作台.csproj" />
+  </ItemGroup>
+
+</Project>

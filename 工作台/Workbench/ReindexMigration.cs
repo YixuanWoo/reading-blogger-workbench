@@ -381,6 +381,43 @@ public static class ReindexMigration
 
         try { RemapOverridesReverse(project, log); } catch { }
 
+        // ---- 渲染清单也要跟着搬回旧镜号（T-6a72ab31 补的对称操作）----
+        //
+        // 【为什么正向改了反向必须改回】
+        //   Execute 把清单里的 File 改成了**新**镜号（RenderManifest.Remap），
+        //   现在文件已经搬回旧名 —— 清单若还留着新号，渲染页（Step3RenderView）
+        //   会拿 `shot_<新号>.mp4` 去跟当前镜头表的镜号对，对不上就整页标
+        //   「产物过期（镜号已对不上）」。用户以为要重渲一整页，其实一个像素都没变。
+        //
+        // 【为什么 RemovedIds 传空集合】
+        //   被合并掉的镜头在正向 Remap 里已经 map.Remove 过了（条目早就不在清单里），
+        //   反向再"删"一次没有对象、也不成立。而且那些镜头的产物合并后本来就不在盘上，
+        //   渲染页走的是"没有清单条目"那条分支（只看实现是否比产物新），
+        //   不会因此被标成「镜号对不上」—— 传 log.RemovedIds 反而是错语义。
+        //
+        // 【为什么必须放在文件搬回之后】
+        //   Remap 不动指纹（内容没变，只有"谁排第几"变了），但语义上是
+        //   "磁盘已经回到旧名，清单跟着对"。放前面会让清单在中途失败时
+        //   指着一批还不存在的文件。
+        //
+        // 【幂等】Execute 失败时会自动调本函数，那时正向 Remap 还没执行、
+        //   清单里还是旧镜号 —— 把旧镜号映射成旧镜号等于无害空转，
+        //   所以这条改动对"执行失败自动回滚"那条路径不产生任何副作用。
+        //
+        // 【异常只进 Notes，不许让 Rollback 返回失败】
+        //   文件已经搬回是既成事实。因为一张"账本"写不进去就报失败，
+        //   会诱导用户再点一次撤销 —— 那才会真把东西搬乱。
+        try
+        {
+            var map = RenderManifest.Load(log.OutputDir);
+            if (map.Count > 0)
+            {
+                RenderManifest.Remap(map, log.OldIndexById, Array.Empty<string>());
+                RenderManifest.Save(log.OutputDir, map);
+            }
+        }
+        catch (Exception ex) { log.Notes.Add("渲染清单还原失败（不影响文件已经搬回）：" + ex.Message); }
+
         log.Status = "rolledback";
         log.Reason = $"已搬回 {back} 个文件";
         WriteLog(project, log);

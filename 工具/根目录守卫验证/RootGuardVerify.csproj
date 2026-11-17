@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- ============================================================
+       根目录守卫验证（RootGuardVerify）
+       「设置里改项目根目录」这件事的无头断言
+
+       这是什么：
+         一个控制台小程序，直接调生产代码（RootChangeGuard + SettingsWindow.SaveWithConfirm），
+         跑一遍这张卡要的三类判据：
+           ① 纯函数口径：Effective / IsChange（尾部斜杠、大小写、分隔符、留空 vs 显式兜底）
+           ② 文案：Prompt 必须含「没删」「改回来」，且新旧两个路径原样列出
+           ③ 行为：点取消 → 配置与内存都不变（文件哈希 + mtime 前后一致、cfg.ProjectRoot 未改）；
+                  点确定 → 真的写盘（且写在新位置）
+         健康检查.ps1 的门禁项就是跑它。
+
+       为什么要引用界面层工程（工作台）：
+         要断言的正是"设置页那个保存入口"本身（SettingsWindow.SaveWithConfirm）。
+         自己另写一份 if 去测等于自我印证 —— 测不出接线错误。
+         这里只**实例化**窗口，不 Show、不弹框（确认回调是注入的假函数），
+         所以能跑在无头/自动化环境里。
+
+       安全闸（为什么没设 LITECUT_DATA_DIR 就拒绝，退出码 2）：
+         这个工具会真的调 AppConfig.Save 写 config.json。
+         不设环境变量就等于落在 %APPDATA%\翊瑄的工作台 —— 那是用户的真实配置，
+         写进去就是污染。宁可拒绝，也不"顺手写一下"。
+       ============================================================ -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <!-- 只是为了能引用界面层工程并实例化 SettingsWindow（不会 Show 任何窗口） -->
+    <UseWPF>true</UseWPF>
+    <RootNamespace>LiteCut.RootGuardVerify</RootNamespace>
+    <AssemblyName>RootGuardVerify</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>12.0</LangVersion>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\工作台\工作台.csproj" />
+  </ItemGroup>
+
+</Project>

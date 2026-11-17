@@ -109,6 +109,14 @@ public partial class WorkbenchWindow : Window, IWritingDeskHost
     private bool _confirmedClose;
 
     /// <summary>
+    /// 已经弹过窗的保存失败种类（键就是 <see cref="ReportSaveFailure"/> 的 what）。
+    /// 为什么要去重：自动保存 20 秒一次、切一页就写一次配置 —— 磁盘真满了，
+    /// 不去的弹窗会连环糊在脸上，用户只能不停点"确定"，还是不知道该怎么办。
+    /// 状态栏的红字每次都写（那是常驻提醒），弹窗每类只给一次。
+    /// </summary>
+    private readonly HashSet<string> _saveFailureShown = new();
+
+    /// <summary>
     /// ★ V1.14.0 调试模式会话（日志 + 文件监听 + 本机遥控口）。
     /// 构造时建好，但**只有配置里开了它才真的工作**（见 ApplyDebugMode）。
     /// 关着的时候它什么都不做、也不占端口。
@@ -376,7 +384,7 @@ public partial class WorkbenchWindow : Window, IWritingDeskHost
     private void RememberNav(string navId)
     {
         State.Config.LastNavId = navId;
-        State.SaveConfig();
+        SaveConfigSafe();
     }
 
     /// <summary>
@@ -440,8 +448,7 @@ public partial class WorkbenchWindow : Window, IWritingDeskHost
         }
 
         State.Config.LastProjectDir = r.Dir;
-        State.SaveConfig();
-
+        SaveConfigSafe();
         EnterScopeForCurrentProject();
         Status($"已打开项目：{r.Name}");
     }
@@ -459,8 +466,7 @@ public partial class WorkbenchWindow : Window, IWritingDeskHost
         if (Session.HasProject) Session.Close();
 
         State.Config.LastProjectDir = "";
-        State.SaveConfig();
-
+        SaveConfigSafe();
         EnterGlobalScope(landOn);
     }
 
@@ -501,8 +507,7 @@ public partial class WorkbenchWindow : Window, IWritingDeskHost
         }
 
         State.Config.LastProjectDir = r.Dir;
-        State.SaveConfig();
-
+        SaveConfigSafe();
         EnterProjectScope();   // 不再是归档项目了 → 自动回到工作流菜单的默认页
         Status($"已取回工程：{r.Model.Name} —— 现在可以接着剪了");
     }
@@ -548,10 +553,21 @@ public partial class WorkbenchWindow : Window, IWritingDeskHost
         //   → 现在：**项目里有什么要存，就一起存。** 保存对用户只有一个动作。
         bool scriptWrote = SaveScriptIfCurrent();
 
+        // 稿子写失败时 SaveScriptIfCurrent 已经报过了（原因在页面的 LastSaveError 上）；
+        // 这里只记下"这一轮有失败"，好让下面的"已保存"别盖掉红字提示。
+        bool scriptFailed = !scriptWrote
+                            && _currentView is IWritingDeskPage wdp
+                            && wdp.LastSaveError != null;
+
         bool wrote = Session.Save(force: manual);
+
+        // 项目存档失败（磁盘满 / 只读 / project.json 被别的程序占着）
+        if (Session.LastSaveError != null)
+            ReportSaveFailure("项目存档（project.json）", Session.LastSaveError);
+
         RefreshShell();
 
-        if (manual)
+        if (manual && !scriptFailed && Session.LastSaveError == null)
         {
             string name = Session.Current!.Model.Name;
             if (scriptWrote)
@@ -566,9 +582,21 @@ public partial class WorkbenchWindow : Window, IWritingDeskHost
     /// <summary>
     /// 当前页是写作台时，把稿子一并存盘。返回是否真的写了。
     /// （不是写作台就直接返回 false —— 稿子不存在，无从谈起。）
+    ///
+    /// ★ 写失败时在这里就开口（稿子丢了是最疼的一种）：
+    ///   Save() 的 false 有「没改动」和「写失败」两种含义，靠 LastSaveError 分辨 ——
+    ///   只有它非 null 才说明是真失败。
     /// </summary>
     private bool SaveScriptIfCurrent()
-        => _currentView is IWritingDeskPage wd && wd.Save();
+    {
+        if (_currentView is not IWritingDeskPage wd) return false;
+
+        bool wrote = wd.Save();
+        if (!wrote && wd.LastSaveError != null)
+            ReportSaveFailure("稿子（script.md）", wd.LastSaveError);
+
+        return wrote;
+    }
 
     /// <summary>把当前页面上还没交回共享状态的编辑推回去。</summary>
     private void SyncCurrent()
@@ -595,7 +623,17 @@ public partial class WorkbenchWindow : Window, IWritingDeskHost
         }
 
         if (Session.Save())
+        {
             Status($"已自动保存 {DateTime.Now:HH:mm:ss}（Ctrl+S 可随时手动保存）");
+        }
+        else
+        {
+            // ★ 走到这里必定是真失败：上面已经确认 IsDirty 为真，
+            //   所以 false 只可能是抛异常那一次。
+            //   以前这里什么都不说 —— 状态栏还停在上一次的「已自动保存 21:03:11」，
+            //   用户以为是存住了，其实是假成功（本卡要消灭的就是这一条）。
+            ReportSaveFailure("项目存档（project.json）", Session.LastSaveError ?? "未知原因");
+        }
         RefreshShell();
     }
 
@@ -737,7 +775,7 @@ public partial class WorkbenchWindow : Window, IWritingDeskHost
             if (string.IsNullOrWhiteSpace(State.Config.FFmpegPath) && FFmpegLocator.FFmpegPath != null)
             {
                 State.Config.FFmpegPath = FFmpegLocator.FFmpegPath;
-                State.SaveConfig();
+                SaveConfigSafe();
             }
         }
         else
@@ -824,11 +862,24 @@ public partial class WorkbenchWindow : Window, IWritingDeskHost
     /// </summary>
     private void BtnSettings_Click(object sender, RoutedEventArgs e)
     {
+        string rootBefore = ProjectStore.RootDir;
+
         var dlg = new Settings.SettingsWindow(State.Config) { Owner = this };
         dlg.ShowDialog();
 
         InitFFmpeg();          // ffmpeg 路径可能被改过
         ApplyDebugMode();      // 调试开关可能被拨过
+
+        // ★ V1.20.1：设置里改了「项目根目录」→ 项目页要按新位置重扫。
+        //   不重扫的话，用户点了保存、关掉设置，看到的还是老位置那几张卡
+        //   （再以为"没生效"，就可能去乱试）。取消的话 Saved=false、根目录也没变，这里什么都不做。
+        if (dlg.Saved &&
+            !string.Equals(ProjectStore.RootDir, rootBefore, StringComparison.OrdinalIgnoreCase) &&
+            _currentView is Views.ProjectListView list)
+        {
+            list.Refresh();
+        }
+
         RefreshShell();
 
         Status(dlg.Saved ? "设置已保存" : "设置没有改动");
@@ -851,8 +902,7 @@ public partial class WorkbenchWindow : Window, IWritingDeskHost
         if (dlg.ShowDialog() != true) return;
 
         State.Config.FFmpegPath = dlg.FileName;
-        State.SaveConfig();
-
+        SaveConfigSafe();
         FFmpegLocator.Configure(dlg.FileName);
         FFmpegLocator.TryFind();
         InitFFmpeg();
@@ -1002,7 +1052,7 @@ public partial class WorkbenchWindow : Window, IWritingDeskHost
         else if (Session.HasProject)
         {
             // 没有改动也顺手落一次盘：把"停在哪个项目 / 哪一页"这类信息写准
-            State.SaveConfig();
+            SaveConfigSafe();
         }
 
         _confirmedClose = true;
@@ -1041,8 +1091,59 @@ public partial class WorkbenchWindow : Window, IWritingDeskHost
     /// </summary>
     public void Status(string msg)
     {
+        // ★ 先把颜色复位：状态栏也会被保存失败提示染成红的，
+        //   不复位的话第一次失败之后所有正常消息都还是红的（看久了就没人当回事了）。
+        TxtStatus.SetResourceReference(TextBlock.ForegroundProperty, "TextDim");
         TxtStatus.Text = msg;
         DebugLog.Write("status", msg);
+    }
+
+    /// <summary>
+    /// 保存失败时对外开口 —— 这是「用户能看见」的唯一落点。
+    ///
+    /// 【为什么要一个统一入口，而不是各 Store 自己弹窗】
+    ///   写盘的地方有六类（稿子 / 项目存档 / 设置 / 灵感池 / 复盘账本 / 归档清单），
+    ///   各弹各的会变成：切一页弹一次、20 秒弹一次。所以数据层只交出「成功没有 + 为什么」，
+    ///   由这里统一讲人话：状态栏红字常驻 + 同一类只弹一次窗。
+    ///
+    /// 【文案为什么这么写】
+    ///   只说"保存失败"用户不知道该干什么。要说清三件事：
+    ///     ① 原因（磁盘满 / 只读 / 被别的程序占着）；
+    ///     ② 现在的处境（改动还在窗口里，不会自己消失，但关掉就真没了）；
+    ///     ③ 怎么办（清空间 / 关掉占用它的程序 / 再按一次 Ctrl+S）。
+    /// </summary>
+    public void ReportSaveFailure(string what, string detail)
+    {
+        TxtStatus.SetResourceReference(TextBlock.ForegroundProperty, "Danger");
+        TxtStatus.Text = $"⚠ {what} 没保存成功：{detail} —— 改动还在窗口里，别关程序";
+
+        DebugLog.Write("save-failed", what, new { detail });
+
+        // 同一类只弹一次（见 _saveFailureShown 的注释）
+        if (!_saveFailureShown.Add(what)) return;
+
+        MessageBox.Show(
+            $"{what} 没能写进磁盘。\n\n" +
+            $"原因：{detail}\n\n" +
+            "改动还在窗口里，不会自己消失 —— 但现在它只在内存里。\n" +
+            "关掉程序、断电或者被强杀，就真的丢了。\n\n" +
+            "可以试这三件事：\n" +
+            "  ① 清一下磁盘空间（尤其是放这台工作台数据的那个盘）；\n" +
+            "  ② 关掉可能占着这个文件的程序：网盘同步（OneDrive / 坚果云）、杀毒软件、Obsidian；\n" +
+            "  ③ 处理完再按一次 Ctrl+S（或顶栏「保存」）重试。\n\n" +
+            "同一种失败只提示这一次，状态栏会一直红着提醒你。",
+            "保存失败", MessageBoxButton.OK, MessageBoxImage.Warning);
+    }
+
+    /// <summary>
+    /// 保存配置的"有结果版"：写失败了要开口，不许像以前那样悄悄算成功。
+    /// 切一页就会写一次 config.json（记住停在哪一页），所以失败频率可能很高 ——
+    /// 弹窗靠 <see cref="ReportSaveFailure"/> 的同类去重挡着，状态栏照常红着。
+    /// </summary>
+    private void SaveConfigSafe()
+    {
+        if (State.SaveConfig()) return;
+        ReportSaveFailure("设置（config.json）", State.Config.LastSaveError ?? "未知原因");
     }
 
     // ========================================================

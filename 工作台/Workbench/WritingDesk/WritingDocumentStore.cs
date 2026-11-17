@@ -69,14 +69,17 @@ public static class WritingDocumentStore
         doc.SavedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
     }
 
-    /// <summary>原子写 + 无 BOM。</summary>
+    /// <summary>
+    /// 原子写 + 无 BOM —— 转交给 <see cref="ContractJson.WriteTextAtomic"/>，本层不再自己实现一遍。
+    ///
+    /// 【为什么改】V1.21.0 之前这里的注释写着「原子写：先写 .tmp 再换名」，
+    /// 实现却是 <c>File.Delete(原稿)</c> → <c>File.Move(tmp)</c>：两者之间有一个
+    /// 「原稿已经没了、新稿还没到位」的窗口，正好在这中间崩溃就只剩一个 .tmp，
+    /// 稿子（唯一副本）就没了。全项目写用户数据只认一个入口，
+    /// 判别式只有一条：出现 <c>File.Replace</c> 才算原子。
+    /// </summary>
     private static void AtomicWriteText(string path, string content)
-    {
-        string tmp = path + ".tmp";
-        File.WriteAllText(tmp, content, ContractJson.Utf8NoBom);
-        if (File.Exists(path)) File.Delete(path);
-        File.Move(tmp, path);
-    }
+        => ContractJson.WriteTextAtomic(path, content);
 
     // ========================================================
     // 本机视图状态（view-state.json）

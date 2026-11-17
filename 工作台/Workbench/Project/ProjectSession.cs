@@ -131,11 +131,22 @@ public sealed class ProjectSession
     // ========================================================
 
     /// <summary>
+    /// 最近一次保存失败的原因（成功、或压根没写时为 null）。
+    /// <see cref="Save"/> 返回 false 有两种含义：「没打开项目 / 没有改动」和「写失败了」，
+    /// 界面要靠这个字段分辨后者的原因，否则只能干看着一个 false。
+    /// </summary>
+    public string? LastSaveError { get; private set; }
+
+    /// <summary>
     /// 保存项目。返回是否真的写了盘。
     /// 没打开项目 / 没有任何改动时直接返回 false，不做无谓的磁盘写。
     /// </summary>
     public bool Save(bool force = false)
     {
+        // 每次进来先清掉上一次的原因：false 才有"这次失败"的意思，
+        // 不然「没改动」的那次 false 会带着旧错误跑出去，界面就误报了。
+        LastSaveError = null;
+
         if (Current == null) return false;
         if (!force && !IsDirty) return false;
 
@@ -144,13 +155,15 @@ public sealed class ProjectSession
             Current.Model = Projected();
             ProjectStore.Save(Current);
             LastSavedAt = Current.Model.UpdatedAt;
+            LastSaveError = null;
             ResetBaseline();
             Saved?.Invoke(this, EventArgs.Empty);
             return true;
         }
-        catch
+        catch (Exception ex)
         {
-            // 存不下（磁盘满/只读/文件被占用）不该打断剪辑，交给调用方提示
+            // 存不下（磁盘满/只读/文件被占用）不该打断剪辑，但原因要留下 —— 交给调用方提示
+            LastSaveError = ex.Message;
             return false;
         }
     }

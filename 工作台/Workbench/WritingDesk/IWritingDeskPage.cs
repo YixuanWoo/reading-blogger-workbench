@@ -22,6 +22,17 @@ public interface IWritingDeskPage
     /// <summary>把当前稿子存盘（写回 .md）。返回是否真的写了。</summary>
     bool Save();
 
+    /// <summary>
+    /// 上一次 <see cref="Save"/> 失败的原因（成功或没写时为 null）。
+    ///
+    /// 【为什么接口上必须有这个】
+    ///   <see cref="Save"/> 返回 false 是个笼统的"没写成"：可能只是"没有改动"，
+    ///   也可能是"真的写失败了"。宿主（主窗口）只看 false 分不清，就没法只说该说的话。
+    ///   而**写作台自己不该弹窗**：它每 20 秒被自动保存调一次，一次写失败就会变成
+    ///   每 20 秒一个弹窗的骚扰。所以由这里把原因交出来，主窗口统一开口（状态栏红字 + 同类只弹一次窗）。
+    /// </summary>
+    string? LastSaveError { get; }
+
     /// <summary>有没有未保存的改动（主窗口用它拦退出/拦切换）。</summary>
     bool HasUnsavedChanges { get; }
 }

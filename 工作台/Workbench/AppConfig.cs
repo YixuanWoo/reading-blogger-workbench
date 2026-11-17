@@ -18,6 +18,8 @@ using System;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using LiteCut.Core.Contracts;
+using LiteCut.Core.Paths;
 
 namespace LiteCut.Workbench;
 
@@ -302,13 +304,27 @@ public sealed class AppConfig
     // 读写
     // ========================================================
 
+    /// <summary>
+    /// 数据目录的落点。★ **进程内只算一次**：配置、灵感池、复盘账本用的是同一个值，
+    /// 跑到一半环境变量被改也不会前后落在两个目录里。
+    ///
+    /// 口径在 <see cref="LiteCut.Core.Paths.AppDataPaths"/>（纯函数，自检里可断言）：
+    ///   · 没设 LITECUT_DATA_DIR → %APPDATA%\翊瑄的工作台（与改造前**逐字相同**）；
+    ///   · 设了 → 它指定的目录（开发版 / 测试实例靠它跟用户的真实数据隔开）。
+    ///
+    /// 【为什么不在这里散着写 Environment.GetFolderPath】
+    ///   同一个落点还要给崩溃日志（App.cs）和单实例锁用；三处各拼一次，
+    ///   迟早改一处漏两处 —— 所以统一从 Core 那个纯函数取。
+    /// </summary>
+    private static readonly string ResolvedDir = AppDataPaths.ResolveDataDir(
+        Environment.GetEnvironmentVariable(AppDataPaths.DataDirEnvVar),
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
+
     /// <summary>配置文件的存放目录。</summary>
-    private static string Dir =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                     "翊瑄的工作台");
+    private static string Dir => ResolvedDir;
 
     /// <summary>
-    /// 程序数据的根目录（%APPDATA%\翊瑄的工作台）。
+    /// 程序数据的根目录（默认 %APPDATA%\翊瑄的工作台；设了 LITECUT_DATA_DIR 时是那个目录）。
     /// 配置、灵感池这类"跟具体项目无关"的东西都放这儿。
     /// </summary>
     public static string DataDir => Dir;
@@ -335,21 +351,43 @@ public sealed class AppConfig
     }
 
     /// <summary>
-    /// 写配置。失败（比如磁盘只读）也不影响程序继续用。
+    /// 最近一次保存失败的原因（成功时为 null）。
+    /// 为什么要有它：<see cref="Save"/> 返回 false 只说"没写成功"，
+    /// 界面要讲人话就得知道"为什么"（磁盘满 / 只读 / 被网盘或杀毒占着）。
     /// </summary>
-    public void Save()
+    public string? LastSaveError { get; private set; }
+
+    /// <summary>
+    /// 写配置。返回是否真的写进了磁盘 —— 调用方（主窗口）据此决定要不要告诉用户。
+    ///
+    /// 【为什么不再静默吞掉】
+    ///   以前这里是裸 File.WriteAllText + catch {}：写一半断电就是半截/空文件，
+    ///   读侧 catch 回默认值 —— 设置悄悄全丢，界面一个字不说（用户只看到"设置没记住"）。
+    ///   现在走 <see cref="ContractJson.WriteTextAtomic"/>（同目录 tmp + 换名），
+    ///   失败时把原因记进 <see cref="LastSaveError"/> 并返回 false，由界面开口。
+    ///
+    /// 【序列化设置保持不变】字节要和以前一模一样（WriteIndented、无 BOM），
+    /// 所以这里仍然用本类自己的序列化选项，只是"写"这一半换成了唯一原子入口。
+    /// </summary>
+    public bool Save()
     {
         try
         {
-            Directory.CreateDirectory(Dir);
-            File.WriteAllText(FilePath, JsonSerializer.Serialize(this, new JsonSerializerOptions
+            // 注意：不能用 ContractJson.Serialize —— 那套 Options 会改字节（中文转义/枚举写法），
+            // 本卡的红线是"config.json 写出来必须和今天一字不差"。
+            string json = JsonSerializer.Serialize(this, new JsonSerializerOptions
             {
                 WriteIndented = true,
-            }));
+            });
+
+            ContractJson.WriteTextAtomic(FilePath, json);
+            LastSaveError = null;
+            return true;
         }
-        catch
+        catch (Exception ex)
         {
-            // 存不了就算了，下次重新设置 —— 不值得为此弹窗打断用户
+            LastSaveError = ex.Message;
+            return false;
         }
     }
 }

@@ -662,9 +662,10 @@ public sealed class WorkbenchState
         $"{Math.Round(a * 20) / 20:0.00}|{Math.Round(b * 20) / 20:0.00}";
 
     /// <summary>
-    /// 保存配置到磁盘。
+    /// 保存配置到磁盘。返回是否真的写成功 —— 失败原因看 <c>Config.LastSaveError</c>。
+    /// （以前是 void：写失败了没人知道，界面也就永远不会说。）
     /// </summary>
-    public void SaveConfig() => Config.Save();
+    public bool SaveConfig() => Config.Save();
 }
 
 /// <summary>

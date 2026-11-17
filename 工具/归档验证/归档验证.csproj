@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- ============================================================
+       归档验证（ArchiveVerify）
+       「归档落点同名时不许静默覆盖」的无头断言
+
+       这是什么：
+         一个控制台小程序，直接调生产代码（ArchiveService.Prepare / Execute），
+         在一个「假硬盘」（%TEMP% 下的临时目录）上真跑一遍归档流程，断言：
+           ① 首次归档成功，落点里 归档清单.json 的 项目Id 是 A 的；
+           ② 采集 A 落盘指纹（相对路径 → SHA256 + 长度）；
+           ③ 同名但不同 id 的 B：Prepare 与 Execute **双双拒绝**；
+           ④ 被拒之后，A 落盘的全部文件逐条指纹不变（一个字节都不许动）；
+           ⑤ 同一个项目（同 id）重新归档仍能覆盖（旧行为没被改坏）；
+           ⑥ 落点存在但读不到清单 → 拒绝（保守口径）。
+
+       为什么要引用界面层工程（工作台）：
+         要断言的就是产品里的 Prepare / Execute 本身。自己另写一份判据去测等于自我印证。
+         Prepare 读的是 WorkbenchWindow.State.Config（落点 / 卷序列号都在那里），
+         所以这里用和 工具\根目录守卫验证 同一套做法：实例化 App 拿到资源，不 Show 任何窗口。
+
+       安全闸（为什么没设 LITECUT_DATA_DIR 就自己钉一个）：
+         Execute 会写 config.json（第一次归档要记卷序列号）。不钉住就等于写进
+         %APPDATA%\翊瑄的工作台 —— 那是用户的真实配置。所以没设变量时，
+         本程序把它钉到本次临时根下的「数据」目录，并在断言里核对真的没落在真实目录。
+
+       安全闸（为什么所有项目根都要在 %TEMP% 下）：
+         归档语义里 Execute 会**删本地文件**。虚拟项目必须全部落在临时根里，
+         跑之前先打印一遍所有项目根路径自证，再逐条断言它们都在 Path.GetTempPath() 下。
+       ============================================================ -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <!-- 只是为了能引用界面层工程（ArchiveService 用到 WorkbenchWindow.State）；不会 Show 任何窗口 -->
+    <UseWPF>true</UseWPF>
+    <RootNamespace>LiteCut.ArchiveVerify</RootNamespace>
+    <AssemblyName>ArchiveVerify</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>12.0</LangVersion>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\工作台\工作台.csproj" />
+  </ItemGroup>
+
+</Project>

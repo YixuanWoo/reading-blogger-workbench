@@ -32,6 +32,20 @@ public partial class SettingsWindow : Window
     /// <summary>点过「保存设置」没有（调用方据此决定要不要刷新界面）。</summary>
     public bool Saved { get; private set; }
 
+    /// <summary>
+    /// 界面上「项目根目录」输入框里的字。
+    ///
+    /// 【为什么要有这个属性】
+    ///   x:Name 生成的控件字段默认是 internal，工程外的验证程序（工具\根目录守卫验证）
+    ///   直接碰 TxtProjectRoot 编译不过。与其把整个控件字段提到 public（那等于允许外面
+    ///   随便改界面），只开一个"读/填这一个输入框"的口子 —— 验证要的就是这个值。
+    /// </summary>
+    public string ProjectRootText
+    {
+        get => TxtProjectRoot.Text;
+        set => TxtProjectRoot.Text = value;
+    }
+
     public SettingsWindow(AppConfig cfg)
     {
         _cfg = cfg;
@@ -453,16 +467,66 @@ public partial class SettingsWindow : Window
             return;
         }
 
-        Save(_cfg, this, port);
+        // ★ V1.20.1：改「项目根目录」要先问一句（原项目没删、改回来还能看到）。
+        //   用户点「取消」→ 什么都不写、窗口不关、Saved 保持 false：
+        //   配置一个字不动，项目列表自然也不会变（这里不碰 ProjectStore）。
+        if (!SaveWithConfirm(_cfg, this, port, ConfirmRootChange))
+            return;
+
         Saved = true;
         Close();
     }
 
     /// <summary>
+    /// 真弹框问用户「确定要换项目根目录吗」。正文由 <see cref="RootChangeGuard.Prompt"/> 生成 ——
+    /// 两个入口（设置页 / 项目页）必须说同一句话，所以文案不在这里另写。
+    /// </summary>
+    private bool ConfirmRootChange(string prompt)
+    {
+        return MessageBox.Show(this, prompt, RootChangeGuard.DialogTitle,
+                               MessageBoxButton.OKCancel, MessageBoxImage.Warning) == MessageBoxResult.OK;
+    }
+
+    /// <summary>
     /// 把界面上的值写回配置并落盘。
     /// ★ 抽成静态是为了**能被无头验证直接调用** —— 不用真的弹一个窗口。
+    /// ★ V1.20.1：行为与原来**逐字相同**（不问、直接写）。需要"改根目录先确认"的调用方
+    ///   请用 <see cref="SaveWithConfirm"/>；本方法保留是为了不破坏既有调用方
+    ///   （工具\写作台验证 用的就是这个三参数签名）。
     /// </summary>
     public static void Save(AppConfig cfg, SettingsWindow ui, int port)
+    {
+        ApplyAndPersist(cfg, ui, port);
+    }
+
+    /// <summary>
+    /// 同 <see cref="Save"/>，但"换项目根目录"这一步先问一下用户（可注入，便于无头断言）。
+    /// </summary>
+    /// <param name="confirm">收到确认文案、返回用户是否同意。真界面传 <see cref="ConfirmRootChange"/>。</param>
+    /// <returns>false = 用户取消，**什么都没写**（配置、内存、磁盘都不动）</returns>
+    public static bool SaveWithConfirm(AppConfig cfg, SettingsWindow ui, int port, Func<string, bool> confirm)
+    {
+        string fallback = ProjectStore.FallbackRoot();
+
+        // 只在"真的换了地方"时问 —— 尾部斜杠 / 大小写 / 分隔符写法 / 留空 vs 显式兜底值
+        // 都算"没变"，不能为这些差异弹框吓人（判据只有一份，在 RootChangeGuard）。
+        if (RootChangeGuard.IsChange(cfg.ProjectRoot, ui.TxtProjectRoot.Text, fallback))
+        {
+            string oldEffective = RootChangeGuard.Effective(cfg.ProjectRoot, fallback);
+            string newEffective = RootChangeGuard.Effective(ui.TxtProjectRoot.Text, fallback);
+
+            if (confirm == null || !confirm(RootChangeGuard.Prompt(oldEffective, newEffective)))
+                return false;   // 取消：不写配置、不扫项目列表
+        }
+
+        ApplyAndPersist(cfg, ui, port);
+        return true;
+    }
+
+    /// <summary>
+    /// 真正"读界面 → 写内存 → 落盘"的那一段（<see cref="Save"/> 与 <see cref="SaveWithConfirm"/> 共用）。
+    /// </summary>
+    private static void ApplyAndPersist(AppConfig cfg, SettingsWindow ui, int port)
     {
         cfg.AgentBaseUrl = ui.TxtUrl.Text.Trim();
         cfg.AgentApiKey = ui.TxtKey.Password.Trim();
@@ -491,6 +555,11 @@ public partial class SettingsWindow : Window
         //   就锁死了，运行中改没有任何效果，只会让人以为"开了没用"。
         //   界面上那句状态提示会告诉用户"要重启才生效"。
         cfg.SoftwareRender = ui.ChkSoftwareRender.IsChecked == true;
+
+        // ★ V1.20.1：配置里的 ProjectRoot 是唯一真源 —— 换个新值之后，
+        //   把 ProjectStore 的进程内缓存丢掉，否则 RootDir 还会返回老路径
+        //   （设置页点了"保存"却"没生效"，比不弹确认框更糟）。
+        ProjectStore.ForgetRootOverride();
 
         cfg.Save();
     }
